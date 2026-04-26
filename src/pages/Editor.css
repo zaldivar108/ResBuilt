@@ -178,6 +178,16 @@
 .sc-btn:hover { background: rgba(255,255,255,0.08); color: #94A3B8; }
 .sc-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 .sc-btn.del:hover { background: rgba(239,68,68,0.18); color: #FCA5A5; }
+.sc-btn.vis:hover { background: rgba(255,255,255,0.08); color: #818CF8; }
+
+/* Hidden section — muted in sidebar */
+.section-item.hidden .section-name-btn {
+  color: #334155;
+  text-decoration: line-through;
+  text-decoration-color: #475569;
+}
+.section-item.hidden .sc-btn.vis { opacity: 1; color: #475569; }
+.section-item.hidden .section-controls { opacity: 1; }
 
 .add-section-form { padding: 6px 4px; }
 .add-section-input {

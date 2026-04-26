@@ -1,8 +1,8 @@
 import './MinimalLayout.css'
 
 export default function MinimalLayout({ sections, styles, template }) {
-  const contact = sections.find(s => s.type === 'contact')
-  const body    = sections.filter(s => s.type !== 'contact')
+  const contact = sections.find(s => s.type === 'contact' && !s.hidden)
+  const body    = sections.filter(s => s.type !== 'contact' && !s.hidden)
   const accent  = template.accentColor
 
   return (

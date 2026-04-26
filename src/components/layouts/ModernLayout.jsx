@@ -9,8 +9,8 @@ export default function ModernLayout({ sections, styles, template }) {
     sidebarColor,
   } = template
 
-  const sidebarSections = sections.filter(s => sidebarSectionTypes.includes(s.type))
-  const mainSections    = sections.filter(s => !sidebarSectionTypes.includes(s.type))
+  const sidebarSections = sections.filter(s => sidebarSectionTypes.includes(s.type) && !s.hidden)
+  const mainSections    = sections.filter(s => !sidebarSectionTypes.includes(s.type) && !s.hidden)
 
   // Sidebar heading uses a lighter tint of the accent for readability on dark bg
   const sbHeadingColor = '#818CF8'

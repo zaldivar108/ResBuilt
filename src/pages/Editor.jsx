@@ -150,6 +150,15 @@ export default function Editor() {
     })
   }
 
+  function toggleSectionVisibility(sectionId) {
+    patch(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId ? { ...s, hidden: !s.hidden } : s
+      ),
+    }))
+  }
+
   function undoDelete() {
     if (!lastDeleted) return
     clearTimeout(undoTimerRef.current)
@@ -290,6 +299,7 @@ export default function Editor() {
                       isActive={section.id === activeSectionId}
                       onSelect={() => switchSection(section.id)}
                       onDelete={() => deleteSection(section.id)}
+                      onToggleVisibility={() => toggleSectionVisibility(section.id)}
                       isDragging={activeDragId === section.id}
                     />
                   ))}
@@ -574,7 +584,7 @@ function BackIcon() {
 }
 
 /* ── Sortable section item ── */
-function SortableSectionItem({ section, isActive, onSelect, onDelete, isDragging }) {
+function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVisibility, isDragging }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: section.id })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -585,7 +595,7 @@ function SortableSectionItem({ section, isActive, onSelect, onDelete, isDragging
     <li
       ref={setNodeRef}
       style={style}
-      className={`section-item${isActive ? ' active' : ''}`}
+      className={`section-item${isActive ? ' active' : ''}${section.hidden ? ' hidden' : ''}`}
       {...attributes}
     >
       <button className="drag-handle" {...listeners} tabIndex={-1}>
@@ -595,6 +605,13 @@ function SortableSectionItem({ section, isActive, onSelect, onDelete, isDragging
         {section.title}
       </button>
       <div className="section-controls">
+        <button
+          className="sc-btn vis"
+          onClick={onToggleVisibility}
+          title={section.hidden ? 'Show section' : 'Hide section'}
+        >
+          {section.hidden ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
         <button className="sc-btn del" onClick={onDelete} title="Delete">×</button>
       </div>
     </li>
@@ -610,6 +627,25 @@ function GripIcon() {
       <circle cx="7"   cy="7"    r="1.2" />
       <circle cx="3"   cy="11.5" r="1.2" />
       <circle cx="7"   cy="11.5" r="1.2" />
+    </svg>
+  )
+}
+
+function EyeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round">
+      <path d="M1 6.5C1 6.5 3 2.5 6.5 2.5C10 2.5 12 6.5 12 6.5C12 6.5 10 10.5 6.5 10.5C3 10.5 1 6.5 1 6.5Z"/>
+      <circle cx="6.5" cy="6.5" r="1.5"/>
+    </svg>
+  )
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round">
+      <path d="M1 6.5C1 6.5 3 2.5 6.5 2.5C10 2.5 12 6.5 12 6.5C12 6.5 10 10.5 6.5 10.5C3 10.5 1 6.5 1 6.5Z"/>
+      <circle cx="6.5" cy="6.5" r="1.5"/>
+      <line x1="2" y1="2" x2="11" y2="11"/>
     </svg>
   )
 }
