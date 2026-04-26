@@ -54,3 +54,19 @@
 
 .font-select { width: 106px; }
 .size-select { width: 72px; }
+
+/* ── Dark mode ── */
+.editor-layout.dark .editor-toolbar {
+  background: #0A0F1E;
+  border-bottom-color: #1E293B;
+}
+.editor-layout.dark .tb-btn { color: #94A3B8; }
+.editor-layout.dark .tb-btn:hover { background: #1E293B; color: #818CF8; }
+.editor-layout.dark .tb-sep { background: #2D3748; }
+.editor-layout.dark .tb-select {
+  background: #1E293B;
+  border-color: #334155;
+  color: #CBD5E1;
+}
+.editor-layout.dark .tb-select:hover { border-color: #475569; }
+.editor-layout.dark .tb-select:focus { border-color: #6366F1; }

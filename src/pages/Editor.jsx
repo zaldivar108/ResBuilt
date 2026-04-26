@@ -24,11 +24,11 @@ export default function Editor() {
 
   const [resume, setResume] = useState(null)
   const [activeSectionId, setActiveSectionId] = useState(null)
-  const [showStyles, setShowStyles] = useState(false)
   const [addingSection, setAddingSection] = useState(false)
   const [newSectionTitle, setNewSectionTitle] = useState('')
   const [saved, setSaved] = useState(true)
-  const [zoom, setZoom] = useState('fit')
+  const [zoom, setZoom] = useState(1)
+  const [darkMode, setDarkMode] = useState(false)
 
   const editorRef = useRef(null)
   const saveTimerRef = useRef(null)
@@ -40,7 +40,6 @@ export default function Editor() {
     setActiveSectionId(r.sections[0]?.id ?? null)
   }, [id])
 
-  // Sync DOM content when switching sections
   useEffect(() => {
     if (!editorRef.current || !resume) return
     const section = resume.sections.find(s => s.id === activeSectionId)
@@ -157,7 +156,7 @@ export default function Editor() {
   }
 
   return (
-    <div className="editor-layout">
+    <div className={`editor-layout${darkMode ? ' dark' : ''}`}>
       {/* Top nav */}
       <nav className="editor-nav">
         <button className="back-btn" onClick={() => navigate('/dashboard')}>
@@ -170,6 +169,13 @@ export default function Editor() {
           placeholder="Resume title..."
         />
         <div className="editor-nav-right">
+          <button
+            className="dark-toggle-btn"
+            onClick={() => setDarkMode(d => !d)}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? <SunIcon /> : <MoonIcon />}
+          </button>
           <span className={`save-badge ${saved ? 'saved' : 'pending'}`}>
             {saved ? '✓ Saved' : 'Saving…'}
           </span>
@@ -177,9 +183,10 @@ export default function Editor() {
         </div>
       </nav>
 
-      {/* Body */}
+      {/* Body: 4-column layout */}
       <div className="editor-body">
-        {/* Left sidebar */}
+
+        {/* Col 1 — Sections sidebar (dark) */}
         <aside className="sidebar">
           <div className="sidebar-scroll">
             <div className="sidebar-section-label">Sections</div>
@@ -246,120 +253,13 @@ export default function Editor() {
               </button>
             )}
           </div>
-
-          {/* Style controls */}
-          <div className="style-panel">
-            <button
-              className="style-toggle"
-              onClick={() => setShowStyles(v => !v)}
-            >
-              <span>Styles</span>
-              <span>{showStyles ? '▲' : '▼'}</span>
-            </button>
-
-            {showStyles && (
-              <div className="style-body">
-                <label className="sf">
-                  <span className="sf-label">Font Family</span>
-                  <select
-                    className="sf-select"
-                    value={resume.styles.fontFamily}
-                    onChange={e => updateStyles({ fontFamily: e.target.value })}
-                  >
-                    <option value="Georgia, serif">Georgia</option>
-                    <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
-                    <option value="Garamond, serif">Garamond</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                    <option value="'Calibri', Candara, sans-serif">Calibri</option>
-                  </select>
-                </label>
-
-                <label className="sf">
-                  <div className="sf-row">
-                    <span className="sf-label">Font Size</span>
-                    <span className="sf-val">{resume.styles.fontSize}pt</span>
-                  </div>
-                  <input
-                    type="range" min="9" max="14" step="0.5"
-                    value={resume.styles.fontSize}
-                    onChange={e => updateStyles({ fontSize: Number(e.target.value) })}
-                  />
-                </label>
-
-                <label className="sf">
-                  <div className="sf-row">
-                    <span className="sf-label">Line Spacing</span>
-                    <span className="sf-val">{resume.styles.lineSpacing}</span>
-                  </div>
-                  <input
-                    type="range" min="1" max="2.2" step="0.05"
-                    value={resume.styles.lineSpacing}
-                    onChange={e => updateStyles({ lineSpacing: Number(e.target.value) })}
-                  />
-                </label>
-
-                <label className="sf">
-                  <div className="sf-row">
-                    <span className="sf-label">Section Spacing</span>
-                    <span className="sf-val">{resume.styles.sectionSpacing}px</span>
-                  </div>
-                  <input
-                    type="range" min="6" max="40"
-                    value={resume.styles.sectionSpacing}
-                    onChange={e => updateStyles({ sectionSpacing: Number(e.target.value) })}
-                  />
-                </label>
-
-                {/* Margin presets */}
-                <div className="sf">
-                  <span className="sf-label">Page Margins</span>
-                  <div className="margin-presets">
-                    {Object.entries(MARGIN_PRESETS).map(([key, preset]) => (
-                      <button
-                        key={key}
-                        className="margin-preset-btn"
-                        onClick={() => applyMarginPreset(key)}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Fine-grained margin inputs */}
-                <div className="sf">
-                  <span className="sf-label">Margins (px)</span>
-                  <div className="margins-grid">
-                    {[
-                      ['marginTop',    'Top'],
-                      ['marginRight',  'Right'],
-                      ['marginBottom', 'Bottom'],
-                      ['marginLeft',   'Left'],
-                    ].map(([key, label]) => (
-                      <label key={key} className="margin-cell">
-                        <span>{label}</span>
-                        <input
-                          type="number" min="12" max="144"
-                          value={resume.styles[key]}
-                          onChange={e => updateStyles({ [key]: Number(e.target.value) })}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         </aside>
 
-        {/* Center editing area */}
+        {/* Col 2 — Editor */}
         <div className="edit-area">
           {activeSection ? (
             <>
               <EditorToolbar editorRef={editorRef} />
-
               <div className="section-title-bar">
                 <input
                   className="section-title-edit"
@@ -368,7 +268,6 @@ export default function Editor() {
                   placeholder="Section title"
                 />
               </div>
-
               <div
                 ref={editorRef}
                 className="content-editable"
@@ -382,9 +281,8 @@ export default function Editor() {
           )}
         </div>
 
-        {/* Right: preview panel */}
+        {/* Col 3 — Preview */}
         <div className="preview-panel">
-          {/* Preview toolbar */}
           <div className="preview-toolbar">
             <select
               className="pt-size-select"
@@ -424,6 +322,111 @@ export default function Editor() {
             zoom={zoom}
           />
         </div>
+
+        {/* Col 4 — Styles sidebar (light) */}
+        <aside className="styles-sidebar">
+          <div className="ss-header">Styles</div>
+          <div className="ss-body">
+
+            <div className="ss-field">
+              <span className="ss-label">Font Family</span>
+              <select
+                className="ss-select"
+                value={resume.styles.fontFamily}
+                onChange={e => updateStyles({ fontFamily: e.target.value })}
+              >
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
+                <option value="Garamond, serif">Garamond</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="'Calibri', Candara, sans-serif">Calibri</option>
+              </select>
+            </div>
+
+            <div className="ss-divider" />
+
+            <div className="ss-field">
+              <div className="ss-row">
+                <span className="ss-label">Font Size</span>
+                <span className="ss-val">{resume.styles.fontSize}pt</span>
+              </div>
+              <input
+                className="ss-range"
+                type="range" min="9" max="14" step="0.5"
+                value={resume.styles.fontSize}
+                onChange={e => updateStyles({ fontSize: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="ss-field">
+              <div className="ss-row">
+                <span className="ss-label">Line Spacing</span>
+                <span className="ss-val">{resume.styles.lineSpacing}</span>
+              </div>
+              <input
+                className="ss-range"
+                type="range" min="1" max="2.2" step="0.05"
+                value={resume.styles.lineSpacing}
+                onChange={e => updateStyles({ lineSpacing: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="ss-field">
+              <div className="ss-row">
+                <span className="ss-label">Section Spacing</span>
+                <span className="ss-val">{resume.styles.sectionSpacing}px</span>
+              </div>
+              <input
+                className="ss-range"
+                type="range" min="6" max="40"
+                value={resume.styles.sectionSpacing}
+                onChange={e => updateStyles({ sectionSpacing: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="ss-divider" />
+
+            <div className="ss-field">
+              <span className="ss-label">Page Margins</span>
+              <div className="ss-presets">
+                {Object.entries(MARGIN_PRESETS).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    className="ss-preset-btn"
+                    onClick={() => applyMarginPreset(key)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="ss-field">
+              <span className="ss-label">Margins (px)</span>
+              <div className="ss-margins-grid">
+                {[
+                  ['marginTop',    'Top'],
+                  ['marginRight',  'Right'],
+                  ['marginBottom', 'Bottom'],
+                  ['marginLeft',   'Left'],
+                ].map(([key, label]) => (
+                  <label key={key} className="ss-margin-cell">
+                    <span>{label}</span>
+                    <input
+                      type="number" min="12" max="144"
+                      value={resume.styles[key]}
+                      onChange={e => updateStyles({ [key]: Number(e.target.value) })}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </aside>
+
       </div>
     </div>
   )
@@ -434,6 +437,25 @@ function BackIcon() {
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
       <path d="M8 2.5L3.5 6.5L8 10.5" stroke="currentColor" strokeWidth="1.8"
         strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M13 9.5A6 6 0 015.5 2a6.5 6.5 0 107.5 7.5z"
+        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function SunIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M3.2 3.2l1 1M10.8 10.8l1 1M10.8 3.2l-1 1M4.2 10.8l-1 1"
+        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }
