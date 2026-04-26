@@ -56,6 +56,7 @@ export default function Editor() {
   const [saved, setSaved] = useState(true)
   const [zoom, setZoom] = useState(1)
   const [activeDragId, setActiveDragId] = useState(null)
+  const [pageCount, setPageCount] = useState(1)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
 
   const editorRef    = useRef(null)
@@ -403,6 +404,10 @@ export default function Editor() {
               ))}
             </div>
 
+            <span className={`pt-page-count${pageCount > 1 ? ' overflow' : ''}`}>
+              {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+            </span>
+
             <button
               className="pt-export-btn"
               onClick={() => exportPDF(resume)}
@@ -416,6 +421,7 @@ export default function Editor() {
             resume={resume}
             paperSizeKey={paperSizeKey}
             zoom={zoom}
+            onPageCount={setPageCount}
           />
         </div>
 

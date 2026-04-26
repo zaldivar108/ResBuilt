@@ -15,7 +15,7 @@ function LayoutSwitch({ sections, styles, template }) {
   }
 }
 
-export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 'fit' }) {
+export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 'fit', onPageCount }) {
   const scrollRef       = useRef(null)
   const contentMeasureRef = useRef(null)
   const [containerWidth, setContainerWidth] = useState(0)
@@ -60,6 +60,14 @@ export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 
     obs.observe(el)
     return () => obs.disconnect()
   }, [paper.height, isSidebar, marginTop, marginBottom])
+
+  useEffect(() => {
+    if (!onPageCount) return
+    if (isSidebar) { onPageCount(1); return }
+    const availableH = paper.height - marginTop - marginBottom
+    const pages = Math.max(1, Math.ceil((availableH + overflowPx) / availableH))
+    onPageCount(pages)
+  }, [overflowPx, isSidebar, paper.height, marginTop, marginBottom])
 
   return (
     <div className="preview-scroll" ref={scrollRef}>
