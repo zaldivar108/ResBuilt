@@ -1,0 +1,40 @@
+.app-switch {
+  position: relative;
+  display: inline-flex;
+  height: 24px;
+  width: 44px;
+  align-items: center;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  outline: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.app-switch:hover {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.app-switch:focus-visible {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.42);
+}
+
+.app-switch-knob {
+  display: inline-block;
+  position: relative;
+  height: 20px;
+  width: 20px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.app-switch-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 9999px;
+  background: #EAB308;
+  filter: blur(8px);
+}

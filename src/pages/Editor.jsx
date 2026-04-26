@@ -4,7 +4,21 @@ import { useResume } from '../context/ResumeContext'
 import { PAPER_SIZES, MARGIN_PRESETS, exportPDF } from '../config/paperSizes'
 import EditorToolbar from '../components/EditorToolbar'
 import ResumePreview from '../components/ResumePreview'
+import { SelectDropdown } from '../components/ui/SelectDropdown'
+import Switch from '../components/ui/switch'
 import './Editor.css'
+
+const FONT_FAMILY_OPTIONS = [
+  { value: 'Georgia, serif',                          label: 'Georgia' },
+  { value: "'Times New Roman', Times, serif",         label: 'Times New Roman' },
+  { value: 'Arial, sans-serif',                       label: 'Arial' },
+  { value: "'Helvetica Neue', Helvetica, sans-serif", label: 'Helvetica' },
+  { value: 'Garamond, serif',                         label: 'Garamond' },
+  { value: 'Verdana, sans-serif',                     label: 'Verdana' },
+  { value: "'Calibri', Candara, sans-serif",          label: 'Calibri' },
+]
+
+const PAPER_SIZE_OPTIONS = Object.values(PAPER_SIZES).map(p => ({ value: p.key, label: p.label }))
 
 function genId() {
   return Math.random().toString(36).slice(2, 9)
@@ -47,6 +61,10 @@ export default function Editor() {
   }, [activeSectionId])
 
   useEffect(() => () => clearTimeout(saveTimerRef.current), [])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   function scheduleAutoSave(r) {
     setSaved(false)
@@ -169,13 +187,7 @@ export default function Editor() {
           placeholder="Resume title..."
         />
         <div className="editor-nav-right">
-          <button
-            className="dark-toggle-btn"
-            onClick={() => setDarkMode(d => !d)}
-            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? <SunIcon /> : <MoonIcon />}
-          </button>
+          <Switch checked={darkMode} onCheckedChange={setDarkMode} />
           <span className={`save-badge ${saved ? 'saved' : 'pending'}`}>
             {saved ? '✓ Saved' : 'Saving…'}
           </span>
@@ -284,16 +296,12 @@ export default function Editor() {
         {/* Col 3 — Preview */}
         <div className="preview-panel">
           <div className="preview-toolbar">
-            <select
-              className="pt-size-select"
+            <SelectDropdown
               value={paperSizeKey}
-              onChange={e => updateStyles({ paperSize: e.target.value })}
-              title="Paper size"
-            >
-              {Object.values(PAPER_SIZES).map(p => (
-                <option key={p.key} value={p.key}>{p.label}</option>
-              ))}
-            </select>
+              onValueChange={val => updateStyles({ paperSize: val })}
+              options={PAPER_SIZE_OPTIONS}
+              triggerClassName="pt-size-select"
+            />
 
             <div className="pt-zoom-group">
               {ZOOM_OPTIONS.map(z => (
@@ -330,19 +338,12 @@ export default function Editor() {
 
             <div className="ss-field">
               <span className="ss-label">Font Family</span>
-              <select
-                className="ss-select"
+              <SelectDropdown
                 value={resume.styles.fontFamily}
-                onChange={e => updateStyles({ fontFamily: e.target.value })}
-              >
-                <option value="Georgia, serif">Georgia</option>
-                <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                <option value="Arial, sans-serif">Arial</option>
-                <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
-                <option value="Garamond, serif">Garamond</option>
-                <option value="Verdana, sans-serif">Verdana</option>
-                <option value="'Calibri', Candara, sans-serif">Calibri</option>
-              </select>
+                onValueChange={val => updateStyles({ fontFamily: val })}
+                options={FONT_FAMILY_OPTIONS}
+                triggerClassName="ss-select"
+              />
             </div>
 
             <div className="ss-divider" />
@@ -441,21 +442,3 @@ function BackIcon() {
   )
 }
 
-function MoonIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <path d="M13 9.5A6 6 0 015.5 2a6.5 6.5 0 107.5 7.5z"
-        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
-function SunIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <circle cx="7.5" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M3.2 3.2l1 1M10.8 10.8l1 1M10.8 3.2l-1 1M4.2 10.8l-1 1"
-        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  )
-}

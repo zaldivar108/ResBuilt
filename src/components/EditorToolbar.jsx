@@ -1,25 +1,52 @@
+import { useRef } from 'react'
+import { ChevronDownIcon } from '@radix-ui/react-icons'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 import './EditorToolbar.css'
 
 const FONTS = [
-  { label: 'Arial', value: 'Arial, sans-serif' },
-  { label: 'Georgia', value: 'Georgia, serif' },
-  { label: 'Garamond', value: 'Garamond, serif' },
-  { label: 'Helvetica', value: "'Helvetica Neue', Helvetica, sans-serif" },
-  { label: 'Times New Roman', value: "'Times New Roman', Times, serif" },
-  { label: 'Verdana', value: 'Verdana, sans-serif' },
-  { label: 'Calibri', value: "'Calibri', Candara, sans-serif" },
+  { label: 'Arial',          value: 'Arial, sans-serif' },
+  { label: 'Georgia',        value: 'Georgia, serif' },
+  { label: 'Garamond',       value: 'Garamond, serif' },
+  { label: 'Helvetica',      value: "'Helvetica Neue', Helvetica, sans-serif" },
+  { label: 'Times New Roman',value: "'Times New Roman', Times, serif" },
+  { label: 'Verdana',        value: 'Verdana, sans-serif' },
+  { label: 'Calibri',        value: "'Calibri', Candara, sans-serif" },
 ]
 
 const SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28]
 
 export default function EditorToolbar({ editorRef }) {
-  function exec(cmd, value = null) {
+  const savedRange = useRef(null)
+
+  function saveSelection() {
+    const sel = window.getSelection()
+    if (sel?.rangeCount > 0) {
+      savedRange.current = sel.getRangeAt(0).cloneRange()
+    }
+  }
+
+  function restoreAndFocus() {
     editorRef.current?.focus()
+    if (savedRange.current) {
+      const sel = window.getSelection()
+      sel.removeAllRanges()
+      sel.addRange(savedRange.current)
+      savedRange.current = null
+    }
+  }
+
+  function exec(cmd, value = null) {
+    restoreAndFocus()
     document.execCommand(cmd, false, value)
   }
 
   function applyFontSize(size) {
-    editorRef.current?.focus()
+    restoreAndFocus()
     document.execCommand('styleWithCSS', false, true)
     document.execCommand('fontSize', false, '7')
     const markers = editorRef.current?.querySelectorAll('font[size="7"]') ?? []
@@ -49,25 +76,53 @@ export default function EditorToolbar({ editorRef }) {
 
       <div className="tb-sep" />
 
-      <select
-        className="tb-select font-select"
-        defaultValue=""
-        title="Font family"
-        onChange={e => { exec('fontName', e.target.value); editorRef.current?.focus() }}
-      >
-        <option value="" disabled>Font</option>
-        {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-      </select>
+      {/* Font family dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="tb-select font-select select-trigger"
+            onMouseDown={saveSelection}
+            title="Font family"
+          >
+            <span className="select-trigger-label">Font</span>
+            <ChevronDownIcon className="select-trigger-chevron" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {FONTS.map(f => (
+            <DropdownMenuItem
+              key={f.value}
+              onSelect={() => exec('fontName', f.value)}
+            >
+              {f.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      <select
-        className="tb-select size-select"
-        defaultValue=""
-        title="Font size"
-        onChange={e => { applyFontSize(e.target.value); editorRef.current?.focus() }}
-      >
-        <option value="" disabled>Size</option>
-        {SIZES.map(s => <option key={s} value={`${s}pt`}>{s}pt</option>)}
-      </select>
+      {/* Font size dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="tb-select size-select select-trigger"
+            onMouseDown={saveSelection}
+            title="Font size"
+          >
+            <span className="select-trigger-label">Size</span>
+            <ChevronDownIcon className="select-trigger-chevron" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {SIZES.map(s => (
+            <DropdownMenuItem
+              key={s}
+              onSelect={() => applyFontSize(`${s}pt`)}
+            >
+              {s}pt
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="tb-sep" />
 
