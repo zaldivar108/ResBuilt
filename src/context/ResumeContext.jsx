@@ -73,6 +73,9 @@ export function ResumeProvider({ children }) {
   const [resumes, setResumes] = useState(() => {
     try { return JSON.parse(localStorage.getItem('resbuilt_resumes')) || [] } catch { return [] }
   })
+  const [darkMode, setDarkMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('resbuilt_darkmode')) || false } catch { return false }
+  })
 
   useEffect(() => {
     localStorage.setItem('resbuilt_user', JSON.stringify(user))
@@ -81,6 +84,11 @@ export function ResumeProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('resbuilt_resumes', JSON.stringify(resumes))
   }, [resumes])
+
+  useEffect(() => {
+    localStorage.setItem('resbuilt_darkmode', JSON.stringify(darkMode))
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   function login(email, _password, name) {
     const u = { id: genId(), email, name: name || email.split('@')[0] }
@@ -130,6 +138,7 @@ export function ResumeProvider({ children }) {
       user, resumes,
       login, logout,
       createResume, updateResume, deleteResume, duplicateResume, getResume,
+      darkMode, setDarkMode,
     }}>
       {children}
     </ResumeContext.Provider>

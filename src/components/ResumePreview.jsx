@@ -46,16 +46,20 @@ export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 
   // Sidebar layout is full-bleed; paper has no outer padding
   const isSidebar = resolvedTemplate.layout === 'sidebar'
 
-  // Overflow detection — only meaningful for non-sidebar (single-column) layouts
+  // Overflow detection — only meaningful for non-sidebar (single-column) layouts.
+  // The paper has margin padding applied, so available height = paper.height - marginTop - marginBottom.
+  const marginTop    = styles.marginTop    ?? 54
+  const marginBottom = styles.marginBottom ?? 54
   useEffect(() => {
     const el = contentMeasureRef.current
     if (!el || isSidebar) { setOverflowPx(0); return }
-    const check = () => setOverflowPx(Math.max(0, el.scrollHeight - paper.height))
+    const availableH = paper.height - marginTop - marginBottom
+    const check = () => setOverflowPx(Math.max(0, el.scrollHeight - availableH))
     check()
     const obs = new ResizeObserver(check)
     obs.observe(el)
     return () => obs.disconnect()
-  }, [paper.height, isSidebar])
+  }, [paper.height, isSidebar, marginTop, marginBottom])
 
   return (
     <div className="preview-scroll" ref={scrollRef}>

@@ -193,3 +193,82 @@
 .modal-btn.create:hover {
   box-shadow: 0 6px 20px rgba(99,102,241,0.42);
 }
+
+/* ── Dark mode ── */
+.dashboard.dark {
+  background: #0A0F1E;
+}
+
+.dashboard.dark .dash-nav {
+  background: #0D1117;
+  border-bottom-color: #1E293B;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.dashboard.dark .dash-user { color: #475569; }
+
+.dashboard.dark .dash-logout {
+  color: #64748B;
+  border-color: #1E293B;
+}
+.dashboard.dark .dash-logout:hover {
+  background: #1E293B;
+  color: #94A3B8;
+}
+
+.dashboard.dark .dash-title { color: #F1F5F9; }
+.dashboard.dark .dash-subtitle { color: #475569; }
+
+.dashboard.dark .dash-empty h2 { color: #94A3B8; }
+.dashboard.dark .dash-empty p  { color: #475569; }
+
+/* Cards */
+.dashboard.dark .resume-card {
+  background: #0F172A;
+  border-color: #1E293B;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.dashboard.dark .resume-card:hover {
+  box-shadow: 0 8px 28px rgba(99,102,241,0.18);
+  border-color: #4338CA;
+}
+.dashboard.dark .card-thumb {
+  background: linear-gradient(145deg, #0D1117 0%, #131929 100%);
+  border-bottom-color: #1E293B;
+}
+.dashboard.dark .card-title { color: #E2E8F0; }
+.dashboard.dark .card-date  { color: #334155; }
+.dashboard.dark .ca-btn {
+  background: #0F172A;
+  border-color: #1E293B;
+  color: #64748B;
+}
+.dashboard.dark .ca-btn:hover { background: #1E293B; color: #94A3B8; }
+.dashboard.dark .ca-btn.danger:hover {
+  background: rgba(239,68,68,0.1);
+  color: #FCA5A5;
+  border-color: rgba(239,68,68,0.25);
+}
+
+/* Modal */
+.dashboard.dark .modal-overlay { background: rgba(0,0,0,0.65); }
+.dashboard.dark .modal {
+  background: #0F172A;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.dashboard.dark .modal h2 { color: #F1F5F9; }
+.dashboard.dark .modal-input {
+  background: #1E293B;
+  border-color: #334155;
+  color: #E2E8F0;
+}
+.dashboard.dark .modal-input:focus {
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+.dashboard.dark .modal-input::placeholder { color: #334155; }
+.dashboard.dark .modal-btn.cancel {
+  background: #1E293B;
+  color: #64748B;
+}
+.dashboard.dark .modal-btn.cancel:hover { background: #2D3748; color: #94A3B8; }

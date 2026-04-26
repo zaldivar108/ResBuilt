@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useResume } from '../context/ResumeContext'
 import ResumeCard from '../components/ResumeCard'
+import Switch from '../components/ui/switch'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { user, resumes, createResume, deleteResume, duplicateResume, logout } = useResume()
+  const { user, resumes, createResume, deleteResume, duplicateResume, logout, darkMode, setDarkMode } = useResume()
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
 
@@ -24,10 +25,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
+    <div className={`dashboard${darkMode ? ' dark' : ''}`}>
       <nav className="dash-nav">
         <span className="dash-logo" onClick={() => navigate('/')}>ResBuilt</span>
         <div className="dash-nav-right">
+          <Switch checked={darkMode} onCheckedChange={setDarkMode} />
           <span className="dash-user">{user?.email}</span>
           <button className="dash-logout" onClick={handleLogout}>Log out</button>
         </div>

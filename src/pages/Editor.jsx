@@ -47,7 +47,7 @@ const ACCENT_PRESETS = [
 export default function Editor() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getResume, updateResume } = useResume()
+  const { getResume, updateResume, darkMode, setDarkMode } = useResume()
 
   const [resume, setResume] = useState(null)
   const [activeSectionId, setActiveSectionId] = useState(null)
@@ -55,7 +55,6 @@ export default function Editor() {
   const [newSectionTitle, setNewSectionTitle] = useState('')
   const [saved, setSaved] = useState(true)
   const [zoom, setZoom] = useState(1)
-  const [darkMode, setDarkMode] = useState(false)
   const [activeDragId, setActiveDragId] = useState(null)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
 
@@ -80,10 +79,6 @@ export default function Editor() {
     clearTimeout(saveTimerRef.current)
     clearTimeout(undoTimerRef.current)
   }, [])
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
 
   function scheduleAutoSave(r) {
     setSaved(false)
