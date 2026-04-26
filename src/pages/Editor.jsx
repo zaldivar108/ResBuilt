@@ -57,6 +57,8 @@ export default function Editor() {
   const [zoom, setZoom] = useState(1)
   const [activeDragId, setActiveDragId] = useState(null)
   const [pageCount, setPageCount] = useState(1)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [stylesSidebarCollapsed, setStylesSidebarCollapsed] = useState(false)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
 
   const editorRef    = useRef(null)
@@ -278,7 +280,14 @@ export default function Editor() {
       <div className="editor-body">
 
         {/* Col 1 — Sections sidebar (dark) */}
-        <aside className="sidebar">
+        <aside className={`sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>
+          <button
+            className="sidebar-collapse-btn"
+            onClick={() => setSidebarCollapsed(v => !v)}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <CollapseIcon collapsed={sidebarCollapsed} />
+          </button>
           <div className="sidebar-scroll">
             <div className="sidebar-section-label">Sections</div>
 
@@ -426,7 +435,14 @@ export default function Editor() {
         </div>
 
         {/* Col 4 — Styles sidebar (light) */}
-        <aside className="styles-sidebar">
+        <aside className={`styles-sidebar${stylesSidebarCollapsed ? ' collapsed' : ''}`}>
+          <button
+            className="ss-collapse-btn"
+            onClick={() => setStylesSidebarCollapsed(v => !v)}
+            title={stylesSidebarCollapsed ? 'Expand styles' : 'Collapse styles'}
+          >
+            <CollapseIcon collapsed={!stylesSidebarCollapsed} />
+          </button>
           <div className="ss-header">Styles</div>
           <div className="ss-body">
 
@@ -577,6 +593,17 @@ export default function Editor() {
 
       </div>
     </div>
+  )
+}
+
+function CollapseIcon({ collapsed }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {collapsed
+        ? <path d="M4 2.5L8 6L4 9.5" />
+        : <path d="M8 2.5L4 6L8 9.5" />
+      }
+    </svg>
   )
 }
 
