@@ -46,17 +46,48 @@ function escHtml(s) {
     .replace(/"/g, '&quot;')
 }
 
+function collectCSS() {
+  const parts = []
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) parts.push(rule.cssText)
+    } catch { /* skip cross-origin */ }
+  }
+  return parts.join('\n')
+}
+
 export function exportPDF(resume) {
   const paper = PAPER_SIZES[resume.styles?.paperSize] ?? PAPER_SIZES.letter
-  const { styles, sections, title } = resume
+  const { title } = resume
 
-  const sectionsHtml = sections.map(s => `
-    <div style="margin-bottom:${styles.sectionSpacing}px">
-      <div style="font-size:0.78em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#1E293B;margin-bottom:3px;">${escHtml(s.title)}</div>
-      <div style="height:1.5px;background:#1E293B;margin-bottom:5px;"></div>
-      <div>${s.content}</div>
-    </div>
-  `).join('')
+  const paperEl = document.querySelector('.preview-paper')
+  if (!paperEl) {
+    alert('Preview not found — make sure the editor is visible, then try again.')
+    return
+  }
+
+  const clone = paperEl.cloneNode(true)
+
+  // Detect if template uses full-bleed sidebar layout
+  const isSidebar = clone.querySelector('.ml-layout') !== null
+
+  // Reset transform / position so it prints at actual size
+  clone.style.position   = 'static'
+  clone.style.transform  = 'none'
+  clone.style.boxShadow  = 'none'
+  clone.style.borderBottom = 'none'
+  clone.style.overflow   = 'visible'
+  clone.style.width      = `${paper.width}px`
+  // Sidebar layout needs a fixed height so its flex children fill correctly;
+  // other layouts can grow naturally.
+  if (isSidebar) {
+    clone.style.height   = `${paper.height}px`
+  } else {
+    clone.style.height   = 'auto'
+    clone.style.minHeight = `${paper.height}px`
+  }
+
+  const cssText = collectCSS()
 
   const html = `<!DOCTYPE html>
 <html>
@@ -64,32 +95,17 @@ export function exportPDF(resume) {
 <meta charset="UTF-8">
 <title>${escHtml(title)}</title>
 <style>
-  @page {
-    size: ${paper.cssPageSize};
-    margin: 0;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: ${styles.fontFamily};
-    font-size: ${styles.fontSize}pt;
-    line-height: ${styles.lineSpacing};
-    padding: ${styles.marginTop}px ${styles.marginRight}px ${styles.marginBottom}px ${styles.marginLeft}px;
-    color: #1a1a1a;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  p { margin-bottom: 2px; }
-  ul, ol { padding-left: 16px; margin: 2px 0; }
-  li { margin-bottom: 1px; }
-  strong { font-weight: 700; }
-  em { font-style: italic; }
-  a { color: #4F46E5; text-decoration: none; }
-  @media print {
-    body { -webkit-print-color-adjust: exact; }
-  }
+${cssText}
+@page { size: ${paper.cssPageSize}; margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; padding: 0; background: white; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
-<body>${sectionsHtml}</body>
+<body>${clone.outerHTML}</body>
 </html>`
 
   const w = window.open('', '_blank')

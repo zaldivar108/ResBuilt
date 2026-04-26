@@ -523,6 +523,76 @@
   box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
 }
 
+/* ── Template picker cards ── */
+.template-cards {
+  display: flex;
+  gap: 6px;
+}
+
+.template-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 4px 7px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #FAFAFA;
+  transition: all 0.14s;
+}
+.template-card:hover {
+  border-color: #A5B4FC;
+  background: #F5F3FF;
+}
+.template-card.active {
+  border-color: #6366F1;
+  background: #EEF2FF;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+}
+
+.tpl-thumb {
+  width: 52px;
+  height: 66px;
+  border-radius: 3px;
+  background: white;
+  border: 1px solid #E8ECF0;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.tpl-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748B;
+  text-align: center;
+  white-space: nowrap;
+}
+.template-card.active .tpl-name { color: #6366F1; }
+
+/* ── Dark mode: template cards ── */
+.editor-layout.dark .template-card {
+  background: #0A0F1E;
+  border-color: #1E293B;
+}
+.editor-layout.dark .template-card:hover {
+  background: #1E293B;
+  border-color: #4338CA;
+}
+.editor-layout.dark .template-card.active {
+  background: rgba(99,102,241,0.15);
+  border-color: #6366F1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+}
+.editor-layout.dark .tpl-thumb {
+  border-color: #1E293B;
+  box-shadow: none;
+}
+.editor-layout.dark .tpl-name { color: #64748B; }
+.editor-layout.dark .template-card.active .tpl-name { color: #818CF8; }
+
 /* ── Dark mode toggle button ── */
 .dark-toggle-btn {
   width: 32px;
@@ -636,6 +706,106 @@
   border-color: #6366F1;
   background: #1E293B;
   box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+
+/* ── Accent color picker ── */
+.accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+
+.accent-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.12s, box-shadow 0.12s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.accent-swatch:hover { transform: scale(1.2); }
+.accent-swatch.active {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #6366F1;
+}
+
+.accent-custom {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: block;
+}
+.accent-custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.accent-custom-dot {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px dashed rgba(0,0,0,0.25);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  transition: transform 0.12s;
+}
+.accent-custom:hover .accent-custom-dot { transform: scale(1.2); }
+
+/* ── Drag handle ── */
+.drag-handle {
+  width: 22px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  background: none;
+  border: none;
+  cursor: grab;
+  padding: 0 0 0 4px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+.section-item:hover .drag-handle { opacity: 1; }
+.drag-handle:hover { color: #94A3B8; background: rgba(255,255,255,0.06); }
+.drag-handle:active { cursor: grabbing; }
+
+/* ── Drag overlay ── */
+.section-item-overlay {
+  background: rgba(99,102,241,0.25) !important;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  padding-right: 3px;
+}
+.section-item-overlay .section-name-btn {
+  color: #A5B4FC;
+  font-weight: 600;
+}
+.section-item-overlay .drag-handle {
+  opacity: 1;
+  color: #818CF8;
+}
+
+/* ── Dark mode: accent picker ── */
+.editor-layout.dark .accent-swatch.active {
+  box-shadow: 0 0 0 2px #0F172A, 0 0 0 4px #818CF8;
+}
+.editor-layout.dark .accent-custom-dot {
+  border-color: rgba(255,255,255,0.2);
 }
 
 /* ── Loading ── */

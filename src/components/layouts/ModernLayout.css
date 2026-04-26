@@ -1,0 +1,99 @@
+/* ── Modern Sidebar Layout ── */
+
+.ml-layout {
+  display: flex;
+  height: 100%;
+}
+
+/* ── Sidebar ── */
+.ml-sidebar {
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Contact section inside sidebar */
+.ml-sb-contact {
+  margin-bottom: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.ml-sb-contact p:first-child {
+  font-size: 1.15em;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.ml-sb-contact p:first-child strong { font-weight: 700; color: white; }
+.ml-sb-contact p:not(:first-child) {
+  font-size: 0.82em;
+  color: #94A3B8;
+  margin: 1px 0;
+}
+
+.ml-sb-heading {
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  margin-bottom: 5px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid;
+}
+
+/* Sidebar body: white/muted text, no-bullet lists */
+.ml-sb-body {
+  font-size: 0.88em;
+}
+.ml-sb-body p           { margin: 0 0 2px; color: #CBD5E1; }
+.ml-sb-body strong      { color: white; font-weight: 600; }
+.ml-sb-body em          { font-style: italic; color: #94A3B8; }
+.ml-sb-body ul          { padding-left: 0; list-style: none; margin: 2px 0; }
+.ml-sb-body li {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-bottom: 2px;
+  color: #CBD5E1;
+}
+.ml-sb-body li::before {
+  content: '›';
+  flex-shrink: 0;
+  color: #818CF8;
+  font-weight: 700;
+  line-height: inherit;
+}
+.ml-sb-body a { color: #818CF8; text-decoration: none; }
+
+/* ── Main Content ── */
+.ml-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ml-main-heading {
+  font-size: 0.77em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  padding-bottom: 3px;
+  border-bottom: 2px solid;
+  margin-bottom: 5px;
+}
+
+.ml-main-body p       { margin: 0 0 2px; color: #1E293B; }
+.ml-main-body ul,
+.ml-main-body ol      { padding-left: 16px; margin: 2px 0; }
+.ml-main-body li      { margin-bottom: 1px; }
+.ml-main-body strong  { font-weight: 700; }
+.ml-main-body em      { font-style: italic; }
+.ml-main-body u       { text-decoration: underline; }
+.ml-main-body a       { color: #4F46E5; text-decoration: none; }

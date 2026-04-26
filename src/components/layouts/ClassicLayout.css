@@ -1,0 +1,49 @@
+/* ── Classic Professional Layout ── */
+
+.cl-layout { height: 100%; }
+
+/* Header — centered contact info */
+.cl-header {
+  text-align: center;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid;
+}
+
+/* Name: first <p> in contact HTML content */
+.cl-header-body p:first-child {
+  font-size: 1.85em;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 5px;
+  line-height: 1.15;
+}
+.cl-header-body p:first-child strong { font-weight: 700; }
+
+/* Contact details lines */
+.cl-header-body p:not(:first-child) {
+  font-size: 0.91em;
+  color: #475569;
+  margin: 1px 0;
+}
+
+/* Section heading: ALL CAPS + bottom rule */
+.cl-heading {
+  font-size: 0.77em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  padding-bottom: 3px;
+  border-bottom: 1.5px solid;
+  margin-bottom: 5px;
+}
+
+/* Body content */
+.cl-body p          { margin: 0 0 2px; }
+.cl-body ul,
+.cl-body ol         { padding-left: 16px; margin: 2px 0; }
+.cl-body li         { margin-bottom: 1px; }
+.cl-body strong     { font-weight: 700; }
+.cl-body em         { font-style: italic; }
+.cl-body u          { text-decoration: underline; }
+.cl-body a          { color: #4F46E5; text-decoration: none; }

@@ -1,6 +1,19 @@
 import { useRef, useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { PAPER_SIZES } from '../config/paperSizes'
+import { getTemplate } from '../config/templates'
+import ClassicLayout from './layouts/ClassicLayout'
+import ModernLayout  from './layouts/ModernLayout'
+import MinimalLayout from './layouts/MinimalLayout'
 import './ResumePreview.css'
+
+function LayoutSwitch({ sections, styles, template }) {
+  switch (template.layout) {
+    case 'sidebar': return <ModernLayout  sections={sections} styles={styles} template={template} />
+    case 'minimal': return <MinimalLayout sections={sections} styles={styles} template={template} />
+    default:        return <ClassicLayout sections={sections} styles={styles} template={template} />
+  }
+}
 
 export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 'fit' }) {
   const scrollRef = useRef(null)
@@ -8,62 +21,63 @@ export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 
 
   useEffect(() => {
     if (!scrollRef.current) return
-    const obs = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width)
-    })
+    const obs = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width))
     obs.observe(scrollRef.current)
     return () => obs.disconnect()
   }, [])
 
   if (!resume) return null
   const { sections, styles } = resume
+  const template = getTemplate(styles.template)
+  const resolvedTemplate = { ...template, accentColor: styles.accentColor ?? template.accentColor }
 
   const paper = PAPER_SIZES[paperSizeKey] ?? PAPER_SIZES.letter
 
-  // 'fit' scales paper to fill the container with 56px of horizontal breathing room
   const fitScale = containerWidth > 0
     ? Math.max(0.25, Math.min(1.6, (containerWidth - 56) / paper.width))
     : 0.72
   const scale = zoom === 'fit' ? fitScale : Number(zoom)
 
-  const scaledW = Math.round(paper.width * scale)
+  const scaledW = Math.round(paper.width  * scale)
   const scaledH = Math.round(paper.height * scale)
+
+  // Sidebar layout is full-bleed; paper has no outer padding
+  const isSidebar = resolvedTemplate.layout === 'sidebar'
 
   return (
     <div className="preview-scroll" ref={scrollRef}>
       <div className="preview-center-host">
-        {/* sizer div occupies scaled space so the scroll container sizes correctly */}
         <div className="preview-sizer" style={{ width: scaledW, height: scaledH }}>
           <div
             className="preview-paper"
             style={{
-              width: paper.width,
+              width:  paper.width,
               height: paper.height,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
               fontFamily: styles.fontFamily,
-              fontSize: `${styles.fontSize}pt`,
+              fontSize:   `${styles.fontSize}pt`,
               lineHeight: styles.lineSpacing,
-              paddingTop:    `${styles.marginTop}px`,
-              paddingRight:  `${styles.marginRight}px`,
-              paddingBottom: `${styles.marginBottom}px`,
-              paddingLeft:   `${styles.marginLeft}px`,
+              ...(isSidebar ? {} : {
+                paddingTop:    `${styles.marginTop}px`,
+                paddingRight:  `${styles.marginRight}px`,
+                paddingBottom: `${styles.marginBottom}px`,
+                paddingLeft:   `${styles.marginLeft}px`,
+              }),
             }}
           >
-            {sections.map(section => (
-              <div
-                key={section.id}
-                className="preview-section"
-                style={{ marginBottom: `${styles.sectionSpacing}px` }}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={resolvedTemplate.id}
+                style={{ height: '100%' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
               >
-                <div className="preview-section-heading">{section.title}</div>
-                <div className="preview-section-rule" />
-                <div
-                  className="preview-section-body"
-                  dangerouslySetInnerHTML={{ __html: section.content }}
-                />
-              </div>
-            ))}
+                <LayoutSwitch sections={sections} styles={styles} template={resolvedTemplate} />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>

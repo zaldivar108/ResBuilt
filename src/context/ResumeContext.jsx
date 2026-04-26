@@ -53,13 +53,15 @@ function createNewResume(title = 'Untitled Resume') {
     styles: {
       fontFamily: 'Georgia, serif',
       fontSize: 11,
-      lineSpacing: 1.45,
-      sectionSpacing: 18,
-      marginTop: 48,
-      marginBottom: 48,
-      marginLeft: 60,
-      marginRight: 60,
+      lineSpacing: 1.5,
+      sectionSpacing: 14,
+      marginTop: 54,
+      marginBottom: 54,
+      marginLeft: 54,
+      marginRight: 54,
       paperSize: 'letter',
+      template: 'classic',
+      accentColor: '#1E293B',
     },
   }
 }

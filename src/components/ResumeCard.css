@@ -30,7 +30,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  opacity: 0.55;
+  opacity: 0.65;
 }
 
 .tm-line {
@@ -38,12 +38,52 @@
   background: #94A3B8;
   border-radius: 9999px;
 }
-.tm-line.name { height: 8px; background: #6366F1; width: 70%; }
-.tm-line.sub { width: 50%; height: 3px; }
-.tm-line.full { width: 100%; }
-.tm-line.med { width: 75%; }
+.tm-line.name  { height: 8px; background: #1E293B; width: 60%; margin: 0 auto; }
+.tm-line.sub   { width: 45%; height: 3px; margin: 0 auto; }
+.tm-line.full  { width: 100%; }
+.tm-line.med   { width: 75%; }
 .tm-line.short { width: 45%; }
 .tm-rule { height: 1px; background: #CBD5E1; margin: 2px 0; }
+
+/* ── Modern Sidebar thumbnail ── */
+.thumb-modern {
+  width: 120px;
+  flex-direction: row;
+  gap: 0;
+  opacity: 0.8;
+}
+.tm-sidebar-col {
+  width: 34px;
+  background: #1E293B;
+  padding: 8px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.tm-sb-name  { height: 5px; background: rgba(255,255,255,0.85); border-radius: 2px; width: 85%; }
+.tm-sb-line  { height: 2px; background: #475569; border-radius: 2px; width: 80%; }
+.tm-sb-line.short  { width: 60%; }
+.tm-sb-line.accent { background: #818CF8; }
+.tm-sb-rule  { height: 1px; background: #2D3748; margin: 1px 0; }
+.tm-main-col {
+  flex: 1;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ── Minimal thumbnail ── */
+.thumb-minimal {
+  width: 110px;
+  flex-direction: column;
+  gap: 0;
+  opacity: 0.7;
+}
+.tm-min-header { padding-bottom: 5px; margin-bottom: 5px; border-bottom: 1px solid #E2E8F0; }
+.tm-min-rule   { height: 1px; background: #E2E8F0; margin-bottom: 6px; }
+.tm-min-section { margin-bottom: 6px; }
 
 .card-thumb-hover {
   position: absolute;
@@ -77,6 +117,23 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.card-template-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 .card-date {

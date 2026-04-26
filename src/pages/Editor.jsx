@@ -6,6 +6,14 @@ import EditorToolbar from '../components/EditorToolbar'
 import ResumePreview from '../components/ResumePreview'
 import { SelectDropdown } from '../components/ui/SelectDropdown'
 import Switch from '../components/ui/switch'
+import { TEMPLATES, getTemplate } from '../config/templates'
+import {
+  DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
+} from '@dnd-kit/core'
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import './Editor.css'
 
 const FONT_FAMILY_OPTIONS = [
@@ -31,6 +39,11 @@ const ZOOM_OPTIONS = [
   { label: 'Fit',  value: 'fit' },
 ]
 
+const ACCENT_PRESETS = [
+  '#1E293B', '#4F46E5', '#0891B2', '#16A34A',
+  '#DC2626', '#7C3AED', '#EA580C', '#94A3B8',
+]
+
 export default function Editor() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -43,6 +56,7 @@ export default function Editor() {
   const [saved, setSaved] = useState(true)
   const [zoom, setZoom] = useState(1)
   const [darkMode, setDarkMode] = useState(false)
+  const [activeDragId, setActiveDragId] = useState(null)
 
   const editorRef = useRef(null)
   const saveTimerRef = useRef(null)
@@ -157,13 +171,48 @@ export default function Editor() {
     patch(prev => ({ ...prev, styles: { ...prev.styles, ...patch_ } }))
   }
 
+  function applyTemplate(templateId) {
+    const tpl = TEMPLATES[templateId]
+    if (!tpl) return
+    patch(prev => ({
+      ...prev,
+      styles: {
+        ...prev.styles,
+        ...tpl.defaultStyles,
+        template: templateId,
+        accentColor: tpl.accentColor,
+      },
+    }))
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragStart(event) {
+    setActiveDragId(event.active.id)
+  }
+
+  function handleDragEnd(event) {
+    setActiveDragId(null)
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    patch(prev => {
+      const oldIndex = prev.sections.findIndex(s => s.id === active.id)
+      const newIndex = prev.sections.findIndex(s => s.id === over.id)
+      return { ...prev, sections: arrayMove(prev.sections, oldIndex, newIndex) }
+    })
+  }
+
   function applyMarginPreset(key) {
     const p = MARGIN_PRESETS[key]
     updateStyles({ marginTop: p.top, marginRight: p.right, marginBottom: p.bottom, marginLeft: p.left })
   }
 
-  const activeSection = resume?.sections.find(s => s.id === activeSectionId)
-  const paperSizeKey = resume?.styles?.paperSize ?? 'letter'
+  const activeSection  = resume?.sections.find(s => s.id === activeSectionId)
+  const paperSizeKey   = resume?.styles?.paperSize ?? 'letter'
+  const activeTemplate = getTemplate(resume?.styles?.template)
 
   if (!resume) {
     return (
@@ -203,40 +252,42 @@ export default function Editor() {
           <div className="sidebar-scroll">
             <div className="sidebar-section-label">Sections</div>
 
-            <ul className="section-list">
-              {resume.sections.map((section, idx) => (
-                <li
-                  key={section.id}
-                  className={`section-item${section.id === activeSectionId ? ' active' : ''}`}
-                >
-                  <button
-                    className="section-name-btn"
-                    onClick={() => switchSection(section.id)}
-                  >
-                    {section.title}
-                  </button>
-                  <div className="section-controls">
-                    <button
-                      className="sc-btn"
-                      onClick={() => moveSection(section.id, -1)}
-                      disabled={idx === 0}
-                      title="Move up"
-                    >↑</button>
-                    <button
-                      className="sc-btn"
-                      onClick={() => moveSection(section.id, 1)}
-                      disabled={idx === resume.sections.length - 1}
-                      title="Move down"
-                    >↓</button>
-                    <button
-                      className="sc-btn del"
-                      onClick={() => deleteSection(section.id)}
-                      title="Delete"
-                    >×</button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={resume.sections.map(s => s.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="section-list">
+                  {resume.sections.map(section => (
+                    <SortableSectionItem
+                      key={section.id}
+                      section={section}
+                      isActive={section.id === activeSectionId}
+                      onSelect={() => switchSection(section.id)}
+                      onDelete={() => deleteSection(section.id)}
+                      isDragging={activeDragId === section.id}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+              <DragOverlay>
+                {activeDragId ? (
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    <li className="section-item section-item-overlay">
+                      <span className="drag-handle"><GripIcon /></span>
+                      <span className="section-name-btn">
+                        {resume.sections.find(s => s.id === activeDragId)?.title}
+                      </span>
+                    </li>
+                  </ul>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
 
             {addingSection ? (
               <div className="add-section-form">
@@ -336,6 +387,55 @@ export default function Editor() {
           <div className="ss-header">Styles</div>
           <div className="ss-body">
 
+            {/* ── Template picker ── */}
+            <div className="ss-field">
+              <span className="ss-label">Template</span>
+              <div className="template-cards">
+                {Object.values(TEMPLATES).map(tpl => (
+                  <button
+                    key={tpl.id}
+                    className={`template-card${activeTemplate.id === tpl.id ? ' active' : ''}`}
+                    onClick={() => applyTemplate(tpl.id)}
+                    title={tpl.fullName}
+                  >
+                    <TemplateThumbnail id={tpl.id} />
+                    <span className="tpl-name">{tpl.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="ss-divider" />
+
+            {/* ── Accent Color ── */}
+            <div className="ss-field">
+              <span className="ss-label">Accent Color</span>
+              <div className="accent-swatches">
+                {ACCENT_PRESETS.map(color => (
+                  <button
+                    key={color}
+                    className={`accent-swatch${(resume.styles.accentColor ?? activeTemplate.accentColor) === color ? ' active' : ''}`}
+                    style={{ background: color }}
+                    onClick={() => updateStyles({ accentColor: color })}
+                    title={color}
+                  />
+                ))}
+                <label className="accent-custom" title="Custom color">
+                  <input
+                    type="color"
+                    value={resume.styles.accentColor ?? activeTemplate.accentColor}
+                    onChange={e => updateStyles({ accentColor: e.target.value })}
+                  />
+                  <span
+                    className="accent-custom-dot"
+                    style={{ background: resume.styles.accentColor ?? activeTemplate.accentColor }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="ss-divider" />
+
             <div className="ss-field">
               <span className="ss-label">Font Family</span>
               <SelectDropdown
@@ -387,43 +487,47 @@ export default function Editor() {
               />
             </div>
 
-            <div className="ss-divider" />
+            {activeTemplate.layout !== 'sidebar' && (
+              <>
+                <div className="ss-divider" />
 
-            <div className="ss-field">
-              <span className="ss-label">Page Margins</span>
-              <div className="ss-presets">
-                {Object.entries(MARGIN_PRESETS).map(([key, preset]) => (
-                  <button
-                    key={key}
-                    className="ss-preset-btn"
-                    onClick={() => applyMarginPreset(key)}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <div className="ss-field">
+                  <span className="ss-label">Page Margins</span>
+                  <div className="ss-presets">
+                    {Object.entries(MARGIN_PRESETS).map(([key, preset]) => (
+                      <button
+                        key={key}
+                        className="ss-preset-btn"
+                        onClick={() => applyMarginPreset(key)}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="ss-field">
-              <span className="ss-label">Margins (px)</span>
-              <div className="ss-margins-grid">
-                {[
-                  ['marginTop',    'Top'],
-                  ['marginRight',  'Right'],
-                  ['marginBottom', 'Bottom'],
-                  ['marginLeft',   'Left'],
-                ].map(([key, label]) => (
-                  <label key={key} className="ss-margin-cell">
-                    <span>{label}</span>
-                    <input
-                      type="number" min="12" max="144"
-                      value={resume.styles[key]}
-                      onChange={e => updateStyles({ [key]: Number(e.target.value) })}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
+                <div className="ss-field">
+                  <span className="ss-label">Margins (px)</span>
+                  <div className="ss-margins-grid">
+                    {[
+                      ['marginTop',    'Top'],
+                      ['marginRight',  'Right'],
+                      ['marginBottom', 'Bottom'],
+                      ['marginLeft',   'Left'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="ss-margin-cell">
+                        <span>{label}</span>
+                        <input
+                          type="number" min="12" max="144"
+                          value={resume.styles[key]}
+                          onChange={e => updateStyles({ [key]: Number(e.target.value) })}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
           </div>
         </aside>
@@ -439,6 +543,110 @@ function BackIcon() {
       <path d="M8 2.5L3.5 6.5L8 10.5" stroke="currentColor" strokeWidth="1.8"
         strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
+  )
+}
+
+/* ── Sortable section item ── */
+function SortableSectionItem({ section, isActive, onSelect, onDelete, isDragging }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: section.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`section-item${isActive ? ' active' : ''}`}
+      {...attributes}
+    >
+      <button className="drag-handle" {...listeners} tabIndex={-1}>
+        <GripIcon />
+      </button>
+      <button className="section-name-btn" onClick={onSelect}>
+        {section.title}
+      </button>
+      <div className="section-controls">
+        <button className="sc-btn del" onClick={onDelete} title="Delete">×</button>
+      </div>
+    </li>
+  )
+}
+
+function GripIcon() {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+      <circle cx="3"   cy="2.5"  r="1.2" />
+      <circle cx="7"   cy="2.5"  r="1.2" />
+      <circle cx="3"   cy="7"    r="1.2" />
+      <circle cx="7"   cy="7"    r="1.2" />
+      <circle cx="3"   cy="11.5" r="1.2" />
+      <circle cx="7"   cy="11.5" r="1.2" />
+    </svg>
+  )
+}
+
+/* ── Mini CSS-drawn thumbnails for the template picker ── */
+function TemplateThumbnail({ id }) {
+  if (id === 'modern') {
+    return (
+      <div className="tpl-thumb" style={{ flexDirection: 'row' }}>
+        {/* dark sidebar column */}
+        <div style={{ width: 15, background: '#1E293B', padding: '5px 3px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ width: '100%', height: 2.5, background: 'rgba(255,255,255,0.85)', borderRadius: 1 }} />
+          <div style={{ width: '80%',  height: 1,   background: '#475569', borderRadius: 1 }} />
+          <div style={{ width: '70%',  height: 1,   background: '#475569', borderRadius: 1, marginBottom: 3 }} />
+          {['#818CF8','#818CF8'].map((c, i) => <div key={i} style={{ width: '90%', height: 1, background: c, borderRadius: 1 }} />)}
+          {[90,70,55].map((w, i) => <div key={i} style={{ width: `${w}%`, height: 1, background: '#334155', borderRadius: 1 }} />)}
+        </div>
+        {/* main column */}
+        <div style={{ flex: 1, padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {[1.5,0.5].map((h, i) => <div key={i} style={{ width: i===0 ? '80%' : '100%', height: h, background: '#4F46E5', borderRadius: 1 }} />)}
+          {[90,70,55].map((w, i) => <div key={i} style={{ width: `${w}%`, height: 1, background: '#D1D5DB', borderRadius: 1 }} />)}
+          <div style={{ height: 3 }} />
+          {[1.5,0.5].map((h, i) => <div key={i} style={{ width: i===0 ? '75%' : '100%', height: h, background: '#4F46E5', borderRadius: 1 }} />)}
+          {[85,65,50].map((w, i) => <div key={i} style={{ width: `${w}%`, height: 1, background: '#D1D5DB', borderRadius: 1 }} />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (id === 'minimal') {
+    return (
+      <div className="tpl-thumb" style={{ padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div style={{ borderBottom: '0.5px solid #E2E8F0', paddingBottom: 3, marginBottom: 4 }}>
+          <div style={{ width: '60%', height: 2, background: '#0F172A', borderRadius: 1, marginBottom: 2 }} />
+          <div style={{ width: '42%', height: 1, background: '#94A3B8', borderRadius: 1 }} />
+        </div>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{ marginBottom: 5 }}>
+            <div style={{ width: '38%', height: 1, background: '#94A3B8', borderRadius: 1, marginBottom: 1 }} />
+            <div style={{ width: 6, height: 1.5, background: '#94A3B8', borderRadius: 1, marginBottom: 2 }} />
+            <div style={{ width: '80%', height: 1, background: '#E2E8F0', borderRadius: 1, marginBottom: 1 }} />
+            <div style={{ width: '60%', height: 1, background: '#E2E8F0', borderRadius: 1 }} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // Classic (default)
+  return (
+    <div className="tpl-thumb" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ textAlign: 'center', padding: '5px 4px 3px', borderBottom: '1px solid #E2E8F0', marginBottom: 3 }}>
+        <div style={{ width: '65%', height: 2.5, background: '#1E293B', borderRadius: 1, margin: '0 auto 2px' }} />
+        <div style={{ width: '48%', height: 1,   background: '#94A3B8', borderRadius: 1, margin: '0 auto' }} />
+      </div>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ padding: '0 4px', marginBottom: 4 }}>
+          <div style={{ width: '42%', height: 1.5, background: '#1E293B', borderRadius: 1, marginBottom: 1 }} />
+          <div style={{ width: '100%', height: 0.5, background: '#E2E8F0', marginBottom: 2 }} />
+          <div style={{ width: '88%', height: 1, background: '#D1D5DB', borderRadius: 1, marginBottom: 1 }} />
+          <div style={{ width: '70%', height: 1, background: '#D1D5DB', borderRadius: 1 }} />
+        </div>
+      ))}
+    </div>
   )
 }
 
