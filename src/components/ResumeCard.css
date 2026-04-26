@@ -1,0 +1,119 @@
+.resume-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+  transition: all 0.22s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.resume-card:hover {
+  box-shadow: 0 8px 28px rgba(99,102,241,0.12);
+  transform: translateY(-3px);
+  border-color: #C7D2FE;
+}
+
+/* Thumbnail */
+.card-thumb {
+  height: 190px;
+  background: linear-gradient(145deg, #F5F5FF 0%, #EEF0FF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.thumb-mock {
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0.55;
+}
+
+.tm-line {
+  height: 4px;
+  background: #94A3B8;
+  border-radius: 9999px;
+}
+.tm-line.name { height: 8px; background: #6366F1; width: 70%; }
+.tm-line.sub { width: 50%; height: 3px; }
+.tm-line.full { width: 100%; }
+.tm-line.med { width: 75%; }
+.tm-line.short { width: 45%; }
+.tm-rule { height: 1px; background: #CBD5E1; margin: 2px 0; }
+
+.card-thumb-hover {
+  position: absolute;
+  inset: 0;
+  background: rgba(79,70,229,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.resume-card:hover .card-thumb-hover { opacity: 1; }
+
+/* Body */
+.card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-date {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.ca-btn {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+  background: #F8FAFC;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ca-btn:hover { background: #F1F5F9; color: #374151; }
+.ca-btn.primary {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+}
+.ca-btn.primary:hover {
+  box-shadow: 0 4px 14px rgba(99,102,241,0.42);
+  transform: translateY(-1px);
+}
+.ca-btn.danger:hover {
+  background: #FEF2F2;
+  color: #EF4444;
+  border-color: #FECACA;
+}

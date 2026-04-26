@@ -1,0 +1,83 @@
+.preview-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* subtle dot-grid background for depth */
+  background-color: #CDD3E2;
+  background-image: radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.preview-center-host {
+  display: flex;
+  justify-content: center;
+  padding: 32px 24px 48px;
+  min-height: 100%;
+}
+
+/* Occupies scaled dimensions in normal flow so scrolling works correctly */
+.preview-sizer {
+  flex-shrink: 0;
+  position: relative;
+  transition: width 0.32s cubic-bezier(0.4,0,0.2,1),
+              height 0.32s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* The actual paper — full size, scaled via transform */
+.preview-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: white;
+  overflow: hidden;
+
+  /* Realistic page shadow */
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.05),
+    0 2px 4px  rgba(0,0,0,0.07),
+    0 8px 24px rgba(0,0,0,0.10),
+    0 28px 64px rgba(0,0,0,0.09);
+
+  /* Subtle page-edge effect at the bottom */
+  border-bottom: 3px solid rgba(0,0,0,0.07);
+
+  /* Smooth transition on paper size and zoom changes */
+  transition: transform 0.32s cubic-bezier(0.4,0,0.2,1),
+              width 0.32s cubic-bezier(0.4,0,0.2,1),
+              height 0.32s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Resume content styles ── */
+
+.preview-section {
+  /* margin-bottom set via inline style */
+}
+
+.preview-section-heading {
+  font-size: 0.82em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1E293B;
+  margin-bottom: 3px;
+}
+
+.preview-section-rule {
+  height: 1.5px;
+  background: #1E293B;
+  margin-bottom: 5px;
+}
+
+.preview-section-body {
+  color: #1a1a1a;
+  font-size: 1em;
+}
+
+.preview-section-body p  { margin: 0 0 2px; }
+.preview-section-body ul,
+.preview-section-body ol { padding-left: 16px; margin: 2px 0; }
+.preview-section-body li { margin-bottom: 1px; }
+.preview-section-body strong { font-weight: 700; }
+.preview-section-body em     { font-style: italic; }
+.preview-section-body u      { text-decoration: underline; }
+.preview-section-body a      { color: #4F46E5; }
