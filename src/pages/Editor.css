@@ -644,6 +644,10 @@
 .editor-layout.dark .edit-empty { color: #334155; }
 
 .editor-layout.dark .preview-panel { border-right-color: #1E293B; }
+.editor-layout.dark .preview-scroll {
+  background-color: #0D1117;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+}
 .editor-layout.dark .preview-toolbar {
   background: #0A0F1E;
   border-bottom-color: #1E293B;
@@ -707,6 +711,47 @@
   background: #1E293B;
   box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
 }
+
+/* ── Undo delete toast ── */
+.undo-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(99,102,241,0.14);
+  border: 1px solid rgba(99,102,241,0.28);
+  animation: toast-in 0.18s ease;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.undo-toast-label {
+  font-size: 11.5px;
+  color: #94A3B8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.undo-btn {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: none;
+  background: #6366F1;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.undo-btn:hover { background: #4F46E5; }
 
 /* ── Accent color picker ── */
 .accent-swatches {

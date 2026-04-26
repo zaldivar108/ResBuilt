@@ -16,8 +16,10 @@ function LayoutSwitch({ sections, styles, template }) {
 }
 
 export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 'fit' }) {
-  const scrollRef = useRef(null)
+  const scrollRef       = useRef(null)
+  const contentMeasureRef = useRef(null)
   const [containerWidth, setContainerWidth] = useState(0)
+  const [overflowPx, setOverflowPx]         = useState(0)
 
   useEffect(() => {
     if (!scrollRef.current) return
@@ -44,6 +46,17 @@ export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 
   // Sidebar layout is full-bleed; paper has no outer padding
   const isSidebar = resolvedTemplate.layout === 'sidebar'
 
+  // Overflow detection — only meaningful for non-sidebar (single-column) layouts
+  useEffect(() => {
+    const el = contentMeasureRef.current
+    if (!el || isSidebar) { setOverflowPx(0); return }
+    const check = () => setOverflowPx(Math.max(0, el.scrollHeight - paper.height))
+    check()
+    const obs = new ResizeObserver(check)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [paper.height, isSidebar])
+
   return (
     <div className="preview-scroll" ref={scrollRef}>
       <div className="preview-center-host">
@@ -66,20 +79,31 @@ export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 
               }),
             }}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={resolvedTemplate.id}
-                style={{ height: '100%' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-              >
-                <LayoutSwitch sections={sections} styles={styles} template={resolvedTemplate} />
-              </motion.div>
-            </AnimatePresence>
+            <div
+              ref={contentMeasureRef}
+              style={{ height: isSidebar ? '100%' : undefined }}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={resolvedTemplate.id}
+                  style={isSidebar ? { height: '100%' } : undefined}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                >
+                  <LayoutSwitch sections={sections} styles={styles} template={resolvedTemplate} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
+        {overflowPx > 0 && (
+          <div className="overflow-indicator" style={{ width: scaledW }}>
+            <span className="overflow-indicator-icon">⚠</span>
+            Content overflows ~{Math.round(overflowPx / paper.height * 100)}% past the page — try reducing font size or spacing
+          </div>
+        )}
       </div>
     </div>
   )

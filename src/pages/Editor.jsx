@@ -57,9 +57,11 @@ export default function Editor() {
   const [zoom, setZoom] = useState(1)
   const [darkMode, setDarkMode] = useState(false)
   const [activeDragId, setActiveDragId] = useState(null)
+  const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
 
-  const editorRef = useRef(null)
+  const editorRef    = useRef(null)
   const saveTimerRef = useRef(null)
+  const undoTimerRef = useRef(null)
 
   useEffect(() => {
     const r = getResume(id)
@@ -74,7 +76,10 @@ export default function Editor() {
     if (section) editorRef.current.innerHTML = section.content
   }, [activeSectionId])
 
-  useEffect(() => () => clearTimeout(saveTimerRef.current), [])
+  useEffect(() => () => {
+    clearTimeout(saveTimerRef.current)
+    clearTimeout(undoTimerRef.current)
+  }, [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
@@ -135,12 +140,32 @@ export default function Editor() {
 
   function deleteSection(sectionId) {
     setResume(prev => {
+      const index = prev.sections.findIndex(s => s.id === sectionId)
+      const section = prev.sections[index]
       const sections = prev.sections.filter(s => s.id !== sectionId)
       const next = { ...prev, sections }
       scheduleAutoSave(next)
       if (activeSectionId === sectionId) setActiveSectionId(sections[0]?.id ?? null)
+
+      clearTimeout(undoTimerRef.current)
+      setLastDeleted({ section, index })
+      undoTimerRef.current = setTimeout(() => setLastDeleted(null), 5000)
+
       return next
     })
+  }
+
+  function undoDelete() {
+    if (!lastDeleted) return
+    clearTimeout(undoTimerRef.current)
+    const { section, index } = lastDeleted
+    setLastDeleted(null)
+    patch(prev => {
+      const sections = [...prev.sections]
+      sections.splice(index, 0, section)
+      return { ...prev, sections }
+    })
+    setActiveSectionId(section.id)
   }
 
   function moveSection(sectionId, dir) {
@@ -288,6 +313,13 @@ export default function Editor() {
                 ) : null}
               </DragOverlay>
             </DndContext>
+
+            {lastDeleted && (
+              <div className="undo-toast">
+                <span className="undo-toast-label">"{lastDeleted.section.title}" deleted</span>
+                <button className="undo-btn" onClick={undoDelete}>Undo</button>
+              </div>
+            )}
 
             {addingSection ? (
               <div className="add-section-form">
