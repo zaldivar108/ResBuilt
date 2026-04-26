@@ -214,6 +214,25 @@
 .sc-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 .sc-btn.del:hover { background: rgba(239,68,68,0.18); color: #FCA5A5; }
 .sc-btn.vis:hover { background: rgba(255,255,255,0.08); color: #818CF8; }
+.sc-btn.confirm-yes { color: #4ADE80; font-size: 11px; }
+.sc-btn.confirm-yes:hover { background: rgba(74,222,128,0.15); color: #4ADE80; }
+.sc-btn.confirm-no  { color: #94A3B8; font-size: 11px; }
+.sc-btn.confirm-no:hover  { background: rgba(255,255,255,0.08); color: #CBD5E1; }
+
+.section-confirm {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.section-confirm-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #EF4444;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.section-item.confirming { background: rgba(239,68,68,0.08); }
 
 /* Hidden section — muted in sidebar */
 .section-item.hidden .section-name-btn {

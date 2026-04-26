@@ -59,6 +59,7 @@ export default function Editor() {
   const [pageCount, setPageCount] = useState(1)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [stylesSidebarCollapsed, setStylesSidebarCollapsed] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
 
   const editorRef    = useRef(null)
@@ -137,6 +138,7 @@ export default function Editor() {
   }
 
   function deleteSection(sectionId) {
+    setConfirmDeleteId(null)
     setResume(prev => {
       const index = prev.sections.findIndex(s => s.id === sectionId)
       const section = prev.sections[index]
@@ -311,6 +313,9 @@ export default function Editor() {
                       onDelete={() => deleteSection(section.id)}
                       onToggleVisibility={() => toggleSectionVisibility(section.id)}
                       isDragging={activeDragId === section.id}
+                      isConfirming={confirmDeleteId === section.id}
+                      onDeleteRequest={() => setConfirmDeleteId(section.id)}
+                      onDeleteCancel={() => setConfirmDeleteId(null)}
                     />
                   ))}
                 </ul>
@@ -617,7 +622,7 @@ function BackIcon() {
 }
 
 /* ── Sortable section item ── */
-function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVisibility, isDragging }) {
+function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVisibility, isDragging, isConfirming, onDeleteRequest, onDeleteCancel }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: section.id })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -628,7 +633,7 @@ function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVi
     <li
       ref={setNodeRef}
       style={style}
-      className={`section-item${isActive ? ' active' : ''}${section.hidden ? ' hidden' : ''}`}
+      className={`section-item${isActive ? ' active' : ''}${section.hidden ? ' hidden' : ''}${isConfirming ? ' confirming' : ''}`}
       {...attributes}
     >
       <button className="drag-handle" {...listeners} tabIndex={-1}>
@@ -637,16 +642,24 @@ function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVi
       <button className="section-name-btn" onClick={onSelect}>
         {section.title}
       </button>
-      <div className="section-controls">
-        <button
-          className="sc-btn vis"
-          onClick={onToggleVisibility}
-          title={section.hidden ? 'Show section' : 'Hide section'}
-        >
-          {section.hidden ? <EyeOffIcon /> : <EyeIcon />}
-        </button>
-        <button className="sc-btn del" onClick={onDelete} title="Delete">×</button>
-      </div>
+      {isConfirming ? (
+        <div className="section-confirm">
+          <span className="section-confirm-label">Delete?</span>
+          <button className="sc-btn confirm-yes" onClick={onDelete} title="Confirm delete">✓</button>
+          <button className="sc-btn confirm-no"  onClick={onDeleteCancel} title="Cancel">✕</button>
+        </div>
+      ) : (
+        <div className="section-controls">
+          <button
+            className="sc-btn vis"
+            onClick={onToggleVisibility}
+            title={section.hidden ? 'Show section' : 'Hide section'}
+          >
+            {section.hidden ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+          <button className="sc-btn del" onClick={onDeleteRequest} title="Delete">×</button>
+        </div>
+      )}
     </li>
   )
 }
