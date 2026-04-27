@@ -157,6 +157,13 @@
   color: var(--dm-muted);
 }
 
+/* ── Danger item (destructive actions) ── */
+.dm-item.dm-item-danger { color: #EF4444; }
+.dm-item.dm-item-danger[data-highlighted] {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
 /* ── Trigger open-state: highlight the select button border ── */
 .select-trigger[data-state="open"] {
   border-color: #6366F1 !important;

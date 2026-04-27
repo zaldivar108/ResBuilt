@@ -90,8 +90,8 @@
 
 /* ── Col 1: Sections sidebar (dark) ── */
 .sidebar {
-  width: 210px;
-  min-width: 210px;
+  width: 320px;
+  min-width: 320px;
   background: #191929;
   color: #CBD5E1;
   display: flex;
@@ -187,16 +187,7 @@
 }
 .section-item.active .section-name-btn { color: #A5B4FC; font-weight: 600; }
 
-.section-controls {
-  display: flex;
-  gap: 1px;
-  opacity: 0;
-  transition: opacity 0.12s;
-  flex-shrink: 0;
-}
-.section-item:hover .section-controls { opacity: 1; }
-
-.sc-btn {
+.sc-menu-btn {
   width: 22px;
   height: 22px;
   display: flex;
@@ -206,33 +197,94 @@
   border: none;
   background: none;
   color: #475569;
-  font-size: 13px;
+  font-size: 17px;
+  line-height: 1;
   cursor: pointer;
-  transition: all 0.1s;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s, opacity 0.12s;
 }
-.sc-btn:hover { background: rgba(255,255,255,0.08); color: #94A3B8; }
-.sc-btn:disabled { opacity: 0.25; cursor: not-allowed; }
-.sc-btn.del:hover { background: rgba(239,68,68,0.18); color: #FCA5A5; }
-.sc-btn.vis:hover { background: rgba(255,255,255,0.08); color: #818CF8; }
-.sc-btn.confirm-yes { color: #4ADE80; font-size: 11px; }
-.sc-btn.confirm-yes:hover { background: rgba(74,222,128,0.15); color: #4ADE80; }
-.sc-btn.confirm-no  { color: #94A3B8; font-size: 11px; }
-.sc-btn.confirm-no:hover  { background: rgba(255,255,255,0.08); color: #CBD5E1; }
+.section-item:hover .sc-menu-btn,
+.section-item.hidden .sc-menu-btn { opacity: 1; }
+.sc-menu-btn:hover { background: rgba(255,255,255,0.08); color: #94A3B8; }
 
-.section-confirm {
+
+/* ── Delete confirmation modal ── */
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 200;
   display: flex;
   align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
+  justify-content: center;
 }
-.section-confirm-label {
-  font-size: 10px;
+.delete-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 22px 24px 18px;
+  width: 300px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.delete-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+}
+.delete-modal-body {
+  font-size: 13px;
+  color: #64748B;
+  line-height: 1.5;
+}
+.delete-modal-body strong { color: #1E293B; }
+.delete-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.delete-modal-cancel {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.delete-modal-cancel:hover { background: #F8FAFC; border-color: #CBD5E1; }
+.delete-modal-confirm {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: none;
+  background: #EF4444;
+  color: white;
+  font-size: 13px;
   font-weight: 600;
-  color: #EF4444;
-  margin-right: 2px;
-  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s;
 }
-.section-item.confirming { background: rgba(239,68,68,0.08); }
+.delete-modal-confirm:hover { background: #DC2626; }
+
+/* dark mode */
+.editor-layout.dark .delete-modal {
+  background: #1E293B;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+}
+.editor-layout.dark .delete-modal-title { color: #F1F5F9; }
+.editor-layout.dark .delete-modal-body  { color: #94A3B8; }
+.editor-layout.dark .delete-modal-body strong { color: #CBD5E1; }
+.editor-layout.dark .delete-modal-cancel {
+  background: #0F172A;
+  border-color: #334155;
+  color: #94A3B8;
+}
+.editor-layout.dark .delete-modal-cancel:hover { background: #1E293B; border-color: #475569; }
 
 /* Hidden section — muted in sidebar */
 .section-item.hidden .section-name-btn {
@@ -240,8 +292,7 @@
   text-decoration: line-through;
   text-decoration-color: #475569;
 }
-.section-item.hidden .sc-btn.vis { opacity: 1; color: #475569; }
-.section-item.hidden .section-controls { opacity: 1; }
+.section-item.hidden .sc-menu-btn { opacity: 1; color: #475569; }
 
 .add-section-form { padding: 6px 4px; }
 .add-section-input {
@@ -467,8 +518,8 @@
 
 /* ── Col 4: Styles sidebar (light) ── */
 .styles-sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 320px;
+  min-width: 320px;
   background: white;
   border-left: 1px solid #E2E8F0;
   display: flex;
@@ -996,7 +1047,7 @@
 
 /* ── Responsive ── */
 @media (max-width: 1200px) {
-  .styles-sidebar { width: 210px; min-width: 210px; }
+  .styles-sidebar { width: 280px; min-width: 280px; }
 }
 @media (max-width: 1024px) {
   .styles-sidebar { display: none; }
@@ -1005,5 +1056,5 @@
   .preview-panel { display: none; }
 }
 @media (max-width: 640px) {
-  .sidebar { width: 180px; min-width: 180px; }
+  .sidebar { width: 320px; min-width: 320px; }
 }

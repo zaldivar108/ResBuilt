@@ -8,6 +8,10 @@ import { SelectDropdown } from '../components/ui/SelectDropdown'
 import Switch from '../components/ui/switch'
 import { TEMPLATES, getTemplate } from '../config/templates'
 import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator,
+} from '../components/ui/dropdown-menu'
+import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core'
 import {
@@ -164,6 +168,18 @@ export default function Editor() {
     }))
   }
 
+  function duplicateSection(sectionId) {
+    patch(prev => {
+      const index = prev.sections.findIndex(s => s.id === sectionId)
+      if (index === -1) return prev
+      const original = prev.sections[index]
+      const copy = { ...original, id: genId(), title: original.title + ' (Copy)' }
+      const sections = [...prev.sections]
+      sections.splice(index + 1, 0, copy)
+      return { ...prev, sections }
+    })
+  }
+
   function undoDelete() {
     if (!lastDeleted) return
     clearTimeout(undoTimerRef.current)
@@ -310,12 +326,10 @@ export default function Editor() {
                       section={section}
                       isActive={section.id === activeSectionId}
                       onSelect={() => switchSection(section.id)}
-                      onDelete={() => deleteSection(section.id)}
+                      onDuplicate={() => duplicateSection(section.id)}
                       onToggleVisibility={() => toggleSectionVisibility(section.id)}
                       isDragging={activeDragId === section.id}
-                      isConfirming={confirmDeleteId === section.id}
                       onDeleteRequest={() => setConfirmDeleteId(section.id)}
-                      onDeleteCancel={() => setConfirmDeleteId(null)}
                     />
                   ))}
                 </ul>
@@ -438,6 +452,25 @@ export default function Editor() {
             onPageCount={setPageCount}
           />
         </div>
+
+        {/* Delete confirmation modal */}
+        {confirmDeleteId && (() => {
+          const section = resume.sections.find(s => s.id === confirmDeleteId)
+          return (
+            <div className="delete-modal-overlay" onClick={() => setConfirmDeleteId(null)}>
+              <div className="delete-modal" onClick={e => e.stopPropagation()}>
+                <div className="delete-modal-title">Delete Section?</div>
+                <div className="delete-modal-body">
+                  <strong>"{section?.title}"</strong> will be removed. You can undo this.
+                </div>
+                <div className="delete-modal-actions">
+                  <button className="delete-modal-cancel" onClick={() => setConfirmDeleteId(null)}>Cancel</button>
+                  <button className="delete-modal-confirm" onClick={() => deleteSection(confirmDeleteId)}>Delete</button>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Col 4 — Styles sidebar (light) */}
         <aside className={`styles-sidebar${stylesSidebarCollapsed ? ' collapsed' : ''}`}>
@@ -622,7 +655,7 @@ function BackIcon() {
 }
 
 /* ── Sortable section item ── */
-function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVisibility, isDragging, isConfirming, onDeleteRequest, onDeleteCancel }) {
+function SortableSectionItem({ section, isActive, onSelect, onDelete, onDuplicate, onToggleVisibility, isDragging, onDeleteRequest }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: section.id })
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -633,7 +666,7 @@ function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVi
     <li
       ref={setNodeRef}
       style={style}
-      className={`section-item${isActive ? ' active' : ''}${section.hidden ? ' hidden' : ''}${isConfirming ? ' confirming' : ''}`}
+      className={`section-item${isActive ? ' active' : ''}${section.hidden ? ' hidden' : ''}`}
       {...attributes}
     >
       <button className="drag-handle" {...listeners} tabIndex={-1}>
@@ -642,25 +675,35 @@ function SortableSectionItem({ section, isActive, onSelect, onDelete, onToggleVi
       <button className="section-name-btn" onClick={onSelect}>
         {section.title}
       </button>
-      {isConfirming ? (
-        <div className="section-confirm">
-          <span className="section-confirm-label">Delete?</span>
-          <button className="sc-btn confirm-yes" onClick={onDelete} title="Confirm delete">✓</button>
-          <button className="sc-btn confirm-no"  onClick={onDeleteCancel} title="Cancel">✕</button>
-        </div>
-      ) : (
-        <div className="section-controls">
-          <button
-            className="sc-btn vis"
-            onClick={onToggleVisibility}
-            title={section.hidden ? 'Show section' : 'Hide section'}
-          >
-            {section.hidden ? <EyeOffIcon /> : <EyeIcon />}
-          </button>
-          <button className="sc-btn del" onClick={onDeleteRequest} title="Delete">×</button>
-        </div>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="sc-menu-btn" title="Section options">⋮</button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" align="end">
+          <DropdownMenuItem onSelect={onToggleVisibility}>
+            {section.hidden ? <EyeIcon /> : <EyeOffIcon />}
+            {section.hidden ? 'Show' : 'Hide'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onDuplicate}>
+            <DuplicateIcon />
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="dm-item-danger" onSelect={onDeleteRequest}>
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </li>
+  )
+}
+
+function DuplicateIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4.5" y="4.5" width="7" height="7" rx="1.2" />
+      <path d="M1.5 8.5V2.5A1 1 0 0 1 2.5 1.5H8.5" />
+    </svg>
   )
 }
 
