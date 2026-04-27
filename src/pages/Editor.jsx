@@ -25,7 +25,7 @@ const FONT_FAMILY_OPTIONS = [
   { value: "'Times New Roman', Times, serif",         label: 'Times New Roman' },
   { value: 'Arial, sans-serif',                       label: 'Arial' },
   { value: "'Helvetica Neue', Helvetica, sans-serif", label: 'Helvetica' },
-  { value: 'Garamond, serif',                         label: 'Garamond' },
+  { value: "'EB Garamond', Garamond, serif",           label: 'Garamond' },
   { value: 'Verdana, sans-serif',                     label: 'Verdana' },
   { value: "'Calibri', Candara, sans-serif",          label: 'Calibri' },
 ]

@@ -1,72 +1,98 @@
+/* ── Toolbar container ── */
 .editor-toolbar {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 6px 14px;
-  background: #FAFAFA;
+  padding: 5px 10px;
+  background: #F8FAFC;
   border-bottom: 1px solid #E2E8F0;
   flex-shrink: 0;
   flex-wrap: wrap;
   min-height: 44px;
 }
 
-.tb-btn {
+/* ── Icon buttons ── */
+.tb-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
-  height: 30px;
-  border-radius: 6px;
+  height: 32px;
+  border-radius: 7px;
   border: none;
   background: none;
-  color: #374151;
+  color: #64748B;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.12s;
   flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
 }
-.tb-btn:hover { background: #F1F5F9; color: #6366F1; }
-.tb-btn.italic em { font-style: italic; font-size: 15px; }
-.tb-btn.underline u { text-underline-offset: 2px; }
+.tb-icon-btn:hover  { background: rgba(99,102,241,0.08); color: #6366F1; }
+.tb-icon-btn.active { background: rgba(99,102,241,0.12); color: #6366F1; }
 
+/* ── Separator ── */
 .tb-sep {
   width: 1px;
   height: 22px;
   background: #E2E8F0;
-  margin: 0 4px;
+  margin: 0 3px;
   flex-shrink: 0;
 }
 
+/* ── Font / size dropdowns ── */
 .tb-select {
-  height: 30px;
+  height: 32px;
   padding: 0 8px;
   border: 1px solid #E2E8F0;
-  border-radius: 6px;
+  border-radius: 7px;
   font-size: 12px;
   color: #374151;
   background: white;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, background 0.12s;
 }
-.tb-select:hover { border-color: #CBD5E1; }
-.tb-select:focus { border-color: #6366F1; }
+.tb-select:hover { border-color: #CBD5E1; background: #F8FAFC; }
 
-.font-select { width: 106px; }
+.font-select { width: 180px; }
 .size-select { width: 72px; }
+
+/* ── Tooltip ── */
+.tb-tip-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tb-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: #1E293B;
+  color: #F1F5F9;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
 
 /* ── Dark mode ── */
 .editor-layout.dark .editor-toolbar {
-  background: #0A0F1E;
+  background: #0D1117;
   border-bottom-color: #1E293B;
 }
-.editor-layout.dark .tb-btn { color: #94A3B8; }
-.editor-layout.dark .tb-btn:hover { background: #1E293B; color: #818CF8; }
-.editor-layout.dark .tb-sep { background: #2D3748; }
+.editor-layout.dark .tb-icon-btn       { color: #64748B; }
+.editor-layout.dark .tb-icon-btn:hover  { background: rgba(129,140,248,0.12); color: #818CF8; }
+.editor-layout.dark .tb-icon-btn.active { background: rgba(129,140,248,0.16); color: #818CF8; }
+.editor-layout.dark .tb-sep            { background: #1E293B; }
 .editor-layout.dark .tb-select {
   background: #1E293B;
   border-color: #334155;
   color: #CBD5E1;
 }
-.editor-layout.dark .tb-select:hover { border-color: #475569; }
-.editor-layout.dark .tb-select:focus { border-color: #6366F1; }
+.editor-layout.dark .tb-select:hover   { border-color: #475569; background: #243044; }
+.editor-layout.dark .tb-tip            { background: #334155; }
