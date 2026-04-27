@@ -388,7 +388,7 @@ export default function Editor() {
         <div className="edit-area">
           {activeSection ? (
             <>
-              <EditorToolbar editorRef={editorRef} />
+              <EditorToolbar editorRef={editorRef} fontFamily={resume.styles.fontFamily} fontSize={resume.styles.fontSize} />
               <div className="section-title-bar">
                 <input
                   className="section-title-edit"

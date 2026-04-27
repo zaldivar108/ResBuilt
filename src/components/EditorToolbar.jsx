@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
 import {
   DropdownMenu,
@@ -7,6 +7,33 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import './EditorToolbar.css'
+
+function firstFont(str) {
+  return str.split(',')[0].trim().replace(/['"]/g, '').toLowerCase()
+}
+
+function fontLabelFromFamily(family) {
+  if (!family) return 'Font'
+  const match = FONTS.find(f => firstFont(f.value) === firstFont(family))
+  return match ? match.label : 'Font'
+}
+
+function ptFromInline(str) {
+  if (!str) return null
+  if (str.endsWith('pt')) return Math.round(parseFloat(str))
+  if (str.endsWith('px')) return Math.round(parseFloat(str) * 0.75)
+  return null
+}
+
+function getInlinePt(anchorNode, editorEl) {
+  let el = anchorNode?.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode
+  while (el && el !== editorEl) {
+    const pt = ptFromInline(el.style?.fontSize)
+    if (pt) return pt
+    el = el.parentElement
+  }
+  return null
+}
 
 const FONTS = [
   { label: 'Arial',          value: 'Arial, sans-serif' },
@@ -20,8 +47,39 @@ const FONTS = [
 
 const SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28]
 
-export default function EditorToolbar({ editorRef }) {
+export default function EditorToolbar({ editorRef, fontFamily, fontSize }) {
   const savedRange = useRef(null)
+  const [activeFontLabel, setActiveFontLabel] = useState(() => fontLabelFromFamily(fontFamily))
+  const [activeSizeLabel, setActiveSizeLabel] = useState(() => fontSize ? `${fontSize}pt` : 'Size')
+
+  useEffect(() => { setActiveFontLabel(fontLabelFromFamily(fontFamily)) }, [fontFamily])
+  useEffect(() => { setActiveSizeLabel(fontSize ? `${fontSize}pt` : 'Size') }, [fontSize])
+
+  const resolveLabel = useCallback(() => {
+    if (!editorRef.current) return
+    const sel = window.getSelection()
+    if (!sel || !editorRef.current.contains(sel.anchorNode)) return
+
+    // Font family
+    const raw = document.queryCommandValue('fontName').toLowerCase()
+    if (raw) {
+      const rawFirst = firstFont(raw)
+      const match = FONTS.find(f => firstFont(f.value) === rawFirst)
+      setActiveFontLabel(match ? match.label : fontLabelFromFamily(fontFamily))
+    } else {
+      setActiveFontLabel(fontLabelFromFamily(fontFamily))
+    }
+
+    // Font size — walk DOM for inline style.fontSize
+    const inlinePt = getInlinePt(sel.anchorNode, editorRef.current)
+    const pt = inlinePt ?? fontSize
+    setActiveSizeLabel(pt ? `${pt}pt` : 'Size')
+  }, [editorRef, fontFamily, fontSize])
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', resolveLabel)
+    return () => document.removeEventListener('selectionchange', resolveLabel)
+  }, [resolveLabel])
 
   function saveSelection() {
     const sel = window.getSelection()
@@ -84,7 +142,7 @@ export default function EditorToolbar({ editorRef }) {
             onMouseDown={saveSelection}
             title="Font family"
           >
-            <span className="select-trigger-label">Font</span>
+            <span className="select-trigger-label">{activeFontLabel}</span>
             <ChevronDownIcon className="select-trigger-chevron" />
           </button>
         </DropdownMenuTrigger>
@@ -108,7 +166,7 @@ export default function EditorToolbar({ editorRef }) {
             onMouseDown={saveSelection}
             title="Font size"
           >
-            <span className="select-trigger-label">Size</span>
+            <span className="select-trigger-label">{activeSizeLabel}</span>
             <ChevronDownIcon className="select-trigger-chevron" />
           </button>
         </DropdownMenuTrigger>
