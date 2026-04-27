@@ -36,12 +36,6 @@ function genId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
-const ZOOM_OPTIONS = [
-  { label: '75%',  value: 0.75 },
-  { label: '100%', value: 1 },
-  { label: '125%', value: 1.25 },
-  { label: 'Fit',  value: 'fit' },
-]
 
 const ACCENT_PRESETS = [
   '#1E293B', '#4F46E5', '#0891B2', '#16A34A',
@@ -420,21 +414,16 @@ export default function Editor() {
               triggerClassName="pt-size-select"
             />
 
-            <div className="pt-zoom-group">
-              {ZOOM_OPTIONS.map(z => (
-                <button
-                  key={z.label}
-                  className={`pt-zoom-btn${zoom === z.value ? ' active' : ''}`}
-                  onClick={() => setZoom(z.value)}
-                >
-                  {z.label}
-                </button>
-              ))}
+            <div className="pt-zoom-slider">
+              <span className="pt-zoom-label">Zoom</span>
+              <input
+                className="pt-zoom-range"
+                type="range" min="50" max="150" step="5"
+                value={Math.round(zoom * 100)}
+                onChange={e => setZoom(Number(e.target.value) / 100)}
+              />
+              <span className="pt-zoom-val">{Math.round(zoom * 100)}%</span>
             </div>
-
-            <span className={`pt-page-count${pageCount > 1 ? ' overflow' : ''}`}>
-              {pageCount} {pageCount === 1 ? 'page' : 'pages'}
-            </span>
 
             <button
               className="pt-export-btn"
@@ -443,6 +432,10 @@ export default function Editor() {
             >
               ↓ Export PDF
             </button>
+
+            <span className={`pt-page-count${pageCount > 1 ? ' overflow' : ''}`}>
+              {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+            </span>
           </div>
 
           <ResumePreview

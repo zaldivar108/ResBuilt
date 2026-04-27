@@ -442,30 +442,36 @@
 .pt-size-select:hover { border-color: #CBD5E1; }
 .pt-size-select:focus { border-color: #6366F1; }
 
-.pt-zoom-group {
+.pt-zoom-slider {
   display: flex;
-  border: 1px solid #E2E8F0;
-  border-radius: 7px;
-  overflow: hidden;
-  background: white;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
 }
 
-.pt-zoom-btn {
-  padding: 0 9px;
-  height: 28px;
+.pt-zoom-label {
   font-size: 11px;
   font-weight: 600;
   color: #64748B;
-  background: none;
-  border: none;
-  border-right: 1px solid #E2E8F0;
-  cursor: pointer;
-  transition: all 0.12s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
-.pt-zoom-btn:last-child { border-right: none; }
-.pt-zoom-btn:hover { background: #F1F5F9; color: #374151; }
-.pt-zoom-btn.active { background: #6366F1; color: white; }
+
+.pt-zoom-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366F1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 34px;
+}
+
+.pt-zoom-range {
+  width: 150px;
+  accent-color: #6366F1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
 
 .pt-page-count {
   font-size: 11px;
@@ -473,9 +479,12 @@
   color: #94A3B8;
   background: #F1F5F9;
   border: 1px solid #E2E8F0;
-  padding: 3px 8px;
-  border-radius: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 .pt-page-count.overflow {
   color: #B45309;
@@ -495,6 +504,7 @@
 
 .pt-export-btn {
   margin-left: auto;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -833,16 +843,8 @@
 }
 .editor-layout.dark .pt-size-select:hover { border-color: #475569; }
 .editor-layout.dark .pt-size-select:focus { border-color: #6366F1; }
-.editor-layout.dark .pt-zoom-group {
-  background: #1E293B;
-  border-color: #334155;
-}
-.editor-layout.dark .pt-zoom-btn {
-  color: #94A3B8;
-  border-right-color: #334155;
-}
-.editor-layout.dark .pt-zoom-btn:hover { background: #2D3748; color: #CBD5E1; }
-.editor-layout.dark .pt-zoom-btn.active { background: #6366F1; color: white; }
+.editor-layout.dark .pt-zoom-label { color: #475569; }
+.editor-layout.dark .pt-zoom-val   { color: #818CF8; }
 
 .editor-layout.dark .styles-sidebar {
   background: #0F172A;
