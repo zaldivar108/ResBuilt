@@ -23,12 +23,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  height: 32px;
   color: #64748B;
   font-size: 13px;
   font-weight: 500;
   background: none;
   border: 1px solid #E2E8F0;
-  padding: 6px 13px;
+  padding: 0 13px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
@@ -72,7 +73,8 @@
   background: #6366F1;
   color: white;
   border: none;
-  padding: 7px 18px;
+  height: 32px;
+  padding: 0 18px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -121,7 +123,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
+  border-radius: 6px;
   border: none;
   background: none;
   color: #475569;
@@ -142,9 +144,9 @@
 }
 
 .sidebar-section-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: #475569;
   margin-bottom: 10px;
@@ -193,7 +195,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 6px;
   border: none;
   background: none;
   color: #475569;
@@ -248,7 +250,7 @@
 }
 .delete-modal-cancel {
   padding: 7px 16px;
-  border-radius: 7px;
+  border-radius: 8px;
   border: 1px solid #E2E8F0;
   background: white;
   color: #475569;
@@ -260,7 +262,7 @@
 .delete-modal-cancel:hover { background: #F8FAFC; border-color: #CBD5E1; }
 .delete-modal-confirm {
   padding: 7px 16px;
-  border-radius: 7px;
+  border-radius: 8px;
   border: none;
   background: #EF4444;
   color: white;
@@ -299,7 +301,7 @@
   width: 100%;
   background: rgba(255,255,255,0.07);
   border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 7px;
+  border-radius: 8px;
   padding: 7px 10px;
   font-size: 13px;
   color: #E2E8F0;
@@ -313,7 +315,7 @@
 .asb {
   flex: 1;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -429,7 +431,7 @@
   height: 28px;
   padding: 0 8px;
   border: 1px solid #E2E8F0;
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
   color: #374151;
@@ -481,7 +483,7 @@
   border: 1px solid #E2E8F0;
   height: 28px;
   padding: 0 10px;
-  border-radius: 7px;
+  border-radius: 8px;
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -515,7 +517,7 @@
   color: white;
   background: linear-gradient(135deg, #6366F1, #8B5CF6);
   border: none;
-  border-radius: 7px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
@@ -559,7 +561,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
+  border-radius: 6px;
   border: none;
   background: none;
   color: #94A3B8;
@@ -575,9 +577,9 @@
   height: 44px;
   display: flex;
   align-items: center;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: #94A3B8;
   border-bottom: 1px solid #E2E8F0;
@@ -694,7 +696,7 @@
   width: 100%;
   padding: 6px 8px;
   border: 1.5px solid #E2E8F0;
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 13px;
   color: #374151;
   background: #FAFAFA;
@@ -918,7 +920,7 @@
 .undo-btn {
   flex-shrink: 0;
   padding: 3px 9px;
-  border-radius: 5px;
+  border-radius: 6px;
   border: none;
   background: #6366F1;
   color: white;
@@ -997,7 +999,7 @@
   cursor: grab;
   padding: 0 0 0 4px;
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   opacity: 0;
   transition: opacity 0.12s, color 0.12s, background 0.12s;
 }

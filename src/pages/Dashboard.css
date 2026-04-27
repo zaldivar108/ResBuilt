@@ -205,22 +205,22 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-.dashboard.dark .dash-user { color: #475569; }
+.dashboard.dark .dash-user { color: #94A3B8; }
 
 .dashboard.dark .dash-logout {
-  color: #64748B;
+  color: #94A3B8;
   border-color: #1E293B;
 }
 .dashboard.dark .dash-logout:hover {
   background: #1E293B;
-  color: #94A3B8;
+  color: #CBD5E1;
 }
 
 .dashboard.dark .dash-title { color: #F1F5F9; }
-.dashboard.dark .dash-subtitle { color: #475569; }
+.dashboard.dark .dash-subtitle { color: #64748B; }
 
-.dashboard.dark .dash-empty h2 { color: #94A3B8; }
-.dashboard.dark .dash-empty p  { color: #475569; }
+.dashboard.dark .dash-empty h2 { color: #CBD5E1; }
+.dashboard.dark .dash-empty p  { color: #64748B; }
 
 /* Cards */
 .dashboard.dark .resume-card {
@@ -236,14 +236,15 @@
   background: linear-gradient(145deg, #0D1117 0%, #131929 100%);
   border-bottom-color: #1E293B;
 }
-.dashboard.dark .card-title { color: #E2E8F0; }
-.dashboard.dark .card-date  { color: #334155; }
+.dashboard.dark .card-title { color: #F1F5F9; }
+.dashboard.dark .card-date  { color: #64748B; }
+.dashboard.dark .card-template-badge { filter: brightness(1.8); }
 .dashboard.dark .ca-btn {
   background: #0F172A;
   border-color: #1E293B;
-  color: #64748B;
+  color: #94A3B8;
 }
-.dashboard.dark .ca-btn:hover { background: #1E293B; color: #94A3B8; }
+.dashboard.dark .ca-btn:hover { background: #1E293B; color: #CBD5E1; }
 .dashboard.dark .ca-btn.danger:hover {
   background: rgba(239,68,68,0.1);
   color: #FCA5A5;
