@@ -152,3 +152,19 @@
   padding: 0;
 }
 .login-switch button:hover { text-decoration: underline; }
+
+.login-skip {
+  text-align: center;
+  margin-top: 16px;
+}
+.login-skip-btn {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.login-skip-btn:hover { color: #6366F1; }

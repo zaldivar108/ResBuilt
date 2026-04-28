@@ -97,6 +97,16 @@ export default function Login() {
             {mode === 'login' ? 'Create one' : 'Sign in'}
           </button>
         </p>
+
+        <div className="login-skip">
+          <button
+            type="button"
+            className="login-skip-btn"
+            onClick={() => { login('guest@resbuilt.com', '', 'Guest'); navigate('/dashboard') }}
+          >
+            Skip for now →
+          </button>
+        </div>
       </div>
     </div>
   )
