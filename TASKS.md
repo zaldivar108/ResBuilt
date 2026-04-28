@@ -18,6 +18,8 @@
 ### Editor
 - [Medium] Add undo for section content (beyond last-deleted toast) - Feature
 - [Low] Add word / character count indicator - Feature
+- [Medium] Spell check — offline client-side via `nspell`/`typo.js` + Hunspell en-US dictionary; scan form fields on demand, show error list in sidebar with field + suggestions - Feature
+- [Low] Spell check — LanguageTool API integration (grammar + spell); debounced REST calls, highlight errors in preview panel with `<mark>` spans; free tier 20 req/min - Feature
 
 ### AI Features (Paid)
 - [High] Job-targeted resume generation — user pastes job description, AI rewrites/tailors resume content to match keywords, tone, and requirements - Complex Feature
