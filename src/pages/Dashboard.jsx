@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [bizCardModal, setBizCardModal] = useState(false)
 
   function handleCreate(e) {
     e.preventDefault()
@@ -44,9 +45,14 @@ export default function Dashboard() {
               {resumes.length} resume{resumes.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <button className="btn-new-resume" onClick={() => setCreating(true)}>
-            + New Resume
-          </button>
+          <div className="dash-header-actions">
+            <button className="btn-new-bizcard" onClick={() => setBizCardModal(true)}>
+              + New Business Card
+            </button>
+            <button className="btn-new-resume" onClick={() => setCreating(true)}>
+              + New Resume
+            </button>
+          </div>
         </div>
 
         {resumes.length === 0 ? (
@@ -89,6 +95,17 @@ export default function Dashboard() {
           </div>
         )
       })()}
+
+      {bizCardModal && (
+        <div className="modal-overlay" onClick={() => setBizCardModal(false)}>
+          <div className="modal bizcard-modal" onClick={e => e.stopPropagation()}>
+            <div className="bizcard-modal-icon">🪪</div>
+            <h2>Business Cards</h2>
+            <p className="bizcard-modal-desc">Design and export professional business cards — coming soon.</p>
+            <button className="modal-btn create" onClick={() => setBizCardModal(false)}>Got it</button>
+          </div>
+        </div>
+      )}
 
       {creating && (
         <div className="modal-overlay" onClick={() => setCreating(false)}>

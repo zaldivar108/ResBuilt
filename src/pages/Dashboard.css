@@ -85,6 +85,29 @@
   color: #94A3B8;
 }
 
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-new-bizcard {
+  background: transparent;
+  color: #6366F1;
+  border: 1.5px solid #6366F1;
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-new-bizcard:hover {
+  background: rgba(99,102,241,0.06);
+  border-color: #4F46E5;
+  color: #4F46E5;
+}
+
 .btn-new-resume {
   background: linear-gradient(135deg, #6366F1, #8B5CF6);
   color: white;
@@ -349,3 +372,28 @@
   color: #94A3B8;
 }
 .dashboard.dark .delete-modal-cancel:hover { background: #1E293B; border-color: #475569; }
+
+/* ── Business card modal ── */
+.bizcard-modal {
+  text-align: center;
+  gap: 12px;
+}
+.bizcard-modal-icon {
+  font-size: 40px;
+  line-height: 1;
+}
+.bizcard-modal-desc {
+  font-size: 14px;
+  color: #64748B;
+  margin: 0;
+}
+.dashboard.dark .bizcard-modal-desc { color: #94A3B8; }
+.dashboard.dark .btn-new-bizcard {
+  border-color: #818CF8;
+  color: #818CF8;
+}
+.dashboard.dark .btn-new-bizcard:hover {
+  background: rgba(129,140,248,0.08);
+  border-color: #6366F1;
+  color: #A5B4FC;
+}
