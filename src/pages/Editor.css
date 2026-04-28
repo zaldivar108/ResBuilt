@@ -471,9 +471,43 @@
 
 .pt-zoom-range {
   width: 150px;
-  accent-color: #6366F1;
   cursor: pointer;
   flex-shrink: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #E2E8F0;
+  outline: none;
+}
+.pt-zoom-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366F1;
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+  transition: box-shadow 0.12s;
+}
+.pt-zoom-range::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2), 0 1px 4px rgba(0,0,0,0.18);
+}
+.pt-zoom-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366F1;
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+.pt-zoom-range::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #E2E8F0;
 }
 
 .pt-page-count {
@@ -644,9 +678,43 @@
 
 .ss-range {
   width: 100%;
-  accent-color: #6366F1;
   cursor: pointer;
   margin-top: 2px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #E2E8F0;
+  outline: none;
+}
+.ss-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366F1;
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+  transition: box-shadow 0.12s;
+}
+.ss-range::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2), 0 1px 4px rgba(0,0,0,0.18);
+}
+.ss-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6366F1;
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+.ss-range::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #E2E8F0;
 }
 
 .ss-divider {

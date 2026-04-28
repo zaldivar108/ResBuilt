@@ -12,6 +12,7 @@ import {
   DropdownMenuItem, DropdownMenuSeparator,
 } from '../components/ui/dropdown-menu'
 import AiInput from '../components/ui/AiInput'
+import AccentColorPicker from '../components/ui/AccentColorPicker'
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core'
@@ -37,11 +38,12 @@ function genId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
+function sliderBg(value, min, max) {
+  const pct = ((value - min) / (max - min)) * 100
+  return { background: `linear-gradient(to right, #6366F1 ${pct}%, #E2E8F0 ${pct}%)` }
+}
 
-const ACCENT_PRESETS = [
-  '#1E293B', '#4F46E5', '#0891B2', '#16A34A',
-  '#DC2626', '#7C3AED', '#EA580C', '#94A3B8',
-]
+
 
 export default function Editor() {
   const { id } = useParams()
@@ -422,6 +424,7 @@ export default function Editor() {
                 type="range" min="50" max="150" step="5"
                 value={Math.round(zoom * 100)}
                 onChange={e => setZoom(Number(e.target.value) / 100)}
+                style={sliderBg(Math.round(zoom * 100), 50, 150)}
               />
               <span className="pt-zoom-val">{Math.round(zoom * 100)}%</span>
             </div>
@@ -502,28 +505,10 @@ export default function Editor() {
             {/* ── Accent Color ── */}
             <div className="ss-field">
               <span className="ss-label">Accent Color</span>
-              <div className="accent-swatches">
-                {ACCENT_PRESETS.map(color => (
-                  <button
-                    key={color}
-                    className={`accent-swatch${(resume.styles.accentColor ?? activeTemplate.accentColor) === color ? ' active' : ''}`}
-                    style={{ background: color }}
-                    onClick={() => updateStyles({ accentColor: color })}
-                    title={color}
-                  />
-                ))}
-                <label className="accent-custom" title="Custom color">
-                  <input
-                    type="color"
-                    value={resume.styles.accentColor ?? activeTemplate.accentColor}
-                    onChange={e => updateStyles({ accentColor: e.target.value })}
-                  />
-                  <span
-                    className="accent-custom-dot"
-                    style={{ background: resume.styles.accentColor ?? activeTemplate.accentColor }}
-                  />
-                </label>
-              </div>
+              <AccentColorPicker
+                value={resume.styles.accentColor ?? activeTemplate.accentColor}
+                onChange={color => updateStyles({ accentColor: color })}
+              />
             </div>
 
             <div className="ss-divider" />
@@ -550,6 +535,7 @@ export default function Editor() {
                 type="range" min="9" max="14" step="0.5"
                 value={resume.styles.fontSize}
                 onChange={e => updateStyles({ fontSize: Number(e.target.value) })}
+                style={sliderBg(resume.styles.fontSize, 9, 14)}
               />
             </div>
 
@@ -563,6 +549,7 @@ export default function Editor() {
                 type="range" min="1" max="2.2" step="0.05"
                 value={resume.styles.lineSpacing}
                 onChange={e => updateStyles({ lineSpacing: Number(e.target.value) })}
+                style={sliderBg(resume.styles.lineSpacing, 1, 2.2)}
               />
             </div>
 
@@ -576,6 +563,7 @@ export default function Editor() {
                 type="range" min="6" max="40"
                 value={resume.styles.sectionSpacing}
                 onChange={e => updateStyles({ sectionSpacing: Number(e.target.value) })}
+                style={sliderBg(resume.styles.sectionSpacing, 6, 40)}
               />
             </div>
 
