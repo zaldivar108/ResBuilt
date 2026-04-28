@@ -10,6 +10,7 @@ export default function Dashboard() {
   const { user, resumes, createResume, deleteResume, duplicateResume, logout, darkMode, setDarkMode } = useResume()
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   function handleCreate(e) {
     e.preventDefault()
@@ -64,12 +65,30 @@ export default function Dashboard() {
                 key={resume.id}
                 resume={resume}
                 onDuplicate={() => duplicateResume(resume.id)}
-                onDelete={() => deleteResume(resume.id)}
+                onDelete={() => setConfirmDeleteId(resume.id)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {confirmDeleteId && (() => {
+        const resume = resumes.find(r => r.id === confirmDeleteId)
+        return (
+          <div className="delete-modal-overlay" onClick={() => setConfirmDeleteId(null)}>
+            <div className="delete-modal" onClick={e => e.stopPropagation()}>
+              <div className="delete-modal-title">Delete Resume?</div>
+              <div className="delete-modal-body">
+                <strong>"{resume?.title}"</strong> will be permanently deleted.
+              </div>
+              <div className="delete-modal-actions">
+                <button className="delete-modal-cancel" onClick={() => setConfirmDeleteId(null)}>Cancel</button>
+                <button className="delete-modal-confirm" onClick={() => { deleteResume(confirmDeleteId); setConfirmDeleteId(null) }}>Delete</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {creating && (
         <div className="modal-overlay" onClick={() => setCreating(false)}>

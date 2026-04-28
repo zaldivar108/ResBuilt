@@ -1,0 +1,211 @@
+/* ── ColorOrb ── */
+@property --angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ai-orb {
+  display: grid;
+  grid-template-areas: "stack";
+  overflow: hidden;
+  border-radius: 50%;
+  position: relative;
+  transform: scale(1.1);
+  flex-shrink: 0;
+}
+
+.ai-orb::before,
+.ai-orb::after {
+  content: "";
+  display: block;
+  grid-area: stack;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transform: translateZ(0);
+}
+
+.ai-orb::before {
+  background:
+    conic-gradient(from calc(var(--angle) * 2) at 25% 70%, oklch(78% 0.14 280), transparent 20% 80%, oklch(78% 0.14 280)),
+    conic-gradient(from calc(var(--angle) * 2) at 45% 75%, oklch(80% 0.12 200), transparent 30% 60%, oklch(80% 0.12 200)),
+    conic-gradient(from calc(var(--angle) * -3) at 80% 20%, oklch(75% 0.15 350), transparent 40% 60%, oklch(75% 0.15 350)),
+    conic-gradient(from calc(var(--angle) * 2) at 15% 5%, oklch(80% 0.12 200), transparent 10% 90%, oklch(80% 0.12 200)),
+    conic-gradient(from calc(var(--angle) * 1) at 20% 80%, oklch(75% 0.15 350), transparent 10% 90%, oklch(75% 0.15 350)),
+    conic-gradient(from calc(var(--angle) * -2) at 85% 10%, oklch(78% 0.14 280), transparent 20% 80%, oklch(78% 0.14 280));
+  filter: blur(1.5px) contrast(1.5);
+  animation: ai-orb-spin var(--spin-duration, 20s) linear infinite;
+}
+
+.ai-orb::after {
+  backdrop-filter: blur(3px) contrast(3);
+  mix-blend-mode: overlay;
+}
+
+@keyframes ai-orb-spin {
+  to { --angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-orb::before { animation: none; }
+}
+
+/* ── Floating wrapper ── */
+.ai-input-wrapper {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+/* ── Morphing panel ── */
+.ai-panel {
+  background: #ffffff;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Dock bar (collapsed state) ── */
+.ai-dock-bar {
+  margin-top: auto;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.ai-dock-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+}
+
+.ai-trigger-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366F1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+
+.ai-trigger-btn:hover { color: #4F46E5; }
+
+/* ── Expanded form ── */
+.ai-form {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.ai-form-inner {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.ai-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 38px;
+}
+
+.ai-form-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+  user-select: none;
+}
+
+.ai-key-hints {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ai-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-family: inherit;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  color: #94A3B8;
+  background: #F8FAFC;
+}
+
+.ai-textarea {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #64748B;
+  background: #F8FAFC;
+  box-sizing: border-box;
+  cursor: not-allowed;
+}
+
+.ai-textarea::placeholder { color: #94A3B8; }
+
+.ai-coming-soon-badge {
+  text-align: center;
+  font-size: 11px;
+  color: #94A3B8;
+  padding: 4px 0 2px;
+  user-select: none;
+}
+
+.ai-orb-absolute {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+}
+
+/* ── Dark mode ── */
+.editor-layout.dark .ai-panel {
+  background: #1E293B;
+  border-color: #334155;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.editor-layout.dark .ai-form-title { color: #F1F5F9; }
+
+.editor-layout.dark .ai-textarea {
+  background: #0F172A;
+  color: #64748B;
+}
+
+.editor-layout.dark .ai-kbd {
+  border-color: #334155;
+  background: #0F172A;
+  color: #475569;
+}
+
+.editor-layout.dark .ai-coming-soon-badge { color: #475569; }

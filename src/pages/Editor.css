@@ -414,6 +414,7 @@
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid #E2E8F0;
+  position: relative;
 }
 
 .preview-toolbar {

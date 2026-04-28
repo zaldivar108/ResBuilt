@@ -8,7 +8,7 @@
 - [Medium] Add user profile / account settings page - Feature
 
 ### Dashboard
-- [High] Add delete confirmation modal (match editor pattern) - Fix
+- [x] [High] Add delete confirmation modal (match editor pattern) - Fix
 - [High] Add sort button — by name, date created, last edited - Feature
 - [High] Show last-edited timestamp on resume cards - Feature
 - [Medium] Add rename resume option on card (currently title locked after creation) - Feature
@@ -18,6 +18,12 @@
 ### Editor
 - [Medium] Add undo for section content (beyond last-deleted toast) - Feature
 - [Low] Add word / character count indicator - Feature
+
+### AI Features (Paid)
+- [High] Job-targeted resume generation — user pastes job description, AI rewrites/tailors resume content to match keywords, tone, and requirements - Complex Feature
+- [Medium] AI bullet point suggestions — improve weak bullet points based on role/industry - Feature
+- [Medium] ATS keyword gap analysis — compare resume vs job description, highlight missing keywords - Feature
+- [Low] AI resume summary generator — auto-write professional summary from resume sections - Feature
 
 ### Templates & Styling
 - [High] Template Builder (paid tier) — customize colors, fonts, column widths, heading styles, section order, spacing → save as named custom template - Complex Feature

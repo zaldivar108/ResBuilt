@@ -11,6 +11,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator,
 } from '../components/ui/dropdown-menu'
+import AiInput from '../components/ui/AiInput'
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core'
@@ -444,6 +445,7 @@ export default function Editor() {
             zoom={zoom}
             onPageCount={setPageCount}
           />
+          <AiInput />
         </div>
 
         {/* Delete confirmation modal */}
