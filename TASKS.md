@@ -30,6 +30,7 @@
 ### Templates & Styling
 - [High] Template Builder (paid tier) — customize colors, fonts, column widths, heading styles, section order, spacing → save as named custom template - Complex Feature
 - [Medium] Allow per-resume accent color to show on dashboard card thumbnail - Feature
+- [Low] Change favicon to custom ResBuilt icon - Fix
 
 ### Export & Sharing
 - [High] PDF export - Feature
@@ -37,6 +38,15 @@
 
 ### Infrastructure
 - [High] Cloud persistence — replace localStorage with real backend - Complex Feature
+
+### Testing
+- [High] Set up Vitest + React Testing Library — unit tests for components (ResumeCard, AccentColorPicker, AiInput, Switch) - Feature
+- [High] Test ResumeContext — createResume, deleteResume, duplicateResume, darkMode toggle - Feature
+- [Medium] Test Editor form fields — input changes update context, preview reflects changes - Feature
+- [Medium] Test auth flow — login, logout, skip button, guest user state - Feature
+- [Medium] Test Dashboard modals — delete confirmation, bizcard modal, new resume modal open/close/submit - Feature
+- [Low] Set up Playwright E2E — full user flow: login → create resume → edit → preview → delete - Feature
+- [Low] Test dark mode — verify CSS class toggles correctly across Dashboard and Editor - Fix
 
 ---
 
