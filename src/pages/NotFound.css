@@ -1,0 +1,142 @@
+.nf-root {
+  min-height: 100vh;
+  background: #F8FAFC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.nf-container {
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.nf-logo {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.nf-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nf-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366F1;
+  letter-spacing: 0.02em;
+}
+
+.nf-heading {
+  font-size: 36px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.6px;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.nf-desc {
+  font-size: 15px;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.nf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #E2E8F0;
+}
+
+.nf-item {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.nf-icon-wrap {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #EEF2FF;
+  color: #6366F1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nf-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nf-item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0;
+}
+
+.nf-item-desc {
+  font-size: 13px;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.nf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366F1;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.nf-link:hover { color: #4F46E5; }
+
+/* ── Dark mode ── */
+.nf-root.dark {
+  background: #0A0F1E;
+}
+
+.nf-root.dark .nf-heading { color: #F1F5F9; }
+.nf-root.dark .nf-desc    { color: #64748B; }
+
+.nf-root.dark .nf-list,
+.nf-root.dark .nf-item {
+  border-color: #1E293B;
+}
+
+.nf-root.dark .nf-icon-wrap {
+  background: rgba(99,102,241,0.12);
+}
+
+.nf-root.dark .nf-item-title { color: #F1F5F9; }
+.nf-root.dark .nf-item-desc  { color: #64748B; }
+
+.nf-root.dark .nf-link { color: #818CF8; }
+.nf-root.dark .nf-link:hover { color: #A5B4FC; }
