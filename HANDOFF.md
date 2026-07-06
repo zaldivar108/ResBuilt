@@ -10,19 +10,22 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Done this session (all committed to working tree, build green):**
-1. Reviewed the whole project; wrote this handoff.
-2. **Pivot to free/teen audience** — stripped all paywalls from `TASKS.md` (AI + Template Builder now free).
-3. **Auth rework** — removed the login gate. Landing → Dashboard direct. Removed the skip-login hack (no-account is the default). Login page kept but optional/unlinked. Dashboard shows "🔒 Private · saved on this device". Privacy-first landing copy + honest icons.
-4. **Content starters** — new `src/config/starters.js`. New Resume modal now offers **5 presets**: Student (default), Internship, IT / Tech, Entry-Level Job, Professional. Each = a tailored section set + age-appropriate example wording. `createResume(title, starterId)`.
+**Shipped & pushed to `master` this session (build green throughout):**
+1. **Pivot to free/teen audience** — stripped all paywalls; auth rework (no login gate, no-account default, privacy-first framing). Login page kept but unlinked.
+2. **Content starters** — `src/config/starters.js`, 5 presets in the New Resume modal (Student default / Internship / IT / Entry-Level / Professional). `createResume(title, starterId)`.
+3. **3 visual templates** — Executive, Compact, Timeline (now 6 total). Template picker is a 3-col grid.
+4. **AI Assist — live** (free, Groq). Per-section editing in the `AiInput` dock (Improve / Fix grammar / Suggest ideas → Apply/Add). Backed by `api/ai.js` (Vercel Edge proxy). `GROQ_API_KEY` set in all Vercel envs. See the "AI setup" note in §9.
 
-**Recommended next (from `TASKS.md`, in priority order):**
-- **Inline content guidance** — per-section "not sure what to write?" prompts/examples. Highest value for this audience (they struggle with *what to say*, not formatting). New UI surface in the editor.
-- **Mobile-responsive editor** — the 4-column `Editor.jsx` layout is desktop-only; teens are mobile-first. Biggest lift.
-- Dashboard polish: rename-on-card, sort, last-edited timestamp (already stored, not shown).
-- Free AI features via the `AiInput` dock (currently a "coming soon" mock).
+**NEXT UP — PDF Import (fully designed, NOT built).** Grilled out this session; the resolved design is the `Import` term in `CONTEXT.md`. Summary:
+- Dashboard "Import from PDF" → **pdf.js extracts plaintext in-browser** (file never leaves device) → **one** Groq call (JSON mode) → validated `sections[]` → new Résumé (default Classic, no Starter) → open Editor (= the review surface, no separate confirm screen).
+- New proxy task `import` in `api/ai.js`: returns strict JSON `{ sections:[{title,type,content(HTML)}] }`; **exactly one `contact` section first, name = first `<p>`**; unknown blocks → `type:'custom'`; `max_tokens ~2000`.
+- Guards: `.pdf` only, ≤5 MB; <~100 chars extracted → "scanned/image PDF" bail (no OCR); cap sent text ~15k chars.
+- Privacy: client-side extraction + explicit consent gate before upload (full-résumé text → Groq; users are minors). Title = filename. Nothing created until the AI call succeeds.
+- **Open:** offered but not yet written — an ADR recording "privacy-first app deliberately sends full-résumé PII to Groq for import." Write `docs/adr/0001-*` if pursued. Also need to add `pdfjs-dist` (or `pdf.js`) as a dep.
 
-**Not done / open:** no runtime click-through was run on the starter feature (build compiles; low-risk data+modal change). Login page is orphaned — decide keep-for-future-sync vs delete. No tests exist. Pre-existing lint error in `ResumeContext.jsx` (`useResume` export trips react-refresh rule) — present at HEAD, left alone. `README.md` still stock Vite boilerplate.
+**Other roadmap (TASKS.md):** inline "not sure what to write?" content guidance; mobile-responsive editor (4-col `Editor.jsx` is desktop-only); dashboard rename-on-card / sort / last-edited; optional harper.js in-browser grammar (privacy-max, no data leaves device).
+
+**Open / caveats:** AI import + section editing not exercised end-to-end in a browser (needs `vercel dev` + the Groq key). AI output is injected as HTML via `dangerouslySetInnerHTML` — fine single-user, sanitize before any share/multi-user. Login page orphaned. No tests. Pre-existing `useResume` react-refresh lint error (present at HEAD). `README.md` still stock Vite. New: `CONTEXT.md` is the domain glossary — keep it current.
 
 ---
 
