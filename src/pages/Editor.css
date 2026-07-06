@@ -780,12 +780,13 @@
 
 /* ── Template picker cards ── */
 .template-cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
 
 .template-card {
-  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
