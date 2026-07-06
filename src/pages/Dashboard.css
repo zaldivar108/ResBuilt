@@ -36,25 +36,16 @@
   gap: 16px;
 }
 
-.dash-user {
-  font-size: 14px;
+.dash-privacy {
+  font-size: 12.5px;
   color: #64748B;
-}
-
-.dash-logout {
-  font-size: 13px;
-  color: #64748B;
-  background: none;
-  border: 1px solid #E2E8F0;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-weight: 500;
-}
-.dash-logout:hover {
   background: #F1F5F9;
-  color: #374151;
+  border: 1px solid #E2E8F0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 500;
+  cursor: default;
+  white-space: nowrap;
 }
 
 .dash-content {
@@ -217,6 +208,64 @@
   box-shadow: 0 6px 20px rgba(99,102,241,0.42);
 }
 
+/* ── Starter picker ── */
+.starter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+.starter-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.starter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 12px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  background: #F8FAFC;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.starter-card:hover { border-color: #C7D2FE; }
+.starter-card.active {
+  border-color: #6366F1;
+  background: #EEF2FF;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+.starter-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0F172A;
+}
+.starter-card-desc {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #64748B;
+}
+
+.dashboard.dark .starter-label { color: #94A3B8; }
+.dashboard.dark .starter-card {
+  background: #1E293B;
+  border-color: #334155;
+}
+.dashboard.dark .starter-card:hover { border-color: #4F46E5; }
+.dashboard.dark .starter-card.active {
+  border-color: #6366F1;
+  background: #312E81;
+}
+.dashboard.dark .starter-card-title { color: #F1F5F9; }
+.dashboard.dark .starter-card-desc  { color: #94A3B8; }
+
 /* ── Dark mode ── */
 .dashboard.dark {
   background: #0A0F1E;
@@ -228,15 +277,10 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-.dashboard.dark .dash-user { color: #94A3B8; }
-
-.dashboard.dark .dash-logout {
+.dashboard.dark .dash-privacy {
   color: #94A3B8;
-  border-color: #1E293B;
-}
-.dashboard.dark .dash-logout:hover {
   background: #1E293B;
-  color: #CBD5E1;
+  border-color: #334155;
 }
 
 .dashboard.dark .dash-title { color: #F1F5F9; }

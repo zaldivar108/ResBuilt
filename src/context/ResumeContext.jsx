@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { STARTERS, DEFAULT_STARTER_ID } from '../config/starters'
 
 const ResumeContext = createContext(null)
 
@@ -6,50 +7,13 @@ function genId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
-const DEFAULT_SECTIONS = [
-  {
-    title: 'Contact Information',
-    type: 'contact',
-    content: '<p><strong>Your Name</strong></p><p>email@example.com &nbsp;|&nbsp; (555) 000-0000 &nbsp;|&nbsp; City, State</p><p>linkedin.com/in/yourname &nbsp;|&nbsp; github.com/yourname</p>',
-  },
-  {
-    title: 'Professional Summary',
-    type: 'summary',
-    content: '<p>Motivated professional with X years of experience in [field]. Proven track record of [achievement]. Seeking to leverage skills in [goal].</p>',
-  },
-  {
-    title: 'Work Experience',
-    type: 'experience',
-    content: '<p><strong>Job Title</strong> &mdash; Company Name</p><p><em>Jan 2022 &ndash; Present &nbsp;|&nbsp; City, State</em></p><ul><li>Accomplished [X] by doing [Y], resulting in [Z]</li><li>Led team of N to deliver project on time and under budget</li><li>Increased [metric] by X% through [initiative]</li></ul>',
-  },
-  {
-    title: 'Education',
-    type: 'education',
-    content: '<p><strong>Bachelor of Science in Computer Science</strong></p><p>University Name &nbsp;|&nbsp; Graduated May 2021</p><p>GPA: 3.8 / 4.0 &nbsp;&mdash;&nbsp; Dean\'s List</p>',
-  },
-  {
-    title: 'Skills',
-    type: 'skills',
-    content: '<p><strong>Languages:</strong> JavaScript, Python, TypeScript, Java</p><p><strong>Frameworks:</strong> React, Node.js, Express, Django</p><p><strong>Tools:</strong> Git, Docker, AWS, PostgreSQL</p>',
-  },
-  {
-    title: 'Projects',
-    type: 'projects',
-    content: '<p><strong>Project Name</strong> &nbsp;|&nbsp; <em>React, Node.js, MongoDB</em></p><ul><li>Built a full-stack application that [description of impact]</li><li>Implemented [feature] reducing load time by X%</li></ul>',
-  },
-  {
-    title: 'Certifications',
-    type: 'certifications',
-    content: '<p><strong>AWS Certified Solutions Architect</strong> &mdash; Amazon Web Services &nbsp;|&nbsp; 2023</p><p><strong>Google Professional Cloud Developer</strong> &mdash; Google &nbsp;|&nbsp; 2022</p>',
-  },
-]
-
-function createNewResume(title = 'Untitled Resume') {
+function createNewResume(title = 'Untitled Resume', starterId = DEFAULT_STARTER_ID) {
+  const starter = STARTERS[starterId] ?? STARTERS[DEFAULT_STARTER_ID]
   return {
     id: genId(),
     title,
     lastEdited: new Date().toISOString(),
-    sections: DEFAULT_SECTIONS.map(s => ({ ...s, id: genId() })),
+    sections: starter.sections.map(s => ({ ...s, id: genId() })),
     styles: {
       fontFamily: 'Georgia, serif',
       fontSize: 11,
@@ -100,8 +64,8 @@ export function ResumeProvider({ children }) {
     setUser(null)
   }
 
-  function createResume(title) {
-    const resume = createNewResume(title)
+  function createResume(title, starterId) {
+    const resume = createNewResume(title, starterId)
     setResumes(prev => [resume, ...prev])
     return resume
   }

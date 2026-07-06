@@ -98,15 +98,12 @@ export default function Login() {
           </button>
         </p>
 
-        <div className="login-skip">
-          <button
-            type="button"
-            className="login-skip-btn"
-            onClick={() => { login('guest@resbuilt.com', '', 'Guest'); navigate('/dashboard') }}
-          >
-            Skip for now →
+        <p className="login-noacct">
+          You don't need an account.{' '}
+          <button type="button" onClick={() => navigate('/dashboard')}>
+            Start building — no sign-up →
           </button>
-        </div>
+        </p>
       </div>
     </div>
   )

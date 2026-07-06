@@ -1,11 +1,13 @@
 # ResBuilt — Tasks & Changelog
 
+> **Product direction:** Free resume builder for teenagers & young adults (first resumes — school, part-time jobs, internships, college apps). No paywalls. Privacy-first: no account required, data stays on the device.
+
 ## To-Do
 
-### Auth
-- [Critical] Remove skip login button before shipping - Fix
-- [High] Replace mock auth with real authentication - Feature
-- [Medium] Add user profile / account settings page - Feature
+### Auth & Privacy
+- [x] [Critical] Remove skip login button — no-account is now the default flow
+- [x] Make no-account the primary path (Landing → Dashboard direct); reframe as privacy-first
+- [Low] Optional accounts *only if* cross-device sync is ever added — must stay optional, never a gate. Minors = no email/PII collection (COPPA/GDPR-K). Keep localStorage as the private default.
 
 ### Dashboard
 - [x] [High] Add delete confirmation modal (match editor pattern) - Fix
@@ -21,14 +23,16 @@
 - [Medium] Spell check — offline client-side via `nspell`/`typo.js` + Hunspell en-US dictionary; scan form fields on demand, show error list in sidebar with field + suggestions - Feature
 - [Low] Spell check — LanguageTool API integration (grammar + spell); debounced REST calls, highlight errors in preview panel with `<mark>` spans; free tier 20 req/min - Feature
 
-### AI Features (Paid)
-- [High] Job-targeted resume generation — user pastes job description, AI rewrites/tailors resume content to match keywords, tone, and requirements - Complex Feature
-- [Medium] AI bullet point suggestions — improve weak bullet points based on role/industry - Feature
-- [Medium] ATS keyword gap analysis — compare resume vs job description, highlight missing keywords - Feature
-- [Low] AI resume summary generator — auto-write professional summary from resume sections - Feature
+### AI Features (free — cost-controlled)
+> Keep free. If AI cost is a concern, rate-limit or gate behind a lightweight quota, not a paywall.
+- [Medium] AI bullet point suggestions — help first-time writers turn "worked at store" into a real bullet - Feature
+- [Low] AI resume summary generator — auto-write a summary from resume sections - Feature
+- [Low] Job-targeted tailoring — paste a job description, tailor content (lower priority for this audience) - Complex Feature
+- [Low] ATS keyword gap analysis — low value for first jobs/internships; defer - Feature
 
 ### Templates & Styling
-- [High] Template Builder (paid tier) — customize colors, fonts, column widths, heading styles, section order, spacing → save as named custom template - Complex Feature
+- [x] [High] Student / first-resume starter template — education-first, Activities / Volunteer / Awards sections, age-appropriate example content. Picked in New Resume modal (Student = default). Presets in `src/config/starters.js`.
+- [Medium] Template Builder (free) — customize colors, fonts, column widths, heading styles, section order, spacing → save as named custom template - Complex Feature
 - [Medium] Allow per-resume accent color to show on dashboard card thumbnail - Feature
 - [Low] Change favicon to custom ResBuilt icon - Fix
 
@@ -37,7 +41,7 @@
 - [Medium] View-only shareable link for resume - Feature
 
 ### Infrastructure
-- [High] Cloud persistence — replace localStorage with real backend - Complex Feature
+- [Low] Cloud persistence — **not** a default. localStorage is the privacy feature. Only add as opt-in sync if users ask, and without collecting PII from minors - Complex Feature
 
 ### Testing
 - [High] Set up Vitest + React Testing Library — unit tests for components (ResumeCard, AccentColorPicker, AiInput, Switch) - Feature
@@ -51,6 +55,14 @@
 ---
 
 ## Changelog
+
+### 2026-07-06
+- **3 role starters added:** Internship (coursework/projects-led), IT / Tech (skills + realistic entry certs like CompTIA A+ / Google IT Support), Entry-Level Job (objective + experience + availability). Now 5 presets in the New Resume picker. `src/config/starters.js`.
+- **Student / first-résumé starter added.** New Resume modal now offers Student (default) vs Professional content presets. Student = education-first with Objective, Activities & Leadership, Volunteer, Awards, age-appropriate guidance text. Presets live in `src/config/starters.js`; picked via `createResume(title, starterId)`.
+- **Pivot: free tool for teens & young adults.** Stripped all paywalls (AI + Template Builder now free).
+- Removed mandatory login. Landing "Get started" → Dashboard directly. No account required.
+- Removed skip-login hack (skipping is now the default). Login page kept but optional/unlinked.
+- Reframed as privacy-first: Dashboard shows "🔒 Private · saved on this device"; landing copy + icons updated (dropped misleading cloud icon).
 
 ### 2026-04-28
 - Added temporary "Skip for now →" button on Login page — bypasses auth, sets guest user, navigates to dashboard. Remove before production.

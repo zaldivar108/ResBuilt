@@ -3,27 +3,30 @@ import { useNavigate } from 'react-router-dom'
 import { useResume } from '../context/ResumeContext'
 import ResumeCard from '../components/ResumeCard'
 import Switch from '../components/ui/switch'
+import { STARTERS, DEFAULT_STARTER_ID } from '../config/starters'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { user, resumes, createResume, deleteResume, duplicateResume, logout, darkMode, setDarkMode } = useResume()
+  const { resumes, createResume, deleteResume, duplicateResume, darkMode, setDarkMode } = useResume()
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [starter, setStarter] = useState(DEFAULT_STARTER_ID)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [bizCardModal, setBizCardModal] = useState(false)
 
+  function openCreate() {
+    setNewTitle('')
+    setStarter(DEFAULT_STARTER_ID)
+    setCreating(true)
+  }
+
   function handleCreate(e) {
     e.preventDefault()
-    const resume = createResume(newTitle.trim() || 'Untitled Resume')
+    const resume = createResume(newTitle.trim() || 'Untitled Resume', starter)
     setCreating(false)
     setNewTitle('')
     navigate(`/editor/${resume.id}`)
-  }
-
-  function handleLogout() {
-    logout()
-    navigate('/')
   }
 
   return (
@@ -32,8 +35,9 @@ export default function Dashboard() {
         <span className="dash-logo" onClick={() => navigate('/')}>ResBuilt</span>
         <div className="dash-nav-right">
           <Switch checked={darkMode} onCheckedChange={setDarkMode} />
-          <span className="dash-user">{user?.email}</span>
-          <button className="dash-logout" onClick={handleLogout}>Log out</button>
+          <span className="dash-privacy" title="No account required. Your resumes are stored only in this browser on this device.">
+            🔒 Private · saved on this device
+          </span>
         </div>
       </nav>
 
@@ -49,7 +53,7 @@ export default function Dashboard() {
             <button className="btn-new-bizcard" onClick={() => setBizCardModal(true)}>
               + New Business Card
             </button>
-            <button className="btn-new-resume" onClick={() => setCreating(true)}>
+            <button className="btn-new-resume" onClick={openCreate}>
               + New Resume
             </button>
           </div>
@@ -60,7 +64,7 @@ export default function Dashboard() {
             <div className="empty-icon">📄</div>
             <h2>No resumes yet</h2>
             <p>Create your first resume to get started.</p>
-            <button className="btn-new-resume" onClick={() => setCreating(true)}>
+            <button className="btn-new-resume" onClick={openCreate}>
               + New Resume
             </button>
           </div>
@@ -119,6 +123,23 @@ export default function Dashboard() {
                 onChange={e => setNewTitle(e.target.value)}
                 placeholder="Resume title..."
               />
+
+              <span className="starter-label">Start from</span>
+              <div className="starter-options">
+                {Object.values(STARTERS).map(s => (
+                  <button
+                    type="button"
+                    key={s.id}
+                    className={`starter-card${starter === s.id ? ' active' : ''}`}
+                    onClick={() => setStarter(s.id)}
+                    aria-pressed={starter === s.id}
+                  >
+                    <span className="starter-card-title">{s.label}</span>
+                    <span className="starter-card-desc">{s.description}</span>
+                  </button>
+                ))}
+              </div>
+
               <div className="modal-actions">
                 <button
                   type="button"

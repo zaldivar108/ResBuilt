@@ -4,10 +4,10 @@ import './Landing.css'
 
 export default function Landing() {
   const navigate = useNavigate()
-  const { user } = useResume()
+  const { resumes } = useResume()
 
   function handleCTA() {
-    navigate(user ? '/dashboard' : '/login')
+    navigate('/dashboard')
   }
 
   return (
@@ -21,14 +21,9 @@ export default function Landing() {
       <nav className="landing-nav">
         <span className="landing-logo">ResBuilt</span>
         <div className="landing-nav-actions">
-          {user ? (
-            <button className="btn-nav" onClick={() => navigate('/dashboard')}>Dashboard</button>
-          ) : (
-            <>
-              <button className="btn-nav-ghost" onClick={() => navigate('/login')}>Log in</button>
-              <button className="btn-nav" onClick={() => navigate('/login')}>Get started</button>
-            </>
-          )}
+          <button className="btn-nav" onClick={() => navigate('/dashboard')}>
+            {resumes.length > 0 ? 'My Resumes' : 'Get started'}
+          </button>
         </div>
       </nav>
 
@@ -41,15 +36,15 @@ export default function Landing() {
         </h1>
 
         <p className="hero-subtitle">
-          Create stunning, professional resumes in minutes.<br />
-          Stand out from the crowd with ResBuilt.
+          Build your first resume in minutes — for school, part-time jobs,<br />
+          internships, and college applications. Free, always.
         </p>
 
         <div className="hero-actions">
           <button className="btn-cta" onClick={handleCTA}>
             Start Building →
           </button>
-          <span className="hero-note">No credit card required</span>
+          <span className="hero-note">No account needed · nothing to sign up for</span>
         </div>
 
         <div className="hero-features">
@@ -57,7 +52,7 @@ export default function Landing() {
             { icon: '⚡', label: 'Fast editor' },
             { icon: '🎨', label: 'Beautiful layouts' },
             { icon: '📄', label: 'Print-ready' },
-            { icon: '☁️', label: 'Auto-saved' },
+            { icon: '🔒', label: 'Stays on your device' },
           ].map(f => (
             <div key={f.label} className="hero-feature">
               <span>{f.icon}</span>
