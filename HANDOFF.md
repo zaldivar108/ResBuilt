@@ -120,13 +120,18 @@ Four-column layout: **sections sidebar | contentEditable editor | live preview |
 
 ## 6. Templates & layouts
 
-`src/config/templates.js` defines 3 templates → `src/components/layouts/`:
+`src/config/templates.js` defines 6 templates → `src/components/layouts/`. To add one: layout component + CSS, a `templates.js` entry, a `LayoutSwitch` case in `ResumePreview.jsx`, and a thumbnail branch in `Editor.jsx`'s `TemplateThumbnail`.
 
 | Template | `layout` | Layout component |
 |---|---|---|
-| Classic | `classic` | `ClassicLayout` — single column, margins applied as padding |
-| Modern | `sidebar` | `ModernLayout` — two-column, full-bleed (no margins). Sections split into sidebar vs main by `type` (`sidebarSectionTypes: contact/skills/certifications`) |
-| Minimal | `minimal` | `MinimalLayout` |
+| Classic | `classic` | `ClassicLayout` — single column, margins as padding |
+| Modern | `sidebar` | `ModernLayout` — two-column, **full-bleed** (no margins). Sections split sidebar vs main by `type` (`sidebarSectionTypes: contact/skills/certifications`) |
+| Minimal | `minimal` | `MinimalLayout` — whitespace, sans-serif |
+| Executive | `executive` | `ExecutiveLayout` — accent header banner + single column |
+| Compact | `twocol` | `CompactLayout` — full-width header + light two-column (`MAIN_TYPES` = summary/experience/education/projects → wide col; rest → side col) |
+| Timeline | `timeline` | `TimelineLayout` — accent vertical line + dot per section |
+
+Only `sidebar` is full-bleed (`isSidebar` in `ResumePreview.jsx` keys off `layout === 'sidebar'`); the rest respect page margins and use the standard overflow/page-count path.
 
 `ResumePreview.jsx` picks the layout via `LayoutSwitch`, scales the paper (`transform: scale`) to fit or to zoom, and measures content overflow with a `ResizeObserver` to report **page count** and show an overflow warning. Sidebar layout is exempt from overflow/margin logic.
 
@@ -196,7 +201,7 @@ src/
 │   ├── EditorToolbar.jsx       # execCommand rich text
 │   ├── ResumePreview.jsx       # scaling, overflow/page-count, layout switch
 │   ├── ResumeCard.jsx          # dashboard card
-│   ├── layouts/                # ClassicLayout, ModernLayout, MinimalLayout
+│   ├── layouts/                # Classic, Modern, Minimal, Executive, Compact, Timeline
 │   └── ui/                     # AccentColorPicker, AiInput(mock), SelectDropdown,
 │                               #   dropdown-menu, switch
 └── lib/utils.js

@@ -2,16 +2,22 @@ import { useRef, useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { PAPER_SIZES } from '../config/paperSizes'
 import { getTemplate } from '../config/templates'
-import ClassicLayout from './layouts/ClassicLayout'
-import ModernLayout  from './layouts/ModernLayout'
-import MinimalLayout from './layouts/MinimalLayout'
+import ClassicLayout   from './layouts/ClassicLayout'
+import ModernLayout    from './layouts/ModernLayout'
+import MinimalLayout   from './layouts/MinimalLayout'
+import ExecutiveLayout from './layouts/ExecutiveLayout'
+import CompactLayout   from './layouts/CompactLayout'
+import TimelineLayout  from './layouts/TimelineLayout'
 import './ResumePreview.css'
 
 function LayoutSwitch({ sections, styles, template }) {
   switch (template.layout) {
-    case 'sidebar': return <ModernLayout  sections={sections} styles={styles} template={template} />
-    case 'minimal': return <MinimalLayout sections={sections} styles={styles} template={template} />
-    default:        return <ClassicLayout sections={sections} styles={styles} template={template} />
+    case 'sidebar':   return <ModernLayout    sections={sections} styles={styles} template={template} />
+    case 'minimal':   return <MinimalLayout   sections={sections} styles={styles} template={template} />
+    case 'executive': return <ExecutiveLayout sections={sections} styles={styles} template={template} />
+    case 'twocol':    return <CompactLayout   sections={sections} styles={styles} template={template} />
+    case 'timeline':  return <TimelineLayout  sections={sections} styles={styles} template={template} />
+    default:          return <ClassicLayout   sections={sections} styles={styles} template={template} />
   }
 }
 

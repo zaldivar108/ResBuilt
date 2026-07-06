@@ -1,0 +1,52 @@
+/* ── Compact Two-Column Layout ── */
+
+.cp-layout { height: 100%; }
+
+/* Full-width header */
+.cp-header {
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid;
+}
+.cp-header-body p:first-child {
+  font-size: 1.7em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 3px;
+}
+.cp-header-body p:not(:first-child) {
+  font-size: 0.85em;
+  color: #475569;
+  margin: 1px 0;
+}
+.cp-header-body a { color: #4F46E5; text-decoration: none; }
+
+/* Columns */
+.cp-columns {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.cp-col-main { flex: 1.7; min-width: 0; }
+.cp-col-side { flex: 1;   min-width: 0; }
+
+/* Section heading */
+.cp-heading {
+  font-size: 0.74em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-bottom: 2px;
+  border-bottom: 1.5px solid;
+  margin-bottom: 4px;
+}
+
+.cp-body p      { margin: 0 0 2px; }
+.cp-body ul,
+.cp-body ol     { padding-left: 15px; margin: 2px 0; }
+.cp-body li     { margin-bottom: 1px; }
+.cp-body strong { font-weight: 700; }
+.cp-body em     { font-style: italic; }
+.cp-body u      { text-decoration: underline; }
+.cp-body a      { color: #4F46E5; text-decoration: none; }

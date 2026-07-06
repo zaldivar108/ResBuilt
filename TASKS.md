@@ -57,6 +57,7 @@
 ## Changelog
 
 ### 2026-07-06
+- **3 visual templates added:** Executive (accent header banner, `layout: executive`), Compact (light two-column, `layout: twocol`), Timeline (accent vertical line + dots, `layout: timeline`). Now 6 templates. Each = layout component in `src/components/layouts/` + `templates.js` entry + LayoutSwitch case + picker thumbnail in `Editor.jsx`. All non-full-bleed (respect margins), so no preview/export plumbing changes.
 - **3 role starters added:** Internship (coursework/projects-led), IT / Tech (skills + realistic entry certs like CompTIA A+ / Google IT Support), Entry-Level Job (objective + experience + availability). Now 5 presets in the New Resume picker. `src/config/starters.js`.
 - **Student / first-résumé starter added.** New Resume modal now offers Student (default) vs Professional content presets. Student = education-first with Objective, Activities & Leadership, Volunteer, Awards, age-appropriate guidance text. Presets live in `src/config/starters.js`; picked via `createResume(title, starterId)`.
 - **Pivot: free tool for teens & young adults.** Stripped all paywalls (AI + Template Builder now free).

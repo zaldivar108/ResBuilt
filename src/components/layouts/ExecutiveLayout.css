@@ -1,0 +1,56 @@
+/* ── Executive Header Layout ── */
+
+.ex-layout { height: 100%; }
+
+/* Accent banner — name + contact reversed out on the accent color */
+.ex-header {
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.ex-header-body p:first-child {
+  font-size: 1.9em;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 5px;
+}
+.ex-header-body p:first-child strong { color: #ffffff; font-weight: 700; }
+.ex-header-body p:not(:first-child) {
+  font-size: 0.86em;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 1px 0;
+}
+.ex-header-body a { color: #ffffff; text-decoration: none; }
+
+/* Section heading — square accent mark + uppercase label */
+.ex-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.ex-heading-mark {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.ex-body p       { margin: 0 0 2px; }
+.ex-body ul,
+.ex-body ol      { padding-left: 16px; margin: 2px 0; }
+.ex-body li      { margin-bottom: 1px; }
+.ex-body strong  { font-weight: 700; }
+.ex-body em      { font-style: italic; }
+.ex-body u       { text-decoration: underline; }
+.ex-body a       { color: #4F46E5; text-decoration: none; }

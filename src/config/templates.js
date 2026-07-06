@@ -60,6 +60,63 @@ export const TEMPLATES = {
       marginLeft: 72,
     },
   },
+
+  executive: {
+    id: 'executive',
+    name: 'Executive',
+    fullName: 'Executive Header',
+    layout: 'executive',
+    description: 'Bold accent banner · Single column',
+    accentColor: '#0F766E',
+    defaultStyles: {
+      fontFamily: 'Georgia, serif',
+      fontSize: 11,
+      lineSpacing: 1.45,
+      sectionSpacing: 14,
+      marginTop: 48,
+      marginRight: 54,
+      marginBottom: 48,
+      marginLeft: 54,
+    },
+  },
+
+  compact: {
+    id: 'compact',
+    name: 'Compact',
+    fullName: 'Compact Two-Column',
+    layout: 'twocol',
+    description: 'Two columns · Space-saving',
+    accentColor: '#B45309',
+    defaultStyles: {
+      fontFamily: "'Helvetica Neue', Helvetica, sans-serif",
+      fontSize: 10,
+      lineSpacing: 1.35,
+      sectionSpacing: 12,
+      marginTop: 44,
+      marginRight: 48,
+      marginBottom: 44,
+      marginLeft: 48,
+    },
+  },
+
+  timeline: {
+    id: 'timeline',
+    name: 'Timeline',
+    fullName: 'Timeline Accent',
+    layout: 'timeline',
+    description: 'Vertical timeline · Modern',
+    accentColor: '#7C3AED',
+    defaultStyles: {
+      fontFamily: "'Helvetica Neue', Helvetica, sans-serif",
+      fontSize: 10.5,
+      lineSpacing: 1.5,
+      sectionSpacing: 16,
+      marginTop: 50,
+      marginRight: 54,
+      marginBottom: 50,
+      marginLeft: 54,
+    },
+  },
 }
 
 export const DEFAULT_TEMPLATE_ID = 'classic'

@@ -1,0 +1,53 @@
+/* ── Timeline Accent Layout ── */
+
+.tl-layout { height: 100%; }
+
+/* Left-aligned header */
+.tl-header { margin-bottom: 16px; }
+.tl-header-body p:first-child {
+  font-size: 1.8em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.tl-header-body p:not(:first-child) {
+  font-size: 0.86em;
+  color: #475569;
+  margin: 1px 0;
+}
+.tl-header-body a { color: #4F46E5; text-decoration: none; }
+
+/* Vertical track with a dot per section */
+.tl-track {
+  border-left: 2px solid;
+  padding-left: 18px;
+  margin-left: 5px;
+}
+.tl-section { position: relative; }
+.tl-dot {
+  position: absolute;
+  left: -23px;
+  top: 3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.tl-heading {
+  font-size: 0.8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-bottom: 4px;
+}
+
+.tl-body p      { margin: 0 0 2px; }
+.tl-body ul,
+.tl-body ol     { padding-left: 16px; margin: 2px 0; }
+.tl-body li     { margin-bottom: 1px; }
+.tl-body strong { font-weight: 700; }
+.tl-body em     { font-style: italic; }
+.tl-body u      { text-decoration: underline; }
+.tl-body a      { color: #4F46E5; text-decoration: none; }

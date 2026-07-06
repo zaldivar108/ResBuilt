@@ -766,6 +766,77 @@ function TemplateThumbnail({ id }) {
     )
   }
 
+  if (id === 'executive') {
+    return (
+      <div className="tpl-thumb" style={{ padding: '4px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* accent banner */}
+        <div style={{ background: '#0F766E', borderRadius: 2, padding: '4px 4px', marginBottom: 2 }}>
+          <div style={{ width: '70%', height: 2.5, background: 'rgba(255,255,255,0.95)', borderRadius: 1, marginBottom: 2 }} />
+          <div style={{ width: '50%', height: 1, background: 'rgba(255,255,255,0.6)', borderRadius: 1 }} />
+        </div>
+        {[0, 1].map(i => (
+          <div key={i} style={{ marginBottom: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 1.5 }}>
+              <div style={{ width: 3, height: 3, borderRadius: 1, background: '#0F766E' }} />
+              <div style={{ width: '40%', height: 1.5, background: '#0F766E', borderRadius: 1 }} />
+            </div>
+            <div style={{ width: '90%', height: 1, background: '#D1D5DB', borderRadius: 1, marginBottom: 1 }} />
+            <div style={{ width: '72%', height: 1, background: '#D1D5DB', borderRadius: 1 }} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (id === 'compact') {
+    return (
+      <div className="tpl-thumb" style={{ padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {/* header */}
+        <div style={{ borderBottom: '1px solid #B45309', paddingBottom: 3, marginBottom: 4 }}>
+          <div style={{ width: '55%', height: 2.5, background: '#7C2D12', borderRadius: 1, marginBottom: 1.5 }} />
+          <div style={{ width: '40%', height: 1, background: '#94A3B8', borderRadius: 1 }} />
+        </div>
+        {/* two columns */}
+        <div style={{ display: 'flex', gap: 5 }}>
+          <div style={{ flex: 1.7, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {[0, 1].map(i => (
+              <div key={i}>
+                <div style={{ width: '50%', height: 1.5, background: '#B45309', borderRadius: 1, marginBottom: 1 }} />
+                <div style={{ width: '95%', height: 1, background: '#D1D5DB', borderRadius: 1, marginBottom: 1 }} />
+                <div style={{ width: '80%', height: 1, background: '#D1D5DB', borderRadius: 1 }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {[0, 1].map(i => (
+              <div key={i}>
+                <div style={{ width: '70%', height: 1.5, background: '#B45309', borderRadius: 1, marginBottom: 1 }} />
+                <div style={{ width: '90%', height: 1, background: '#D1D5DB', borderRadius: 1 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (id === 'timeline') {
+    return (
+      <div className="tpl-thumb" style={{ padding: '5px 4px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div style={{ width: '60%', height: 2.5, background: '#4C1D95', borderRadius: 1, marginBottom: 2 }} />
+        <div style={{ borderLeft: '1.5px solid rgba(124,58,237,0.3)', paddingLeft: 6, marginLeft: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', left: -8.5, top: 0.5, width: 3, height: 3, borderRadius: '50%', background: '#7C3AED' }} />
+              <div style={{ width: '45%', height: 1.5, background: '#7C3AED', borderRadius: 1, marginBottom: 1 }} />
+              <div style={{ width: '85%', height: 1, background: '#D1D5DB', borderRadius: 1 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   // Classic (default)
   return (
     <div className="tpl-thumb" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
