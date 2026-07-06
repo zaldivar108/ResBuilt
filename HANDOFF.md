@@ -156,8 +156,14 @@ No PDF library. It clones the `.preview-paper` DOM node, inlines **all** stylesh
 ## 9. Mocked / placeholder features
 
 - **Auth** — mock and **unused**. Login page unlinked from the flow (no-account is the default). No backend.
-- **AI Assist** (`src/components/ui/AiInput.jsx`) — animated dock UI, textarea disabled, "Coming Soon". No AI wired up. Intended entry point for the (free) AI features.
+- **AI Assist** — **now live** (free). `AiInput.jsx` dock → paste text, run Improve / Suggest ideas / Fix grammar. Calls `api/ai.js` (Vercel **Edge** proxy) → Groq free tier (`llama-3.3-70b-versatile`). Key `GROQ_API_KEY` is server-side only. Requires setup (see below); text leaves the device → consent notice shown in the dock.
 - **Business Cards** (Dashboard) — modal says "coming soon".
+
+**AI setup / running it:**
+- Free key at console.groq.com → set `GROQ_API_KEY`. See `.env.example`.
+- **Local:** `vercel dev` (NOT `npm run dev` — Vite doesn't run `/api`). **Prod:** add `GROQ_API_KEY` in Vercel env vars.
+- `.env` / `.env.*` are gitignored (except `.env.example`) — never commit the key.
+- Privacy tradeoff (minors): résumé text is sent to Groq. To keep everything on-device, the open alternative is harper.js (in-browser grammar) — see TASKS.md.
 
 ---
 
@@ -188,6 +194,8 @@ Roadmap lives in [TASKS.md](TASKS.md) (paywalls already stripped — everything 
 ## 12. File map (quick reference)
 
 ```
+api/
+└── ai.js                       # Vercel Edge proxy → Groq (GROQ_API_KEY server-side only)
 src/
 ├── App.jsx                     # routes
 ├── main.jsx

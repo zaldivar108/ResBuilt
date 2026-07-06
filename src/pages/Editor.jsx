@@ -116,6 +116,16 @@ export default function Editor() {
     if (resume) { updateResume(resume.id, resume); setSaved(true) }
   }
 
+  // Write an AI result back into the active section, keeping the contentEditable in sync.
+  function applyAiToSection(html) {
+    if (!activeSectionId) return
+    patch(prev => ({
+      ...prev,
+      sections: prev.sections.map(s => s.id === activeSectionId ? { ...s, content: html } : s),
+    }))
+    if (editorRef.current) editorRef.current.innerHTML = html
+  }
+
   function switchSection(sectionId) {
     if (editorRef.current && activeSectionId) {
       const content = editorRef.current.innerHTML
@@ -448,7 +458,7 @@ export default function Editor() {
             zoom={zoom}
             onPageCount={setPageCount}
           />
-          <AiInput />
+          <AiInput section={activeSection} onApply={applyAiToSection} />
         </div>
 
         {/* Delete confirmation modal */}

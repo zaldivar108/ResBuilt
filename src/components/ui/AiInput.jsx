@@ -3,8 +3,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 import './AiInput.css'
 
 const SPEED_FACTOR = 1
-const FORM_WIDTH = 340
-const FORM_HEIGHT = 200
+const FORM_WIDTH = 360
+const FORM_HEIGHT = 340
+const COOLDOWN_MS = 3000
+
+const TASKS = [
+  { id: 'improve', label: 'Improve wording' },
+  { id: 'grammar', label: 'Fix grammar' },
+  { id: 'ideas',   label: 'Suggest ideas' },
+]
+
+// Models sometimes wrap output in ```html … ``` despite instructions — strip it.
+function stripFences(s) {
+  return s.replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim()
+}
 
 function ColorOrb({ dimension = '24px', spinDuration = 20 }) {
   return (
@@ -33,7 +45,7 @@ function DockBar() {
           <div className="ai-dock-inner">
             <ColorOrb dimension="20px" />
             <button type="button" className="ai-trigger-btn" onClick={triggerOpen}>
-              ✦ Coming Soon
+              ✦ AI Assist
             </button>
           </div>
         </motion.footer>
@@ -42,12 +54,56 @@ function DockBar() {
   )
 }
 
-function InputForm({ textareaRef }) {
-  const { triggerClose, showForm } = useFormCtx()
+function InputForm() {
+  const { showForm, section, onApply } = useFormCtx()
+  const [result, setResult] = useState('')
+  const [lastTask, setLastTask] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [applied, setApplied] = useState(false)
+  const coolingRef = useRef(false)
 
-  function handleKeys(e) {
-    if (e.key === 'Escape') triggerClose()
+  async function runTask(task) {
+    if (loading) return
+    if (!section) { setError('Select a section to edit first.'); return }
+    if (coolingRef.current) { setError('One moment — try again in a second.'); return }
+    coolingRef.current = true
+    setTimeout(() => { coolingRef.current = false }, COOLDOWN_MS)
+
+    setLoading(true)
+    setError('')
+    setResult('')
+    setApplied(false)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task, text: section.content }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong. Try again.')
+        return
+      }
+      setResult(stripFences(data.result || ''))
+      setLastTask(task)
+    } catch {
+      setError('Could not reach the AI. If running locally, use `vercel dev`.')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  function applyResult() {
+    if (!result || !section) return
+    // 'ideas' returns new bullets to append; other tasks return the rewritten section.
+    const next = lastTask === 'ideas' ? section.content + result : result
+    onApply(next)
+    setApplied(true)
+    setTimeout(() => setApplied(false), 1500)
+  }
+
+  const applyLabel = lastTask === 'ideas' ? 'Add to section' : 'Apply to section'
 
   return (
     <form
@@ -70,15 +126,45 @@ function InputForm({ textareaRef }) {
                 <kbd className="ai-kbd">Esc</kbd>
               </div>
             </div>
-            <textarea
-              ref={textareaRef}
-              placeholder="Coming soon..."
-              className="ai-textarea"
-              onKeyDown={handleKeys}
-              spellCheck={false}
-              disabled
-            />
-            <div className="ai-coming-soon-badge">🚀 AI resume features coming soon</div>
+
+            <div className="ai-section-tag">
+              {section
+                ? <>Editing: <strong>{section.title}</strong></>
+                : 'Select a section to edit'}
+            </div>
+
+            <div className="ai-tasks">
+              {TASKS.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="ai-task-btn"
+                  onClick={() => runTask(t.id)}
+                  disabled={loading || !section}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {loading && <div className="ai-status">Thinking…</div>}
+            {error && <div className="ai-status ai-error">{error}</div>}
+
+            {result && !loading && (
+              <div className="ai-result">
+                <div
+                  className="ai-result-text"
+                  dangerouslySetInnerHTML={{ __html: result }}
+                />
+                <button type="button" className="ai-apply-btn" onClick={applyResult}>
+                  {applied ? 'Applied ✓' : applyLabel}
+                </button>
+              </div>
+            )}
+
+            <div className="ai-consent">
+              🔒 The section's text is sent to Groq's AI to generate suggestions. Don't put anything you want to keep private in your résumé.
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -100,16 +186,12 @@ function InputForm({ textareaRef }) {
   )
 }
 
-export function AiInput() {
+export function AiInput({ section = null, onApply = () => {} }) {
   const wrapperRef = useRef(null)
-  const textareaRef = useRef(null)
   const [showForm, setShowForm] = useState(false)
 
   const triggerClose = useCallback(() => setShowForm(false), [])
-  const triggerOpen = useCallback(() => {
-    setShowForm(true)
-    setTimeout(() => textareaRef.current?.focus())
-  }, [])
+  const triggerOpen = useCallback(() => setShowForm(true), [])
 
   useEffect(() => {
     function clickOutside(e) {
@@ -117,13 +199,20 @@ export function AiInput() {
         triggerClose()
       }
     }
+    function onKey(e) {
+      if (e.key === 'Escape' && showForm) triggerClose()
+    }
     document.addEventListener('mousedown', clickOutside)
-    return () => document.removeEventListener('mousedown', clickOutside)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', clickOutside)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [showForm, triggerClose])
 
   const ctx = useMemo(
-    () => ({ showForm, triggerOpen, triggerClose }),
-    [showForm, triggerOpen, triggerClose]
+    () => ({ showForm, triggerOpen, triggerClose, section, onApply }),
+    [showForm, triggerOpen, triggerClose, section, onApply]
   )
 
   return (
@@ -147,7 +236,7 @@ export function AiInput() {
       >
         <FormContext.Provider value={ctx}>
           <DockBar />
-          <InputForm textareaRef={textareaRef} />
+          <InputForm />
         </FormContext.Provider>
       </motion.div>
     </div>
