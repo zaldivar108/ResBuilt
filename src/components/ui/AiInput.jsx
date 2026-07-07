@@ -6,6 +6,7 @@ import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { getCached, setCached } from '../../lib/aiCache'
 import { canUseAI, recordUse } from '../../lib/aiBudget'
 import { scrubPii } from '../../lib/scrubPii'
+import { streamAiTask } from '../../lib/streamAi'
 import OnetSuggest from './OnetSuggest'
 import JobTailor from './JobTailor'
 
@@ -132,23 +133,21 @@ function InputForm() {
     }
 
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, text: sentText }),
+      // Stream tokens in as they arrive — swap the "Thinking…" spinner for the
+      // growing preview on the first token. Content is sanitized on every update
+      // so nothing unsafe is ever rendered mid-stream.
+      let streamed = false
+      const full = await streamAiTask({ task, text: sentText }, partial => {
+        if (!streamed) { streamed = true; setLoading(false) }
+        setResult(sanitizeHtml(stripFences(partial)))
       })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setError(data.error || 'Something went wrong. Try again.')
-        return
-      }
-      const clean = sanitizeHtml(stripFences(data.result || ''))
+      const clean = sanitizeHtml(stripFences(full))
       setResult(clean)
       setLastTask(task)
       setCached(task, sentText, clean)
       recordUse(today())
-    } catch {
-      setError('Could not reach the AI. If running locally, use `vercel dev`.')
+    } catch (err) {
+      setError(err?.message || 'Could not reach the AI. If running locally, use `vercel dev`.')
     } finally {
       setLoading(false)
     }

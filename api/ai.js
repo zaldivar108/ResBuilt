@@ -125,6 +125,10 @@ export default async function handler(req) {
     return json({ error: `Text is too long (max ${config.maxInput} characters).` }, 413)
   }
 
+  // Streaming is opt-in and only for plain-HTML tasks — JSON tasks (import,
+  // tailor) must arrive whole to parse. Falls back to the buffered path otherwise.
+  const wantStream = body.stream === true && !config.json
+
   try {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
@@ -137,6 +141,7 @@ export default async function handler(req) {
         temperature: config.temperature,
         max_tokens: config.maxTokens,
         ...(config.json ? { response_format: { type: 'json_object' } } : {}),
+        ...(wantStream ? { stream: true } : {}),
         messages: [
           { role: 'system', content: config.prompt },
           { role: 'user', content: text.trim() },
@@ -151,6 +156,17 @@ export default async function handler(req) {
         ? 'The AI service is busy right now — try again in a moment.'
         : 'The AI service returned an error. Try again shortly.'
       return json({ error }, status)
+    }
+
+    if (wantStream) {
+      // Pass Groq's SSE stream straight through to the browser.
+      return new Response(res.body, {
+        headers: {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        },
+      })
     }
 
     const data = await res.json()
