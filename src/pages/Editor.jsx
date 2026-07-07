@@ -62,10 +62,12 @@ export default function Editor() {
   const [stylesSidebarCollapsed, setStylesSidebarCollapsed] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
+  const [lastAiEdit, setLastAiEdit] = useState(null) // { sectionId, prevContent }
 
-  const editorRef    = useRef(null)
-  const saveTimerRef = useRef(null)
-  const undoTimerRef = useRef(null)
+  const editorRef      = useRef(null)
+  const saveTimerRef   = useRef(null)
+  const undoTimerRef   = useRef(null)
+  const aiUndoTimerRef = useRef(null)
 
   useEffect(() => {
     const r = getResume(id)
@@ -119,11 +121,31 @@ export default function Editor() {
   // Write an AI result back into the active section, keeping the contentEditable in sync.
   function applyAiToSection(html) {
     if (!activeSectionId) return
+    // Snapshot the current content so the AI edit can be undone for 8s.
+    const prevContent = editorRef.current
+      ? editorRef.current.innerHTML
+      : resume.sections.find(s => s.id === activeSectionId)?.content ?? ''
+    setLastAiEdit({ sectionId: activeSectionId, prevContent })
+    clearTimeout(aiUndoTimerRef.current)
+    aiUndoTimerRef.current = setTimeout(() => setLastAiEdit(null), 8000)
+
     patch(prev => ({
       ...prev,
       sections: prev.sections.map(s => s.id === activeSectionId ? { ...s, content: html } : s),
     }))
     if (editorRef.current) editorRef.current.innerHTML = html
+  }
+
+  function undoAiEdit() {
+    if (!lastAiEdit) return
+    const { sectionId, prevContent } = lastAiEdit
+    patch(prev => ({
+      ...prev,
+      sections: prev.sections.map(s => s.id === sectionId ? { ...s, content: prevContent } : s),
+    }))
+    if (editorRef.current && activeSectionId === sectionId) editorRef.current.innerHTML = prevContent
+    clearTimeout(aiUndoTimerRef.current)
+    setLastAiEdit(null)
   }
 
   function switchSection(sectionId) {
@@ -359,6 +381,13 @@ export default function Editor() {
               <div className="undo-toast">
                 <span className="undo-toast-label">"{lastDeleted.section.title}" deleted</span>
                 <button className="undo-btn" onClick={undoDelete}>Undo</button>
+              </div>
+            )}
+
+            {lastAiEdit && (
+              <div className="undo-toast">
+                <span className="undo-toast-label">✦ AI edit applied</span>
+                <button className="undo-btn" onClick={undoAiEdit}>Undo</button>
               </div>
             )}
 
