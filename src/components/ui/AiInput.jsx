@@ -14,7 +14,7 @@ const today = () => new Date().toISOString().slice(0, 10)
 import './AiInput.css'
 
 const SPEED_FACTOR = 1
-const FORM_WIDTH = 360
+const FORM_WIDTH = 540
 const FORM_HEIGHT = 340
 const COOLDOWN_MS = 3000
 
