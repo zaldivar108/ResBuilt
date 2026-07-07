@@ -1,17 +1,20 @@
-// Orchestrates the "Import from PDF" flow: validate → extract (on-device) →
-// assess → one AI call → normalize into resume sections.
+// Orchestrates the résumé "Import" flow: validate → extract (on-device) →
+// assess → one AI call → normalize into resume sections. Handles PDF, Word
+// (.docx), .txt, and .md.
 //
-// The pieces it depends on (PDF text extraction, the AI network call) are
-// injected so this coordinator is fully unit-testable without pdf.js or a
+// The pieces it depends on (text extraction, the AI network call) are injected
+// so this coordinator is fully unit-testable without pdf.js/mammoth or a
 // server. The defaults wire in the real implementations.
 
-import { validatePdfFile, assessExtractedText } from './pdfImport.js'
+import { validateImportFile, assessExtractedText, SUPPORTED_IMPORT_EXTENSIONS } from './pdfImport.js'
 import { normalizeImportedSections } from './importSections.js'
-import { extractPdfText } from './pdfExtract.js'
+import { extractFileText } from './fileExtract.js'
+
+const EXT_RE = new RegExp(`\\.(${SUPPORTED_IMPORT_EXTENSIONS.join('|')})$`, 'i')
 
 /** Derive a resume title from the uploaded filename. */
 export function titleFromFilename(name) {
-  const base = typeof name === 'string' ? name.replace(/\.pdf$/i, '').trim() : ''
+  const base = typeof name === 'string' ? name.replace(EXT_RE, '').trim() : ''
   return base || 'Imported Resume'
 }
 
@@ -39,18 +42,18 @@ async function defaultCallImport(text) {
  * @param {{ extractText?: (file) => Promise<string>, callImport?: (text) => Promise<{ok,result?,error?}> }} [deps]
  * @returns {Promise<{ ok: true, title: string, sections: Array } | { ok: false, error: string }>}
  */
-export async function importResumeFromPdf(file, deps = {}) {
-  const extractText = deps.extractText ?? extractPdfText
+export async function importResumeFromFile(file, deps = {}) {
+  const extractText = deps.extractText ?? extractFileText
   const callImport = deps.callImport ?? defaultCallImport
 
-  const fileCheck = validatePdfFile(file)
+  const fileCheck = validateImportFile(file)
   if (!fileCheck.ok) return fileCheck
 
   let rawText
   try {
     rawText = await extractText(file)
   } catch {
-    return { ok: false, error: 'We couldn’t read that PDF. It may be corrupted or password-protected.' }
+    return { ok: false, error: 'We couldn’t read that file. It may be corrupted or password-protected.' }
   }
 
   const textCheck = assessExtractedText(rawText)

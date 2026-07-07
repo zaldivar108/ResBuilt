@@ -62,7 +62,7 @@ export default function Dashboard() {
               + New Business Card
             </button>
             <button className="btn-new-bizcard" onClick={() => setImporting(true)}>
-              📥 Import from PDF
+              📥 Import a résumé
             </button>
             <button className="btn-new-resume" onClick={openCreate}>
               + New Resume

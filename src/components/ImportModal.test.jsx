@@ -1,10 +1,10 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ImportModal from './ImportModal'
-import { importResumeFromPdf } from '../lib/importResume'
+import { importResumeFromFile } from '../lib/importResume'
 
 vi.mock('../lib/importResume', () => ({
-  importResumeFromPdf: vi.fn(),
+  importResumeFromFile: vi.fn(),
 }))
 
 function pickFile() {
@@ -26,7 +26,7 @@ describe('ImportModal', () => {
 
   test('calls onImported with the result on success', async () => {
     const result = { ok: true, title: 'resume', sections: [{ id: 'a', type: 'contact', title: 'Contact', content: '<p>x</p>' }] }
-    importResumeFromPdf.mockResolvedValue(result)
+    importResumeFromFile.mockResolvedValue(result)
     const onImported = vi.fn()
     render(<ImportModal onClose={() => {}} onImported={onImported} />)
 
@@ -36,7 +36,7 @@ describe('ImportModal', () => {
   })
 
   test('shows the error inline and does not import on failure', async () => {
-    importResumeFromPdf.mockResolvedValue({ ok: false, error: 'That PDF is too large (max 5 MB).' })
+    importResumeFromFile.mockResolvedValue({ ok: false, error: 'That PDF is too large (max 5 MB).' })
     const onImported = vi.fn()
     render(<ImportModal onClose={() => {}} onImported={onImported} />)
 
@@ -50,6 +50,6 @@ describe('ImportModal', () => {
     render(<ImportModal onClose={() => {}} onImported={() => {}} />)
     const input = document.querySelector('.import-file-input')
     fireEvent.change(input, { target: { files: [] } })
-    expect(importResumeFromPdf).not.toHaveBeenCalled()
+    expect(importResumeFromFile).not.toHaveBeenCalled()
   })
 })

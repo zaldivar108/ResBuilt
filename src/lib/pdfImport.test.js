@@ -1,9 +1,10 @@
 import { describe, test, expect } from 'vitest'
 import {
-  MAX_PDF_BYTES,
+  MAX_IMPORT_BYTES,
   MIN_TEXT_CHARS,
   MAX_TEXT_CHARS,
-  validatePdfFile,
+  fileKind,
+  validateImportFile,
   assessExtractedText,
 } from './pdfImport.js'
 
@@ -12,37 +13,62 @@ function fakeFile({ name = 'resume.pdf', type = 'application/pdf', size = 1000 }
   return { name, type, size }
 }
 
-describe('validatePdfFile', () => {
-  test('accepts a normal .pdf under the size cap', () => {
-    const result = validatePdfFile(fakeFile())
-    expect(result.ok).toBe(true)
+describe('fileKind', () => {
+  test('classifies by extension', () => {
+    expect(fileKind(fakeFile({ name: 'a.pdf', type: '' }))).toBe('pdf')
+    expect(fileKind(fakeFile({ name: 'a.docx', type: '' }))).toBe('docx')
+    expect(fileKind(fakeFile({ name: 'a.txt', type: '' }))).toBe('text')
+    expect(fileKind(fakeFile({ name: 'notes.MD', type: '' }))).toBe('text')
+  })
+
+  test('falls back to MIME type when the extension is missing', () => {
+    expect(fileKind(fakeFile({ name: 'blob', type: 'application/pdf' }))).toBe('pdf')
+    expect(fileKind(fakeFile({ name: 'blob', type: 'text/plain' }))).toBe('text')
+  })
+
+  test('returns null for unsupported files (incl. legacy .doc)', () => {
+    expect(fileKind(fakeFile({ name: 'a.doc', type: '' }))).toBeNull()
+    expect(fileKind(fakeFile({ name: 'a.rtf', type: '' }))).toBeNull()
+    expect(fileKind(null)).toBeNull()
+  })
+})
+
+describe('validateImportFile', () => {
+  test.each([
+    ['resume.pdf', 'application/pdf'],
+    ['resume.docx', ''],
+    ['resume.txt', ''],
+    ['resume.md', ''],
+  ])('accepts %s', (name, type) => {
+    expect(validateImportFile(fakeFile({ name, type })).ok).toBe(true)
   })
 
   test('rejects when no file is provided', () => {
-    const result = validatePdfFile(null)
-    expect(result.ok).toBe(false)
-    expect(result.error).toMatch(/choose|select|file/i)
+    const r = validateImportFile(null)
+    expect(r.ok).toBe(false)
+    expect(r.error).toMatch(/choose|file/i)
   })
 
-  test('rejects a non-pdf by mime type', () => {
-    const result = validatePdfFile(fakeFile({ name: 'resume.docx', type: 'application/msword' }))
-    expect(result.ok).toBe(false)
-    expect(result.error).toMatch(/pdf/i)
+  test('rejects an unsupported type', () => {
+    const r = validateImportFile(fakeFile({ name: 'resume.rtf', type: '' }))
+    expect(r.ok).toBe(false)
+    expect(r.error).toMatch(/pdf|docx|txt|md/i)
   })
 
-  test('accepts a .pdf by extension even when the browser reports an empty mime type', () => {
-    const result = validatePdfFile(fakeFile({ name: 'My Resume.PDF', type: '' }))
-    expect(result.ok).toBe(true)
+  test('gives .doc users a helpful message', () => {
+    const r = validateImportFile(fakeFile({ name: 'resume.doc', type: '' }))
+    expect(r.ok).toBe(false)
+    expect(r.error).toMatch(/\.docx|pdf/i)
   })
 
   test('rejects a file over the 5 MB cap', () => {
-    const result = validatePdfFile(fakeFile({ size: MAX_PDF_BYTES + 1 }))
-    expect(result.ok).toBe(false)
-    expect(result.error).toMatch(/5\s?MB|too (large|big)/i)
+    const r = validateImportFile(fakeFile({ size: MAX_IMPORT_BYTES + 1 }))
+    expect(r.ok).toBe(false)
+    expect(r.error).toMatch(/5\s?MB|too (large|big)/i)
   })
 
   test('accepts a file exactly at the cap', () => {
-    expect(validatePdfFile(fakeFile({ size: MAX_PDF_BYTES })).ok).toBe(true)
+    expect(validateImportFile(fakeFile({ size: MAX_IMPORT_BYTES })).ok).toBe(true)
   })
 })
 
@@ -54,21 +80,18 @@ describe('assessExtractedText', () => {
     expect(result.text).toBe(text)
   })
 
-  test('bails on too-little text as a likely scanned/image PDF', () => {
+  test('bails on too-little text', () => {
     const result = assessExtractedText('short')
     expect(result.ok).toBe(false)
-    expect(result.error).toMatch(/scan|image|couldn.?t read|text/i)
+    expect(result.error).toMatch(/scan|image|text|file/i)
   })
 
   test('counts trimmed length, not whitespace padding', () => {
-    const padded = '   ' + 'x'.repeat(10) + '\n\n   '
-    const result = assessExtractedText(padded)
-    expect(result.ok).toBe(false)
+    expect(assessExtractedText('   ' + 'x'.repeat(10) + '\n\n   ').ok).toBe(false)
   })
 
   test('caps very long text at MAX_TEXT_CHARS', () => {
-    const long = 'z'.repeat(MAX_TEXT_CHARS + 5000)
-    const result = assessExtractedText(long)
+    const result = assessExtractedText('z'.repeat(MAX_TEXT_CHARS + 5000))
     expect(result.ok).toBe(true)
     expect(result.text.length).toBe(MAX_TEXT_CHARS)
   })
