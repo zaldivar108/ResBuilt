@@ -1,5 +1,23 @@
 import { describe, test, expect } from 'vitest'
-import { normalizeSearch, normalizeCareer } from './onetNormalize'
+import { normalizeSearch, normalizeCareer, normalizeOnlineTasks } from './onetNormalize'
+
+describe('normalizeOnlineTasks', () => {
+  test('sorts Core before Supplemental, then by descending importance, and keeps titles', () => {
+    const json = {
+      task: [
+        { title: 'Supplemental high', importance: 90, category: 'Supplemental' },
+        { title: 'Core low', importance: 40, category: 'Core' },
+        { title: 'Core high', importance: 95, category: 'Core' },
+        { title: '  ', importance: 99, category: 'Core' }, // blank dropped
+      ],
+    }
+    expect(normalizeOnlineTasks(json)).toEqual(['Core high', 'Core low', 'Supplemental high'])
+  })
+
+  test('returns [] for a missing payload', () => {
+    expect(normalizeOnlineTasks(null)).toEqual([])
+  })
+})
 
 describe('normalizeSearch', () => {
   test('maps the career array to {code,title}', () => {

@@ -57,3 +57,25 @@ export function normalizeCareer(json, fallbackTitle = '') {
     skills: [], // not surfaced in the UI; kept for record-shape parity with the seed
   }
 }
+
+/**
+ * Online task-detail response → a fuller task list than My Next Move's short
+ * `on_the_job`. Source: /online/occupations/{code}/details/tasks
+ *   → { task: [{ title, importance, category }] }
+ * Core tasks lead, then by descending importance; capped at MAX_TASKS.
+ * @param {any} json
+ * @returns {string[]}
+ */
+export function normalizeOnlineTasks(json) {
+  const list = Array.isArray(json?.task) ? json.task : []
+  return list
+    .map(t => ({
+      title: typeof t?.title === 'string' ? t.title.trim() : '',
+      importance: Number(t?.importance) || 0,
+      isCore: t?.category === 'Core',
+    }))
+    .filter(t => t.title)
+    .sort((a, b) => (a.isCore === b.isCore ? 0 : a.isCore ? -1 : 1) || b.importance - a.importance)
+    .map(t => t.title)
+    .slice(0, MAX_TASKS)
+}

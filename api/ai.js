@@ -48,8 +48,8 @@ const TASKS = {
   },
   format: {
     model: MODEL_SMALL,
-    maxInput: 2000,
-    maxTokens: 600,
+    maxInput: 6000,
+    maxTokens: 1200,
     temperature: 0.2,
     prompt:
       'You reformat ONE section of a first résumé for a teenager or young adult into the clean, conventional layout for that kind of section. The user sends the section as HTML. Reformat the SAME information into standard résumé structure — do NOT reword beyond light cleanup, do NOT add or drop any facts, and never invent experience, employers, numbers, dates, or credentials. Use only <p>, <ul>, <li>, <strong>, <em>. Return ONLY the formatted HTML — no markdown, no code fences, no commentary.',

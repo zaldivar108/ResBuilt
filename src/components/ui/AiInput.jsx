@@ -15,7 +15,7 @@ import './AiInput.css'
 
 const SPEED_FACTOR = 1
 const FORM_WIDTH = 540
-const FORM_HEIGHT = 340
+const FORM_HEIGHT = 540 // square: match the largest dock dimension
 const COOLDOWN_MS = 3000
 
 const TASKS = [

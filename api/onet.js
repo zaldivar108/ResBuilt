@@ -9,7 +9,7 @@
 //   /api/onet?action=occupation&code=41-2011.00  → { occupation: {code,title,keywords,tasks,skills} }
 //     (title passthrough is a fallback; the detail payload normally has it.)
 
-import { normalizeSearch, normalizeCareer } from '../src/lib/onetNormalize.js'
+import { normalizeSearch, normalizeCareer, normalizeOnlineTasks } from '../src/lib/onetNormalize.js'
 
 export const config = { runtime: 'edge' }
 
@@ -66,6 +66,19 @@ export default async function handler(req) {
       const data = await onetGet(`/mnm/careers/${encodeURIComponent(code)}/`, key)
       const occupation = normalizeCareer(data, title)
       if (!occupation) return json({ error: 'That occupation was not found.' }, 404)
+
+      // The mnm `on_the_job` list is only ~3 items. Pull the fuller O*NET task
+      // bank (Core-first, importance-ranked) and prefer it when available;
+      // fall back silently to on_the_job if that endpoint is unavailable.
+      try {
+        const tasksData = await onetGet(
+          `/online/occupations/${encodeURIComponent(code)}/details/tasks?end=20`,
+          key
+        )
+        const fullerTasks = normalizeOnlineTasks(tasksData)
+        if (fullerTasks.length) occupation.tasks = fullerTasks
+      } catch { /* keep the on_the_job fallback */ }
+
       return json({ occupation })
     }
 
