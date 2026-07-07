@@ -9,6 +9,7 @@
 import { validateImportFile, assessExtractedText, SUPPORTED_IMPORT_EXTENSIONS } from './pdfImport.js'
 import { normalizeImportedSections } from './importSections.js'
 import { extractFileText } from './fileExtract.js'
+import { sanitizeHtml } from './sanitizeHtml.js'
 
 const EXT_RE = new RegExp(`\\.(${SUPPORTED_IMPORT_EXTENSIONS.join('|')})$`, 'i')
 
@@ -65,5 +66,7 @@ export async function importResumeFromFile(file, deps = {}) {
   const normalized = normalizeImportedSections(ai.result)
   if (!normalized.ok) return normalized
 
-  return { ok: true, title: titleFromFilename(file.name), sections: normalized.sections }
+  // AI/file content is untrusted — sanitize before it becomes section HTML.
+  const sections = normalized.sections.map(s => ({ ...s, content: sanitizeHtml(s.content) }))
+  return { ok: true, title: titleFromFilename(file.name), sections }
 }

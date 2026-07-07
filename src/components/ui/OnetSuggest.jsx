@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { searchOccupations, getOccupation, bulletsFromTasks } from '../../lib/onet'
+import { sanitizeHtml } from '../../lib/sanitizeHtml'
 
 // Grounds résumé bullets in real O*NET occupational data instead of AI guesses.
 // Flow: search a job → pick it → check the real duties that apply →
@@ -66,7 +67,8 @@ export default function OnetSuggest({ onApply }) {
         setError(data.error || 'Something went wrong. Try again.')
         return
       }
-      const html = (data.result || '').replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim()
+      const raw = (data.result || '').replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim()
+      const html = sanitizeHtml(raw)
       if (html) { onApply(html); flash('Added ✓') }
     } catch {
       setError('Could not reach the AI. If running locally, use `vercel dev`.')

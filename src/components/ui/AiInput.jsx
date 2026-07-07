@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, createContext, useCo
 import { AnimatePresence, motion } from 'framer-motion'
 import { fixGrammarInHtml } from '../../lib/grammarFix'
 import { getLinter } from '../../lib/harperLinter'
+import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import OnetSuggest from './OnetSuggest'
 import './AiInput.css'
 
@@ -86,7 +87,7 @@ function InputForm() {
       try {
         const linter = await getLinter()
         const fixed = await fixGrammarInHtml(section.content, linter)
-        setResult(fixed)
+        setResult(sanitizeHtml(fixed))
         setLastTask('grammar')
       } catch {
         setError('Grammar check failed to load. Please try again.')
@@ -107,7 +108,7 @@ function InputForm() {
         setError(data.error || 'Something went wrong. Try again.')
         return
       }
-      setResult(stripFences(data.result || ''))
+      setResult(sanitizeHtml(stripFences(data.result || '')))
       setLastTask(task)
     } catch {
       setError('Could not reach the AI. If running locally, use `vercel dev`.')
