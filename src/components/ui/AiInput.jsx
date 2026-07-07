@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, createContext, useCo
 import { AnimatePresence, motion } from 'framer-motion'
 import { fixGrammarInHtml } from '../../lib/grammarFix'
 import { getLinter } from '../../lib/harperLinter'
+import OnetSuggest from './OnetSuggest'
 import './AiInput.css'
 
 const SPEED_FACTOR = 1
@@ -63,6 +64,7 @@ function InputForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [applied, setApplied] = useState(false)
+  const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = real job duties
   const coolingRef = useRef(false)
 
   async function runTask(task) {
@@ -153,38 +155,62 @@ function InputForm() {
                 : 'Select a section to edit'}
             </div>
 
-            <div className="ai-tasks">
-              {TASKS.map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className="ai-task-btn"
-                  onClick={() => runTask(t.id)}
-                  disabled={loading || !section}
-                >
-                  {t.label}
-                </button>
-              ))}
+            <div className="ai-mode-tabs">
+              <button
+                type="button"
+                className={`ai-mode-tab${mode === 'ai' ? ' active' : ''}`}
+                onClick={() => setMode('ai')}
+              >
+                Edit my text
+              </button>
+              <button
+                type="button"
+                className={`ai-mode-tab${mode === 'onet' ? ' active' : ''}`}
+                onClick={() => setMode('onet')}
+                disabled={!section}
+              >
+                Real job duties
+              </button>
             </div>
 
-            {loading && <div className="ai-status">Thinking…</div>}
-            {error && <div className="ai-status ai-error">{error}</div>}
+            {mode === 'onet' ? (
+              <OnetSuggest onApply={html => onApply(section.content + html)} />
+            ) : (
+              <>
+                <div className="ai-tasks">
+                  {TASKS.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className="ai-task-btn"
+                      onClick={() => runTask(t.id)}
+                      disabled={loading || !section}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
 
-            {result && !loading && (
-              <div className="ai-result">
-                <div
-                  className="ai-result-text"
-                  dangerouslySetInnerHTML={{ __html: result }}
-                />
-                <button type="button" className="ai-apply-btn" onClick={applyResult}>
-                  {applied ? 'Applied ✓' : applyLabel}
-                </button>
-              </div>
+                {loading && <div className="ai-status">Thinking…</div>}
+                {error && <div className="ai-status ai-error">{error}</div>}
+
+                {result && !loading && (
+                  <div className="ai-result">
+                    <div
+                      className="ai-result-text"
+                      dangerouslySetInnerHTML={{ __html: result }}
+                    />
+                    <button type="button" className="ai-apply-btn" onClick={applyResult}>
+                      {applied ? 'Applied ✓' : applyLabel}
+                    </button>
+                  </div>
+                )}
+
+                <div className="ai-consent">
+                  🔒 Fix grammar runs on your device — nothing is sent. Improve wording &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
+                </div>
+              </>
             )}
-
-            <div className="ai-consent">
-              🔒 Fix grammar runs on your device — nothing is sent. Improve wording &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

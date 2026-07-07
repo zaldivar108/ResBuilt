@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { searchOccupations, getOccupation } from './onet.js'
+import { searchOccupations, getOccupation, bulletsFromTasks } from './onet.js'
 
 // Fixture shaped like the real O*NET seed so the repository stays pure/testable.
 const DATA = [
@@ -44,6 +44,19 @@ describe('searchOccupations', () => {
   test('respects the result limit', () => {
     const results = searchOccupations('e', { data: DATA, limit: 2 })
     expect(results.length).toBeLessThanOrEqual(2)
+  })
+})
+
+describe('bulletsFromTasks', () => {
+  test('wraps selected tasks in a <ul> of <li>s', () => {
+    expect(bulletsFromTasks(['Greet customers.', 'Ring up sales.']))
+      .toBe('<ul><li>Greet customers.</li><li>Ring up sales.</li></ul>')
+  })
+
+  test('skips blanks and returns empty string when nothing is selected', () => {
+    expect(bulletsFromTasks(['  ', ''])).toBe('')
+    expect(bulletsFromTasks([])).toBe('')
+    expect(bulletsFromTasks(undefined)).toBe('')
   })
 })
 

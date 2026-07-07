@@ -41,6 +41,19 @@ export function searchOccupations(query, { data = OCCUPATIONS, limit = DEFAULT_L
 }
 
 /**
+ * Build an HTML bullet list from selected task strings, ready to append to a
+ * section's content. Skips blanks; returns '' when nothing is selected.
+ * @param {string[]} tasks
+ * @returns {string}
+ */
+export function bulletsFromTasks(tasks) {
+  const items = (tasks ?? [])
+    .filter(t => typeof t === 'string' && t.trim())
+    .map(t => `<li>${t.trim()}</li>`)
+  return items.length ? `<ul>${items.join('')}</ul>` : ''
+}
+
+/**
  * Look up a full occupation record (tasks + skills) by O*NET-SOC code.
  * @param {string} code
  * @param {{ data?: Array }} [opts]
