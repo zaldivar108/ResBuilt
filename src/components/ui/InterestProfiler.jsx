@@ -26,8 +26,12 @@ export default function InterestProfiler({ onClose, onStartResume }) {
   const [options, setOptions] = useState([])
   const [questions, setQuestions] = useState([])
   const [answers, setAnswers] = useState(() => new Map()) // index -> value 1..5
+  const [current, setCurrent] = useState(0) // position in the ordered question list
   const [areas, setAreas] = useState(saved?.areas ?? [])
   const [careers, setCareers] = useState(saved?.careers ?? [])
+
+  // Questions in the order O*NET indexes them; drives the one-at-a-time flow.
+  const ordered = [...questions].sort((a, b) => a.index - b.index)
 
   // Fetch questions on mount unless we already have a saved result to show.
   useEffect(() => {
@@ -48,8 +52,12 @@ export default function InterestProfiler({ onClose, onStartResume }) {
   const answeredCount = answers.size
   const allAnswered = questions.length > 0 && answeredCount === questions.length
 
-  function setAnswer(index, value) {
+  // Record the answer and auto-advance to the next unanswered-or-next question.
+  function chooseAnswer(index, value) {
     setAnswers(prev => new Map(prev).set(index, value))
+    if (current < ordered.length - 1) {
+      setCurrent(c => Math.min(c + 1, ordered.length - 1))
+    }
   }
 
   function buildAnswerString() {
@@ -79,6 +87,7 @@ export default function InterestProfiler({ onClose, onStartResume }) {
 
   function retake() {
     setAnswers(new Map())
+    setCurrent(0)
     setAreas([])
     setCareers([])
     setError('')
@@ -106,44 +115,55 @@ export default function InterestProfiler({ onClose, onStartResume }) {
           </div>
         )}
 
-        {stage === 'quiz' && (
-          <>
-            <div className="ip-head">
-              <h2>Find a job that fits you</h2>
-              <p className="ip-sub">For each activity, pick how much you’d like or dislike doing it. No right answers — just you.</p>
-            </div>
-            <div className="ip-progress"><div className="ip-progress-bar" style={{ width: `${(answeredCount / questions.length) * 100}%` }} /></div>
-            <p className="ip-count">{answeredCount} of {questions.length} answered</p>
-            <ol className="ip-questions">
-              {questions.slice().sort((a, b) => a.index - b.index).map(q => (
-                <li key={q.index} className="ip-q">
-                  <span className="ip-q-text">{q.text}</span>
-                  <div className="ip-scale" role="radiogroup" aria-label={q.text}>
-                    {options.map(opt => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        role="radio"
-                        aria-checked={answers.get(q.index) === opt.value}
-                        className={`ip-opt${answers.get(q.index) === opt.value ? ' active' : ''}`}
-                        title={opt.name}
-                        onClick={() => setAnswer(q.index, opt.value)}
-                      >
-                        {opt.name}
-                      </button>
-                    ))}
-                  </div>
-                </li>
-              ))}
-            </ol>
-            {error && <p className="ip-error">{error}</p>}
-            <div className="ip-actions">
-              <button className="modal-btn create" disabled={!allAnswered} onClick={submit}>
-                See my results →
-              </button>
-            </div>
-          </>
-        )}
+        {stage === 'quiz' && ordered[current] && (() => {
+          const q = ordered[current]
+          const isLast = current === ordered.length - 1
+          return (
+            <>
+              <div className="ip-head">
+                <h2>Find a job that fits you</h2>
+                <p className="ip-sub">Would you like or dislike doing this activity? No right answers — just you.</p>
+              </div>
+              <div className="ip-progress"><div className="ip-progress-bar" style={{ width: `${((current + 1) / ordered.length) * 100}%` }} /></div>
+              <p className="ip-count">Question {current + 1} of {ordered.length} · {answeredCount} answered</p>
+
+              <div className="ip-single">
+                <span className="ip-q-num">{current + 1}.</span>
+                <p className="ip-q-text-lg">{q.text}</p>
+                <div className="ip-scale ip-scale-col" role="radiogroup" aria-label={q.text}>
+                  {options.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={answers.get(q.index) === opt.value}
+                      className={`ip-opt${answers.get(q.index) === opt.value ? ' active' : ''}`}
+                      onClick={() => chooseAnswer(q.index, opt.value)}
+                    >
+                      {opt.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {error && <p className="ip-error">{error}</p>}
+              <div className="ip-actions ip-actions-split">
+                <button className="modal-btn cancel" disabled={current === 0} onClick={() => setCurrent(c => Math.max(0, c - 1))}>
+                  ← Back
+                </button>
+                {isLast || allAnswered ? (
+                  <button className="modal-btn create" disabled={!allAnswered} onClick={submit}>
+                    See my results →
+                  </button>
+                ) : (
+                  <button className="modal-btn create" disabled={!answers.has(q.index)} onClick={() => setCurrent(c => Math.min(ordered.length - 1, c + 1))}>
+                    Next →
+                  </button>
+                )}
+              </div>
+            </>
+          )
+        })()}
 
         {stage === 'scoring' && <div className="ip-center"><div className="ip-spinner" />Scoring your answers…</div>}
 
