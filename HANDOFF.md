@@ -1,32 +1,41 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-06 · Branch `master` · Build: green (`npm run build` ✓)_
+_Last updated: 2026-07-06 · Branch `master` · Build: green · Tests: 135 passing · HEAD `ef2bb00`_
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
-A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage` (that's the privacy feature, not debt). AI and business cards are mocked; auth is optional/unused.
+A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage` (that's the privacy feature, not debt). **AI Assist is live** (Groq proxy + on-device harper.js/O*NET); business cards are mocked; auth is optional/unused.
 
 ---
 
 ## 0. Session status — where to continue
 
-**Shipped & pushed to `master` this session (build green throughout):**
-1. **Pivot to free/teen audience** — stripped all paywalls; auth rework (no login gate, no-account default, privacy-first framing). Login page kept but unlinked.
-2. **Content starters** — `src/config/starters.js`, 5 presets in the New Resume modal (Student default / Internship / IT / Entry-Level / Professional). `createResume(title, starterId)`.
-3. **3 visual templates** — Executive, Compact, Timeline (now 6 total). Template picker is a 3-col grid.
-4. **AI Assist — live** (free, Groq). Per-section editing in the `AiInput` dock (Improve / Fix grammar / Suggest ideas → Apply/Add). Backed by `api/ai.js` (Vercel Edge proxy). `GROQ_API_KEY` set in all Vercel envs. See the "AI setup" note in §9.
+**Test suite: 135 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work.
 
-**SHIPPED THIS SESSION — PDF Import (built + tested, TDD).** Matches the design in the `Import` term of `CONTEXT.md`. What landed:
-- Dashboard "📥 Import from PDF" → `ImportModal` consent gate → **pdf.js extracts plaintext in-browser** (file never leaves device; pdf.js lazy-loaded) → **one** Groq call (`import` task, JSON mode) → validated `sections[]` → new Résumé (Classic default, no Starter) → open Editor.
-- Modules: `src/lib/pdfImport.js` (file + extracted-text guards), `src/lib/pdfExtract.js` (lazy pdf.js text extraction), `src/lib/importSections.js` (AI-JSON → normalized Sections, enforces "one contact, first"), `src/lib/importResume.js` (orchestrator with injectable deps), `src/components/ImportModal.jsx` + `.css`. Context gained `createResumeFromImport(title, sections)`.
-- `api/ai.js` refactored to **per-task config** (`TASKS` map): `import` gets `maxInput 15000`, `maxTokens 2000`, `response_format json_object`; the three editing tasks unchanged (2000/600).
-- Guards enforced: `.pdf` only, ≤5 MB; <100 chars extracted → "scanned/image PDF" bail (no OCR); text capped 15k chars.
-- **Tests:** Vitest added (`npm test` / `test:run`). 52 tests across `pdfImport`, `importSections`, `importResume`, `api/ai`, and `ImportModal` (component). Build green, main chunk back to ~180KB gzip (pdf.js split into its own on-demand chunk).
-- **Not yet done / open:** (1) not exercised end-to-end in a real browser — needs `vercel dev` + `GROQ_API_KEY`. (2) ADR still unwritten — "privacy-first app deliberately sends full-résumé PII to Groq for import"; write `docs/adr/0001-*` if pursued. (3) imported HTML rendered via `dangerouslySetInnerHTML` like all sections — sanitize before any share feature.
+**Foundation (earlier sessions):** free/teen pivot (paywalls stripped, login unlinked); 5 content starters (`starters.js`); 6 visual templates; AI Assist dock live on Groq.
 
-**Other roadmap (TASKS.md):** inline "not sure what to write?" content guidance; mobile-responsive editor (4-col `Editor.jsx` is desktop-only); dashboard rename-on-card / sort / last-edited; optional harper.js in-browser grammar (privacy-max, no data leaves device).
+**SHIPPED THIS SESSION (all TDD, pushed to `master`):**
 
-**Open / caveats:** AI import + section editing not exercised end-to-end in a browser (needs `vercel dev` + the Groq key). AI output is injected as HTML via `dangerouslySetInnerHTML` — fine single-user, sanitize before any share/multi-user. Login page orphaned. **Tests:** Vitest now covers the PDF-import logic (52 tests); the rest of the app (Editor, layouts, context) is still untested. Pre-existing `useResume` react-refresh lint error + other pre-existing Editor/toolbar lint errors (present at HEAD, not from import work). `README.md` still stock Vite. `CONTEXT.md` is the domain glossary — keep it current.
+1. **Multi-format Import** (`0f5ca37`, `3711275`) — Dashboard "📥 Import a résumé" → `ImportModal` consent gate → **on-device text extraction** → one Groq `import` call (JSON mode) → validated `sections[]` → new Résumé (Classic) → Editor. Supports **PDF (pdf.js), Word .docx (mammoth), .txt, .md** — all lazy-loaded; legacy `.doc` rejected with guidance. Modules: `pdfImport.js` (guards: `fileKind`/`validateImportFile`), `fileExtract.js` (format dispatch), `pdfExtract.js`, `importSections.js` (AI-JSON→Sections), `importResume.js` (`importResumeFromFile`, injectable deps). Context: `createResumeFromImport`.
+2. **On-device grammar** (`3f5a6ca`) — "Fix grammar" runs in-browser via **harper.js WASM** (lazy; ~8 MB first load, then cached). Nothing sent, no Groq quota. `grammarFix.js` (`correctText` + `fixGrammarInHtml`, preserves tags), `harperLinter.js`. Improve/Ideas still Groq.
+3. **O*NET grounding** (`3f5a6ca`, `905cbfc`) — "Real job duties" tab: search job → pick → check real O*NET tasks → **Add selected** (verbatim, on-device) or **✨ Make it mine** (Groq `polish`). `onet.js` repository (swappable), `onetData.js` seed (**10 occupations only** — full extract per `docs/onet-extract.md`), `OnetSuggest.jsx`. Attribution: landing footer + editor credit, logo self-hosted at `public/onet/`.
+4. **AI improvements** (`53a0fb6`→`ef2bb00`):
+   - **Security** — `sanitizeHtml.js` (DOMPurify) on ALL AI/imported HTML. **XSS risk from §10 is now mitigated at write-time** (AiInput results, OnetSuggest polish, importResumeFromFile).
+   - **Quota** — model routing (`api/ai.js`: editing tasks → `llama-3.1-8b-instant`, import → `llama-3.3-70b`); `aiCache.js` (localStorage result cache); `aiBudget.js` (soft 25/device/day cap); import cap trimmed 15k→8k.
+   - **Grounding** — `scrubPii.js` (email/phone/URL redaction, applied to Ideas only); Ideas grounds on the selected O*NET occupation.
+   - **Job tailor** — "Match a job" tab (`JobTailor.jsx`): paste posting → gap analysis (matched/missing/suggestions) via `tailor` task + optional grounded rewrite via `retarget` task. `tailor.js` parser. Scopes to the **active section**.
+   - **UX** — undo toast after any AI edit (Editor `undoAiEdit`, 8s); Improve/Ideas **stream** token-by-token (`streamAi.js`, opt-in `stream` flag in `api/ai.js`).
+
+**NOT exercised end-to-end in a real browser** — all AI + import needs `vercel dev` + `GROQ_API_KEY`. Logic + build verified; live round-trips (real Groq JSON, real pdf.js/mammoth/harper output, SSE streaming, `.docx` parse) unconfirmed. **Test live first.**
+
+**Open / next:**
+- **ADR 0001** still unwritten — "privacy-first app deliberately sends full-résumé PII to Groq for import." Write `docs/adr/0001-*` if pursued.
+- **O*NET seed is 10 jobs** — searches outside them return nothing. Full extract path documented (`docs/onet-extract.md`); the O*NET API key is **under approval** (swap to live API or bulk DB behind the same `onet.js` interface).
+- **Daily AI cap is per-browser localStorage** — a soft guard, not server-enforced.
+- **Job-tailor + O*NET grounding are per-section** (the dock only sees the active section); whole-résumé versions are clean future extensions.
+- **Streaming falls back** to buffered if the env doesn't stream — verify once on Vercel.
+- Still untested: Editor, layouts, context, toolbar. `README.md` still stock Vite.
+- Other roadmap (TASKS.md): inline content guidance per section; mobile-responsive editor; dashboard rename/sort/last-edited.
 
 ---
 
@@ -41,7 +50,7 @@ npm run lint     # eslint
 npm test         # vitest (watch)  ·  npm run test:run (once)  ·  npm run coverage
 ```
 
-Vitest covers the PDF-import logic (52 tests). No CI. Deploys to Vercel (`vercel.json` rewrites all routes → `index.html` for SPA client routing).
+Vitest: 135 tests, jsdom env. No CI. Deploys to Vercel (`vercel.json` rewrites all routes → `index.html` for SPA client routing).
 
 ---
 
@@ -57,6 +66,10 @@ Vitest covers the PDF-import logic (52 tests). No CI. Deploys to Vercel (`vercel
 | Animation | `framer-motion` |
 | UI primitives | `@radix-ui/react-dropdown-menu`, `@radix-ui/react-icons`, `lucide-react` |
 | Styling | Plain CSS per component. Theme via `data-theme="dark|light"` on `<html>` + CSS custom props. No CSS framework. |
+| AI proxy | Vercel Edge fn `api/ai.js` → Groq (OpenAI-compatible) |
+| Import/parse | `pdfjs-dist` (PDF), `mammoth` (.docx) — both lazy |
+| On-device | `harper.js` (grammar WASM), `dompurify` (sanitize) |
+| Tests | `vitest` + `@testing-library/react`, `jsdom` env |
 
 Palette: indigo/violet primary `#6366F1`. Slate accents.
 
@@ -161,24 +174,26 @@ No PDF library. It clones the `.preview-paper` DOM node, inlines **all** stylesh
 ## 9. Mocked / placeholder features
 
 - **Auth** — mock and **unused**. Login page unlinked from the flow (no-account is the default). No backend.
-- **AI Assist** — **now live** (free). `AiInput.jsx` dock → paste text, run Improve / Suggest ideas / Fix grammar. Calls `api/ai.js` (Vercel **Edge** proxy) → Groq free tier (`llama-3.3-70b-versatile`). Key `GROQ_API_KEY` is server-side only. Requires setup (see below); text leaves the device → consent notice shown in the dock.
+- **AI Assist** — **live** (free). `AiInput.jsx` dock, three tabs: **Edit my text** (Improve / Fix grammar / Suggest ideas), **Real job duties** (O*NET), **Match a job** (job-posting tailor). Calls `api/ai.js` (Vercel **Edge** proxy) → Groq. **Task→model routing:** editing/polish/tailor/retarget → `llama-3.1-8b-instant`; `import` → `llama-3.3-70b-versatile` (JSON mode). `GROQ_API_KEY` server-side only.
+  - **On-device (no Groq):** Fix grammar (harper.js WASM) + "Add selected" O*NET duties. Everything else sends text to Groq → consent notices shown.
+  - **Quota guards:** `aiCache.js` (localStorage result cache), `aiBudget.js` (25 AI actions/device/day soft cap), `scrubPii.js` (redacts PII on Ideas). Improve/Ideas **stream** (`streamAi.js`).
 - **Business Cards** (Dashboard) — modal says "coming soon".
 
 **AI setup / running it:**
 - Free key at console.groq.com → set `GROQ_API_KEY`. See `.env.example`.
 - **Local:** `vercel dev` (NOT `npm run dev` — Vite doesn't run `/api`). **Prod:** add `GROQ_API_KEY` in Vercel env vars.
 - `.env` / `.env.*` are gitignored (except `.env.example`) — never commit the key.
-- Privacy tradeoff (minors): résumé text is sent to Groq. To keep everything on-device, the open alternative is harper.js (in-browser grammar) — see TASKS.md.
+- Privacy tradeoff (minors): text sent to Groq for import/improve/ideas/polish/tailor. Grammar is on-device (harper.js).
 
 ---
 
 ## 10. Known risks / gotchas
 
-- **XSS surface:** section `content` is user HTML rendered with `dangerouslySetInnerHTML` in every layout and re-serialized into the print window. Fine for a single-user local app; **must sanitize** before any multi-user/shared-link feature.
+- **XSS — now mitigated at write-time:** all AI/imported HTML is run through `sanitizeHtml.js` (DOMPurify allow-list) before entering section state. Note: user-typed contentEditable content is still stored raw (trusted, single-user). Before any shared-link/multi-user feature, also sanitize at render/print time as defense-in-depth.
 - **`execCommand` is deprecated** — works in all current browsers but is the toolbar's foundation. Font-size marker-swap hack (`applyFontSize`) is the most brittle path.
 - **localStorage only** — by design (privacy). Clearing storage wipes everything; no cross-device sync; ~5MB cap. Warn users before adding anything that assumes durability.
-- **Bundle is one 546KB chunk** (173KB gzip) — no code-splitting. Build warns. Consider lazy-loading routes / framer-motion.
-- **Tests cover PDF import only.** Vitest is set up (`vite.config.js` `test` block, `src/test/setup.js`); 52 tests for the import path. Editor, layouts, context, and toolbar remain untested. TASKS.md lists the fuller Vitest + Playwright plan.
+- **Bundle:** main chunk ~180KB gzip. Heavy libs (pdf.js, mammoth, harper.js WASM ~8MB gzip) are **lazy-split** — only load when their feature is first used. Build warns on the pdf.worker/harper chunks; expected.
+- **Tests: 135 passing** (`npm run test:run`). Vitest env is **jsdom** (`vite.config.js`) — required for DOMPurify. Covered: all import/AI **logic + utils** (guards, extractors, normalizers, cache, budget, PII, tailor, streaming SSE parsers, sanitizer) + component tests for ImportModal / OnetSuggest / JobTailor. **Still untested:** Editor, layouts, ResumeContext, toolbar. No E2E/Playwright yet.
 - **Pre-existing lint error** — `ResumeContext.jsx` exports `useResume` (a hook) beside the provider, tripping `react-refresh/only-export-components`. Present at HEAD; harmless (dev HMR only). Fix by moving the hook to its own file if it bothers you.
 
 ---
@@ -198,24 +213,41 @@ Roadmap lives in [TASKS.md](TASKS.md) (paywalls already stripped — everything 
 
 ## 12. File map (quick reference)
 
+Most `src/lib/*.js` have a co-located `*.test.js`. Test env: jsdom.
+
 ```
 api/
-└── ai.js                       # Vercel Edge proxy → Groq (GROQ_API_KEY server-side only)
+└── ai.js                       # Vercel Edge proxy → Groq. TASKS map (per-task model/caps/prompt);
+                                #   tasks: improve, ideas, grammar, polish, tailor, retarget (8B),
+                                #   import (70B, JSON). Opt-in `stream` passthrough for HTML tasks.
+docs/
+├── onet-extract.md             # how to replace the O*NET seed with full DB / live API
+└── adr/                        # (empty — ADR 0001 on PII→Groq still to write)
+public/onet/                    # self-hosted O*NET "in-it" logo (svg + png)
 src/
-├── App.jsx                     # routes
-├── main.jsx
-├── context/ResumeContext.jsx   # all state + persistence
+├── App.jsx  main.jsx
+├── context/ResumeContext.jsx   # all state + persistence; createResume / createResumeFromImport
 ├── config/
-│   ├── templates.js            # 3 visual layout templates
-│   ├── starters.js             # 5 content presets: Student(default)/Internship/IT/EntryLevel/Professional
-│   └── paperSizes.js           # paper sizes, margin presets, exportPDF()
+│   ├── templates.js  paperSizes.js  starters.js
+│   └── onetData.js             # O*NET occupation SEED (10 jobs, CC BY 4.0) — swap per docs/
 ├── pages/  Landing Login Dashboard Editor NotFound  (+ .css each)
 ├── components/
-│   ├── EditorToolbar.jsx       # execCommand rich text
-│   ├── ResumePreview.jsx       # scaling, overflow/page-count, layout switch
-│   ├── ResumeCard.jsx          # dashboard card
+│   ├── EditorToolbar.jsx  ResumePreview.jsx  ResumeCard.jsx
+│   ├── ImportModal.jsx         # multi-format import consent gate + UI
 │   ├── layouts/                # Classic, Modern, Minimal, Executive, Compact, Timeline
-│   └── ui/                     # AccentColorPicker, AiInput(mock), SelectDropdown,
-│                               #   dropdown-menu, switch
-└── lib/utils.js
+│   └── ui/                     # AiInput (dock, 3 tabs), OnetSuggest, JobTailor,
+│                               #   AccentColorPicker, SelectDropdown, dropdown-menu, switch
+└── lib/
+    ├── utils.js
+    ├── sanitizeHtml.js         # DOMPurify allow-list (all AI/imported HTML)
+    ├── pdfImport.js            # fileKind + validateImportFile + assessExtractedText
+    ├── fileExtract.js          # format dispatch → pdfExtract / mammoth / text (lazy)
+    ├── pdfExtract.js           # lazy pdf.js
+    ├── importSections.js       # AI-JSON → normalized Sections (one contact, first)
+    ├── importResume.js         # importResumeFromFile orchestrator (injectable deps)
+    ├── grammarFix.js  harperLinter.js   # on-device grammar (harper.js WASM)
+    ├── onet.js                 # occupation repository (search / getOccupation / bulletsFromTasks)
+    ├── tailor.js               # parseTailorResult (job-match analysis)
+    ├── scrubPii.js  aiCache.js  aiBudget.js  streamAi.js   # AI quota/privacy/streaming utils
+    └── ...
 ```
