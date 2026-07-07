@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useResume } from '../context/ResumeContext'
+import { APP_VERSION } from '../version'
 import './Landing.css'
 
 export default function Landing() {
@@ -19,7 +20,10 @@ export default function Landing() {
       </div>
 
       <nav className="landing-nav">
-        <span className="landing-logo">ResBuilt</span>
+        <span className="landing-brand">
+          <span className="landing-logo">ResBuilt</span>
+          <span className="landing-version">v{APP_VERSION}</span>
+        </span>
         <div className="landing-nav-actions">
           <button className="btn-nav" onClick={() => navigate('/dashboard')}>
             {resumes.length > 0 ? 'My Resumes' : 'Get started'}
