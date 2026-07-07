@@ -103,6 +103,51 @@ describe('api/ai tailor + retarget tasks', () => {
   })
 })
 
+describe('api/ai format task (paragraph → bullet points)', () => {
+  test('is a recognized task', async () => {
+    const res = await handler(req({ task: 'format', text: '<p>I did a lot of things at my job.</p>' }))
+    expect(res.status).toBe(200)
+  })
+
+  test('does not request JSON mode and runs on the fast 8B model', async () => {
+    await handler(req({ task: 'format', text: '<p>I did things.</p>' }))
+    const body = sentBody()
+    expect(body.response_format).toBeUndefined()
+    expect(body.model).toBe('llama-3.1-8b-instant')
+  })
+
+  test('returns the reformatted HTML as { result }', async () => {
+    fetchMock.mockResolvedValue(groqOk('<ul><li>Did things.</li></ul>'))
+    const res = await handler(req({ task: 'format', text: '<p>I did things.</p>' }))
+    const data = await res.json()
+    expect(data.result).toContain('<li>')
+  })
+
+  test('rejects text over the 2000-char per-section cap', async () => {
+    const res = await handler(req({ task: 'format', text: 'a'.repeat(2001) }))
+    expect(res.status).toBe(413)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  test('appends the per-type layout hint for the section type', async () => {
+    await handler(req({ task: 'format', sectionType: 'education', text: '<p>Harvard 2024</p>' }))
+    const sys = sentBody().messages[0].content
+    expect(sys).toContain('EDUCATION')
+  })
+
+  test('routes each section type to its own hint', async () => {
+    await handler(req({ task: 'format', sectionType: 'contact', text: '<p>x</p>' }))
+    expect(sentBody().messages[0].content).toContain('CONTACT')
+  })
+
+  test('falls back to the default hint for an unknown/absent section type', async () => {
+    await handler(req({ task: 'format', text: '<p>x</p>' }))
+    const sys = sentBody().messages[0].content
+    expect(sys).toContain('résumé conventions')
+    expect(sys).not.toContain('EDUCATION')
+  })
+})
+
 describe('api/ai regression — existing per-section tasks', () => {
   test('improve still rejects text over 2000 chars', async () => {
     const res = await handler(req({ task: 'improve', text: 'a'.repeat(2001) }))

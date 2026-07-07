@@ -19,9 +19,16 @@ const FORM_HEIGHT = 340
 const COOLDOWN_MS = 3000
 
 const TASKS = [
-  { id: 'improve', label: 'Improve wording' },
-  { id: 'grammar', label: 'Fix grammar' },
-  { id: 'ideas',   label: 'Suggest ideas' },
+  { id: 'improve', label: 'Improve wording', title: 'Rewrite this section for clarity and impact — stronger verbs, more concise. Sent to Groq AI.' },
+  { id: 'grammar', label: 'Fix grammar',     title: 'Fix spelling and grammar only, keeping your wording. Runs on your device — nothing is sent.' },
+  { id: 'format',  label: 'Format',          title: 'Reformat this section into the standard résumé layout for its type — clean contact lines, "School — City, State — Year" for education, title + duty bullets for experience, and so on. Sent to Groq AI.' },
+  { id: 'ideas',   label: 'Suggest ideas',   title: 'Suggest 3 realistic bullet points you could add. Sent to Groq AI.' },
+]
+
+const MODE_TABS = [
+  { id: 'ai',     label: 'Edit my text',   title: 'Improve, fix grammar, reformat, or get bullet-point ideas for the selected section.' },
+  { id: 'onet',   label: 'Real job duties', title: 'Search a real occupation and add verbatim duties from O*NET job data.' },
+  { id: 'tailor', label: 'Match a job',     title: 'Paste a job posting to see what your section matches or is missing, then tailor it.' },
 ]
 
 // Models sometimes wrap output in ```html … ``` despite instructions — strip it.
@@ -117,7 +124,9 @@ function InputForm() {
     }
 
     // Serve an identical prior request from cache — free, no quota spent.
-    const cached = getCached(task, sentText)
+    // "format" output depends on the section type, so key on it too.
+    const cacheKey = task === 'format' ? `${section.type}\n${sentText}` : sentText
+    const cached = getCached(task, cacheKey)
     if (cached) {
       setResult(cached)
       setLastTask(task)
@@ -136,15 +145,19 @@ function InputForm() {
       // Stream tokens in as they arrive — swap the "Thinking…" spinner for the
       // growing preview on the first token. Content is sanitized on every update
       // so nothing unsafe is ever rendered mid-stream.
+      // "format" adapts to the section type — the proxy picks the right layout.
+      const payload = { task, text: sentText }
+      if (task === 'format') payload.sectionType = section.type
+
       let streamed = false
-      const full = await streamAiTask({ task, text: sentText }, partial => {
+      const full = await streamAiTask(payload, partial => {
         if (!streamed) { streamed = true; setLoading(false) }
         setResult(sanitizeHtml(stripFences(partial)))
       })
       const clean = sanitizeHtml(stripFences(full))
       setResult(clean)
       setLastTask(task)
-      setCached(task, sentText, clean)
+      setCached(task, cacheKey, clean)
       recordUse(today())
     } catch (err) {
       setError(err?.message || 'Could not reach the AI. If running locally, use `vercel dev`.')
@@ -193,29 +206,19 @@ function InputForm() {
             </div>
 
             <div className="ai-mode-tabs">
-              <button
-                type="button"
-                className={`ai-mode-tab${mode === 'ai' ? ' active' : ''}`}
-                onClick={() => setMode('ai')}
-              >
-                Edit my text
-              </button>
-              <button
-                type="button"
-                className={`ai-mode-tab${mode === 'onet' ? ' active' : ''}`}
-                onClick={() => setMode('onet')}
-                disabled={!section}
-              >
-                Real job duties
-              </button>
-              <button
-                type="button"
-                className={`ai-mode-tab${mode === 'tailor' ? ' active' : ''}`}
-                onClick={() => setMode('tailor')}
-                disabled={!section}
-              >
-                Match a job
-              </button>
+              {MODE_TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`ai-mode-tab${mode === tab.id ? ' active' : ''}`}
+                  title={tab.title}
+                  aria-label={tab.title}
+                  onClick={() => setMode(tab.id)}
+                  disabled={tab.id !== 'ai' && !section}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {mode === 'onet' ? (
@@ -233,6 +236,8 @@ function InputForm() {
                       key={t.id}
                       type="button"
                       className="ai-task-btn"
+                      title={t.title}
+                      aria-label={t.title}
                       onClick={() => runTask(t.id)}
                       disabled={loading || !section}
                     >
@@ -263,7 +268,7 @@ function InputForm() {
                 )}
 
                 <div className="ai-consent">
-                  🔒 Fix grammar runs on your device — nothing is sent. Improve wording &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
+                  🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
                 </div>
               </>
             )}

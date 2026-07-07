@@ -46,6 +46,14 @@ const TASKS = {
     prompt:
       'Fix only spelling and grammar in the résumé section the user sends as HTML. Preserve the meaning, wording, tone, and every HTML tag and structure. Do not add or remove content. Return ONLY the corrected HTML — no markdown, no code fences, no commentary.',
   },
+  format: {
+    model: MODEL_SMALL,
+    maxInput: 2000,
+    maxTokens: 600,
+    temperature: 0.2,
+    prompt:
+      'You reformat ONE section of a first résumé for a teenager or young adult into the clean, conventional layout for that kind of section. The user sends the section as HTML. Reformat the SAME information into standard résumé structure — do NOT reword beyond light cleanup, do NOT add or drop any facts, and never invent experience, employers, numbers, dates, or credentials. Use only <p>, <ul>, <li>, <strong>, <em>. Return ONLY the formatted HTML — no markdown, no code fences, no commentary.',
+  },
   polish: {
     model: MODEL_SMALL,
     maxInput: 2000,
@@ -95,6 +103,28 @@ const TASKS = {
   },
 }
 
+// The "format" task adapts to the section it's run on: each résumé section type
+// has its own conventional layout. The matching hint is appended to the base
+// format prompt server-side using the `sectionType` the client sends.
+const FORMAT_HINTS = {
+  contact:
+    'This is a CONTACT section. Put the person\'s full name alone in the FIRST <p> wrapped in <strong>. Then one <p> per line, in this order when present: email, phone, location, links. Normalize the phone number to a standard style (e.g. (555) 123-4567 for a US 10-digit number) and keep the email and URLs exactly as given. Drop nothing; do not invent missing details.',
+  education:
+    'This is an EDUCATION section. Format each school as a line "School Name — City, State — Year" with the school name in <strong>, and put the degree/diploma, GPA, or honors on the next line. Use one <p> per entry, or a <ul> with one <li> per school if there are several. Do not invent schools, locations, dates, or grades.',
+  experience:
+    'This is a WORK EXPERIENCE section. For each job, write a heading line "Job Title, Employer — Month Year–Month Year" with the job title in <strong>, followed by a <ul> of concise, action-verb duty bullets (one duty per <li>). Split any run-on paragraph of duties into separate bullets. Do not invent employers, titles, dates, or achievements.',
+  skills:
+    'This is a SKILLS section. Format as a single <ul> with one concise skill per <li>, grouped logically (related skills adjacent). Do not invent skills.',
+  summary:
+    'This is a SUMMARY section. Format as one tight <p> of 2–3 sentences — no bullets. Do not invent experience.',
+  projects:
+    'This is a PROJECTS section. For each project, a heading line with the project name in <strong>, followed by a short <ul> of what was built or done. Do not invent projects or outcomes.',
+  certifications:
+    'This is a CERTIFICATIONS section. One <li> per certification as "Certification Name — Issuer — Year" (name in <strong>). Do not invent certifications, issuers, or dates.',
+  default:
+    'Format this section with clean résumé conventions: use a <ul> with one concise <li> per item when it is a list of duties or facts, or tidy <p> lines otherwise. Split run-on paragraphs into separate points. Do not invent content.',
+}
+
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
@@ -129,6 +159,12 @@ export default async function handler(req) {
   // tailor) must arrive whole to parse. Falls back to the buffered path otherwise.
   const wantStream = body.stream === true && !config.json
 
+  // "format" adapts to the active section: append the per-type layout hint.
+  let systemPrompt = config.prompt
+  if (task === 'format') {
+    systemPrompt += ' ' + (FORMAT_HINTS[body.sectionType] || FORMAT_HINTS.default)
+  }
+
   try {
     const res = await fetch(GROQ_URL, {
       method: 'POST',
@@ -143,7 +179,7 @@ export default async function handler(req) {
         ...(config.json ? { response_format: { type: 'json_object' } } : {}),
         ...(wantStream ? { stream: true } : {}),
         messages: [
-          { role: 'system', content: config.prompt },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: text.trim() },
         ],
       }),
