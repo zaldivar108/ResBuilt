@@ -61,6 +61,27 @@ export default function Landing() {
           ))}
         </div>
       </main>
+
+      <footer className="landing-footer">
+        <a
+          href="https://services.onetcenter.org/"
+          title="This application incorporates information from O*NET Web Services. Click to learn more."
+          target="_blank"
+          rel="noreferrer"
+        >
+          <img
+            src="https://www.onetcenter.org/image/link/onet-in-it.svg"
+            style={{ width: 130, height: 60, border: 'none' }}
+            alt="O*NET in-it"
+          />
+        </a>
+        <p className="onet-credit">
+          This application incorporates information from{' '}
+          <a href="https://services.onetcenter.org/" target="_blank" rel="noreferrer">O*NET Web Services</a>{' '}
+          by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA).
+          O*NET® is a trademark of USDOL/ETA.
+        </p>
+      </footer>
     </div>
   )
 }

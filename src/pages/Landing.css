@@ -207,3 +207,19 @@
   padding: 9px 20px;
   border-radius: 9999px;
 }
+
+/* O*NET attribution footer (required by CC BY 4.0 license) */
+.landing-footer {
+  text-align: center;
+  padding: 2.5rem 1.5rem 3rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.landing-footer img { margin-bottom: 0.75rem; }
+.onet-credit {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #64748B;
+  margin: 0;
+}
+.onet-credit a { color: #6366F1; }

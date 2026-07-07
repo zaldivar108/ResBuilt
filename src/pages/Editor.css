@@ -1157,3 +1157,15 @@
 @media (max-width: 640px) {
   .sidebar { width: 320px; min-width: 320px; }
 }
+
+/* O*NET attribution credit — required whenever O*NET data is surfaced */
+.onet-editor-credit {
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: #94A3B8;
+  margin: 1.25rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid #E2E8F0;
+}
+.onet-editor-credit a { color: #818CF8; }
+.editor-layout.dark .onet-editor-credit { color: #64748B; border-top-color: #334155; }
