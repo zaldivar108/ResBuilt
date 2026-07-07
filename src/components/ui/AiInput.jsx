@@ -241,9 +241,13 @@ export function AiInput({ section = null, onApply = () => {} }) {
 
   useEffect(() => {
     function clickOutside(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target) && showForm) {
-        triggerClose()
-      }
+      if (!showForm) return
+      if (wrapperRef.current && wrapperRef.current.contains(e.target)) return
+      // Keep the dock open while working inside the editor — switching sections,
+      // editing text, or clicking the preview shouldn't dismiss it. Only a click
+      // fully outside the editor closes it.
+      if (e.target.closest && e.target.closest('.editor-layout')) return
+      triggerClose()
     }
     function onKey(e) {
       if (e.key === 'Escape' && showForm) triggerClose()
