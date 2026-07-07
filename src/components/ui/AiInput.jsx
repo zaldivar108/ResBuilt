@@ -5,6 +5,7 @@ import { getLinter } from '../../lib/harperLinter'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { getCached, setCached } from '../../lib/aiCache'
 import { canUseAI, recordUse } from '../../lib/aiBudget'
+import { scrubPii } from '../../lib/scrubPii'
 import OnetSuggest from './OnetSuggest'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -70,6 +71,7 @@ function InputForm() {
   const [error, setError] = useState('')
   const [applied, setApplied] = useState(false)
   const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = real job duties
+  const [groundOcc, setGroundOcc] = useState(null) // O*NET occupation to ground "ideas" on
   const coolingRef = useRef(false)
 
   async function runTask(task) {
@@ -101,8 +103,19 @@ function InputForm() {
       return
     }
 
+    // "Suggest ideas" is context-only: ground it on the selected O*NET job (so
+    // suggestions match real duties) and scrub PII before sending. Improve
+    // rewrites the actual text, so it's sent verbatim.
+    let sentText = section.content
+    if (task === 'ideas') {
+      if (groundOcc) {
+        sentText += `\n\nContext — real duties for a ${groundOcc.title}: ${groundOcc.tasks.join('; ')}`
+      }
+      sentText = scrubPii(sentText)
+    }
+
     // Serve an identical prior request from cache — free, no quota spent.
-    const cached = getCached(task, section.content)
+    const cached = getCached(task, sentText)
     if (cached) {
       setResult(cached)
       setLastTask(task)
@@ -121,7 +134,7 @@ function InputForm() {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, text: section.content }),
+        body: JSON.stringify({ task, text: sentText }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -131,7 +144,7 @@ function InputForm() {
       const clean = sanitizeHtml(stripFences(data.result || ''))
       setResult(clean)
       setLastTask(task)
-      setCached(task, section.content, clean)
+      setCached(task, sentText, clean)
       recordUse(today())
     } catch {
       setError('Could not reach the AI. If running locally, use `vercel dev`.')
@@ -198,7 +211,10 @@ function InputForm() {
             </div>
 
             {mode === 'onet' ? (
-              <OnetSuggest onApply={html => onApply(section.content + html)} />
+              <OnetSuggest
+                onApply={html => onApply(section.content + html)}
+                onOccupation={setGroundOcc}
+              />
             ) : (
               <>
                 <div className="ai-tasks">
@@ -214,6 +230,12 @@ function InputForm() {
                     </button>
                   ))}
                 </div>
+
+                {groundOcc && (
+                  <div className="ai-ground-hint">
+                    ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
+                  </div>
+                )}
 
                 {loading && <div className="ai-status">Thinking…</div>}
                 {error && <div className="ai-status ai-error">{error}</div>}

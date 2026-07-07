@@ -10,7 +10,7 @@ const today = () => new Date().toISOString().slice(0, 10)
 //   "Add selected" inserts them verbatim (zero AI, zero hallucination), or
 //   "✨ Make it mine" sends the picked duties to Groq's `polish` task to rewrite
 //   them in a teen/entry-level voice (still grounded in the real tasks).
-export default function OnetSuggest({ onApply }) {
+export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [occupation, setOccupation] = useState(null)
@@ -25,7 +25,9 @@ export default function OnetSuggest({ onApply }) {
   }
 
   function pickOccupation(code) {
-    setOccupation(getOccupation(code))
+    const occ = getOccupation(code)
+    setOccupation(occ)
+    onOccupation(occ) // share it so "Suggest ideas" can ground on it too
     setChecked(new Set())
     setResults([])
     setQuery('')
@@ -111,7 +113,7 @@ export default function OnetSuggest({ onApply }) {
         <>
           <div className="onet-occ-head">
             <strong>{occupation.title}</strong>
-            <button type="button" className="onet-change" onClick={() => setOccupation(null)}>Change</button>
+            <button type="button" className="onet-change" onClick={() => { setOccupation(null); onOccupation(null) }}>Change</button>
           </div>
           <p className="onet-hint">Check the duties that apply to you:</p>
           <ul className="onet-tasks">

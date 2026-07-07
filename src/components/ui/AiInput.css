@@ -398,3 +398,6 @@
 .editor-layout.dark .onet-result-btn { background: #1E293B; color: #E2E8F0; }
 .editor-layout.dark .onet-task { color: #CBD5E1; }
 .editor-layout.dark .onet-add { background: #1E293B; color: #E2E8F0; border-color: #334155; }
+
+.ai-ground-hint { font-size: 11.5px; color: #4F46E5; background: #EEF2FF; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
+.editor-layout.dark .ai-ground-hint { background: #312E81; color: #C7D2FE; }
