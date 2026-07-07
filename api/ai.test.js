@@ -39,22 +39,23 @@ describe('api/ai import task', () => {
   })
 
   test('accepts résumé text longer than the 2000-char per-section cap', async () => {
-    const res = await handler(req({ task: 'import', text: 'a'.repeat(9000) }))
+    const res = await handler(req({ task: 'import', text: 'a'.repeat(5000) }))
     expect(res.status).toBe(200)
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
-  test('rejects text beyond the import cap (15000)', async () => {
-    const res = await handler(req({ task: 'import', text: 'a'.repeat(15001) }))
+  test('rejects text beyond the import cap (8000)', async () => {
+    const res = await handler(req({ task: 'import', text: 'a'.repeat(8001) }))
     expect(res.status).toBe(413)
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  test('requests JSON mode and a larger token budget from Groq', async () => {
+  test('requests JSON mode, a larger token budget, and the 70B model', async () => {
     await handler(req({ task: 'import', text: 'a'.repeat(500) }))
     const body = sentBody()
     expect(body.response_format).toEqual({ type: 'json_object' })
     expect(body.max_tokens).toBeGreaterThanOrEqual(1500)
+    expect(body.model).toBe('llama-3.3-70b-versatile')
   })
 
   test('returns the raw JSON string as { result }', async () => {
@@ -91,6 +92,11 @@ describe('api/ai regression — existing per-section tasks', () => {
   test('improve does not request JSON mode', async () => {
     await handler(req({ task: 'improve', text: 'hello' }))
     expect(sentBody().response_format).toBeUndefined()
+  })
+
+  test('editing tasks route to the fast 8B model', async () => {
+    await handler(req({ task: 'improve', text: 'hello' }))
+    expect(sentBody().model).toBe('llama-3.1-8b-instant')
   })
 
   test('unknown task is still rejected', async () => {

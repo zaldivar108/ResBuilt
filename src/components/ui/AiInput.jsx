@@ -3,7 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { fixGrammarInHtml } from '../../lib/grammarFix'
 import { getLinter } from '../../lib/harperLinter'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
+import { getCached, setCached } from '../../lib/aiCache'
+import { canUseAI, recordUse } from '../../lib/aiBudget'
 import OnetSuggest from './OnetSuggest'
+
+const today = () => new Date().toISOString().slice(0, 10)
 import './AiInput.css'
 
 const SPEED_FACTOR = 1
@@ -97,6 +101,22 @@ function InputForm() {
       return
     }
 
+    // Serve an identical prior request from cache — free, no quota spent.
+    const cached = getCached(task, section.content)
+    if (cached) {
+      setResult(cached)
+      setLastTask(task)
+      setLoading(false)
+      return
+    }
+
+    // Soft per-device daily cap to protect the shared free-tier quota.
+    if (!canUseAI(today())) {
+      setError('You’ve reached today’s AI limit. Fix grammar still works offline — or come back tomorrow.')
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
@@ -108,8 +128,11 @@ function InputForm() {
         setError(data.error || 'Something went wrong. Try again.')
         return
       }
-      setResult(sanitizeHtml(stripFences(data.result || '')))
+      const clean = sanitizeHtml(stripFences(data.result || ''))
+      setResult(clean)
       setLastTask(task)
+      setCached(task, section.content, clean)
+      recordUse(today())
     } catch {
       setError('Could not reach the AI. If running locally, use `vercel dev`.')
     } finally {

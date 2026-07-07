@@ -13,8 +13,9 @@ export const MAX_PDF_BYTES = MAX_IMPORT_BYTES
 /** Below this many characters we assume an unreadable file (e.g. scanned PDF). */
 export const MIN_TEXT_CHARS = 100
 
-/** Cap the text sent to the AI so one Groq call stays cheap and bounded. */
-export const MAX_TEXT_CHARS = 15000
+/** Cap the text sent to the AI so one Groq call stays cheap and bounded.
+ *  Kept in sync with the `import` task's maxInput in api/ai.js. */
+export const MAX_TEXT_CHARS = 8000
 
 /** Extensions we can extract in-browser. */
 export const SUPPORTED_IMPORT_EXTENSIONS = ['pdf', 'docx', 'txt', 'md']

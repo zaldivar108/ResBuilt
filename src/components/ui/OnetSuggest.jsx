@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { searchOccupations, getOccupation, bulletsFromTasks } from '../../lib/onet'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
+import { canUseAI, recordUse } from '../../lib/aiBudget'
+
+const today = () => new Date().toISOString().slice(0, 10)
 
 // Grounds résumé bullets in real O*NET occupational data instead of AI guesses.
 // Flow: search a job → pick it → check the real duties that apply →
@@ -54,6 +57,10 @@ export default function OnetSuggest({ onApply }) {
 
   async function makeItMine() {
     if (!selectedTasks.length || busy) return
+    if (!canUseAI(today())) {
+      setError('You’ve reached today’s AI limit. “Add selected” still works — or come back tomorrow.')
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -69,7 +76,7 @@ export default function OnetSuggest({ onApply }) {
       }
       const raw = (data.result || '').replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim()
       const html = sanitizeHtml(raw)
-      if (html) { onApply(html); flash('Added ✓') }
+      if (html) { onApply(html); recordUse(today()); flash('Added ✓') }
     } catch {
       setError('Could not reach the AI. If running locally, use `vercel dev`.')
     } finally {

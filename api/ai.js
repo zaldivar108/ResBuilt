@@ -6,7 +6,12 @@
 export const config = { runtime: 'edge' }
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODEL = 'llama-3.3-70b-versatile'
+// Model routing to stretch the shared free-tier quota: short editing tasks run
+// on the fast/cheap 8B model (higher rate limits, plenty for a rewrite); only
+// résumé structure extraction (import) needs the larger 70B model + JSON mode.
+const MODEL_SMALL = 'llama-3.1-8b-instant'
+const MODEL_LARGE = 'llama-3.3-70b-versatile'
+const MODEL = MODEL_LARGE // fallback
 
 // One entry per supported task. Per-section editing tasks are tailored for
 // teen / young-adult first-time résumé writers — truthful, concise, encouraging.
@@ -18,6 +23,7 @@ const MODEL = 'llama-3.3-70b-versatile'
 // It gets a larger input/output budget and JSON mode.
 const TASKS = {
   improve: {
+    model: MODEL_SMALL,
     maxInput: 2000,
     maxTokens: 600,
     temperature: 0.5,
@@ -25,6 +31,7 @@ const TASKS = {
       'You improve one section of a first résumé for a teenager or young adult. The user sends the section as simple HTML. Rewrite for clarity and impact: strong action verbs, concise, honest — never invent experience, employers, numbers, or credentials. Preserve the HTML structure and the same tags (<p>, <ul>, <li>, <strong>, <em>). Return ONLY the improved HTML — no markdown, no code fences, no commentary.',
   },
   ideas: {
+    model: MODEL_SMALL,
     maxInput: 2000,
     maxTokens: 600,
     temperature: 0.5,
@@ -32,6 +39,7 @@ const TASKS = {
       'You help a teenager or young adult writing a first résumé. The user sends one résumé section as HTML for context. Suggest 3 short, realistic bullet points they could ADD, believable for someone with limited experience (school, part-time jobs, volunteering, activities) — never invent specific employers or achievements. Return ONLY an HTML fragment: a single <ul> with exactly three <li> items. No commentary, no code fences.',
   },
   grammar: {
+    model: MODEL_SMALL,
     maxInput: 2000,
     maxTokens: 600,
     temperature: 0.5,
@@ -39,6 +47,7 @@ const TASKS = {
       'Fix only spelling and grammar in the résumé section the user sends as HTML. Preserve the meaning, wording, tone, and every HTML tag and structure. Do not add or remove content. Return ONLY the corrected HTML — no markdown, no code fences, no commentary.',
   },
   polish: {
+    model: MODEL_SMALL,
     maxInput: 2000,
     maxTokens: 500,
     temperature: 0.5,
@@ -46,7 +55,8 @@ const TASKS = {
       'You turn real job duties into résumé bullet points for a teenager or young adult writing a first résumé. The user sends one or more real tasks for a specific job (sourced from O*NET occupational data). Rewrite them as concise, first-person-implied résumé bullets with strong action verbs, in a voice believable for someone with limited experience. Keep them truthful to the duties given — do NOT invent employers, numbers, dates, or achievements. Return ONLY an HTML fragment: a single <ul> with one <li> per bullet. No commentary, no code fences.',
   },
   import: {
-    maxInput: 15000,
+    model: MODEL_LARGE,
+    maxInput: 8000,
     maxTokens: 2000,
     temperature: 0.2,
     json: true,
@@ -98,7 +108,7 @@ export default async function handler(req) {
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: config.model || MODEL,
         temperature: config.temperature,
         max_tokens: config.maxTokens,
         ...(config.json ? { response_format: { type: 'json_object' } } : {}),
