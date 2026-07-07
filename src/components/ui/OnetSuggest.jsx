@@ -143,6 +143,9 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
               </li>
             ))}
           </ul>
+          {query.trim().length >= 2 && results.length === 0 && (
+            <p className="onet-empty">No matching jobs. Try a different word (e.g. “cashier”, “tutor”, “barista”).</p>
+          )}
         </>
       ) : (
         <>

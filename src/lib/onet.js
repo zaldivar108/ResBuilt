@@ -12,13 +12,20 @@ import { OCCUPATIONS } from '../config/onetData.js'
 
 const DEFAULT_LIMIT = 8
 
+// True when any whole word in `text` starts with `q`. Word-prefix (not raw
+// substring) matching keeps "cash"→"Cashiers" while rejecting junk like
+// "it"→"waiters"/"babysitter"/"activities".
+function wordStartsWith(text, q) {
+  return text.split(/[^a-z0-9]+/i).some(w => w.startsWith(q))
+}
+
 // Higher score = better match. Title hits beat keyword-only hits.
 function scoreMatch(occ, q) {
   const title = occ.title.toLowerCase()
   if (title === q) return 4
   if (title.startsWith(q)) return 3
-  if (title.includes(q)) return 2
-  if ((occ.keywords ?? []).some(k => k.toLowerCase().includes(q))) return 1
+  if (wordStartsWith(title, q)) return 2
+  if ((occ.keywords ?? []).some(k => wordStartsWith(k.toLowerCase(), q))) return 1
   return 0
 }
 

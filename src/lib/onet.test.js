@@ -49,6 +49,21 @@ describe('searchOccupations', () => {
     expect(searchOccupations('astronaut', { data: DATA })).toEqual([])
   })
 
+  test('does not match on mid-word substrings (regression: "it")', () => {
+    // "it" appears inside "waiters", "babysitter", "activities" — none should match.
+    const noise = [
+      { code: 'a', title: 'Waiters & Waitresses', keywords: ['server'], tasks: [], skills: [] },
+      { code: 'b', title: 'Childcare Workers', keywords: ['babysitter', 'sitter'], tasks: [], skills: [] },
+      { code: 'c', title: 'Recreation Workers', keywords: ['activities'], tasks: [], skills: [] },
+    ]
+    expect(searchOccupations('it', { data: noise })).toEqual([])
+  })
+
+  test('matches a word prefix inside a multi-word keyword phrase', () => {
+    const results = searchOccupations('store', { data: DATA })
+    expect(results[0].title).toBe('Retail Salespersons') // via "store associate"
+  })
+
   test('respects the result limit', () => {
     const results = searchOccupations('e', { data: DATA, limit: 2 })
     expect(results.length).toBeLessThanOrEqual(2)

@@ -371,6 +371,7 @@
 .onet-occ-head { display: flex; align-items: center; justify-content: space-between; }
 .onet-change { border: none; background: none; color: #6366F1; font-size: 12px; cursor: pointer; }
 .onet-hint { font-size: 12px; color: #64748B; margin: 0; }
+.onet-empty { font-size: 12px; color: #94A3B8; margin: 8px 2px 0; line-height: 1.4; }
 .onet-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .onet-task { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: #334155; cursor: pointer; line-height: 1.4; }
 .onet-task input { margin-top: 2px; flex-shrink: 0; }
