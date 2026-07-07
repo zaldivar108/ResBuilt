@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useResume } from '../context/ResumeContext'
 import ResumeCard from '../components/ResumeCard'
 import ImportModal from '../components/ImportModal'
+import InterestProfiler from '../components/ui/InterestProfiler'
 import Switch from '../components/ui/switch'
 import { STARTERS, DEFAULT_STARTER_ID } from '../config/starters'
 import './Dashboard.css'
@@ -16,10 +17,17 @@ export default function Dashboard() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [bizCardModal, setBizCardModal] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [profiling, setProfiling] = useState(false)
 
   function handleImported({ title, sections }) {
     const resume = createResumeFromImport(title, sections)
     setImporting(false)
+    navigate(`/editor/${resume.id}`)
+  }
+
+  function handleStartFromCareer(careerTitle) {
+    const resume = createResume(`${careerTitle} Resume`, DEFAULT_STARTER_ID)
+    setProfiling(false)
     navigate(`/editor/${resume.id}`)
   }
 
@@ -58,6 +66,9 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="dash-header-actions">
+            <button className="btn-new-bizcard" onClick={() => setProfiling(true)}>
+              🎯 Find a job that fits
+            </button>
             <button className="btn-new-bizcard" onClick={() => setBizCardModal(true)}>
               + New Business Card
             </button>
@@ -113,6 +124,10 @@ export default function Dashboard() {
 
       {importing && (
         <ImportModal onClose={() => setImporting(false)} onImported={handleImported} />
+      )}
+
+      {profiling && (
+        <InterestProfiler onClose={() => setProfiling(false)} onStartResume={handleStartFromCareer} />
       )}
 
       {bizCardModal && (

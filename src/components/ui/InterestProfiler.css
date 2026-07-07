@@ -1,0 +1,92 @@
+/* Interest Profiler quiz modal. Reuses .modal-overlay / .modal / .modal-btn
+   from Dashboard.css; these rules only add the profiler-specific pieces. */
+
+.ip-modal {
+  position: relative;
+  max-width: 620px;
+  width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.ip-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: #94A3B8;
+  cursor: pointer;
+}
+.ip-close:hover { color: #475569; }
+
+.ip-head h2 { margin: 0 0 6px; font-size: 22px; color: #1E293B; }
+.ip-sub { margin: 0 0 16px; font-size: 14px; color: #64748B; line-height: 1.5; }
+
+/* Progress */
+.ip-progress { height: 6px; background: #E2E8F0; border-radius: 9999px; overflow: hidden; }
+.ip-progress-bar { height: 100%; background: linear-gradient(90deg, #6366F1, #8B5CF6); transition: width 0.25s ease; }
+.ip-count { font-size: 12px; color: #94A3B8; margin: 6px 0 12px; }
+
+/* Questions */
+.ip-questions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.ip-q { border-bottom: 1px solid #F1F5F9; padding-bottom: 12px; }
+.ip-q-text { display: block; font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 8px; }
+.ip-scale { display: flex; gap: 6px; flex-wrap: wrap; }
+.ip-opt {
+  flex: 1;
+  min-width: 88px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #fff;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ip-opt:hover { border-color: #C7D2FE; color: #4F46E5; }
+.ip-opt.active { background: #6366F1; border-color: #6366F1; color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,0.4); }
+
+/* Actions */
+.ip-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
+.ip-actions-split { justify-content: space-between; }
+
+/* Results — RIASEC bars */
+.ip-bars { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ip-bar-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 12px; }
+.ip-bar-label { font-size: 13px; font-weight: 600; color: #475569; }
+.ip-bar-track { height: 14px; background: #F1F5F9; border-radius: 9999px; overflow: hidden; }
+.ip-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, #6366F1, #8B5CF6); border-radius: 9999px; transition: width 0.4s ease; }
+
+/* Results — careers */
+.ip-careers-title { font-size: 15px; color: #1E293B; margin: 0 0 10px; }
+.ip-careers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ip-career {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; border: 1px solid #E2E8F0; border-radius: 10px; background: #F8FAFC;
+}
+.ip-career-name { font-size: 13.5px; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ip-badge { font-size: 10.5px; font-weight: 700; color: #B45309; background: #FEF3C7; padding: 2px 8px; border-radius: 9999px; }
+.ip-start {
+  flex-shrink: 0; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  color: #4F46E5; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px; padding: 7px 12px; cursor: pointer; transition: all 0.15s;
+}
+.ip-start:hover { background: #6366F1; color: #fff; border-color: #6366F1; }
+
+.ip-attr { font-size: 11px; color: #94A3B8; line-height: 1.5; margin: 18px 0 0; }
+.ip-attr a { color: #6366F1; }
+
+/* Loading / error */
+.ip-center { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 48px 16px; color: #64748B; font-size: 14px; }
+.ip-spinner { width: 32px; height: 32px; border: 3px solid #E2E8F0; border-top-color: #6366F1; border-radius: 50%; animation: ip-spin 0.7s linear infinite; }
+@keyframes ip-spin { to { transform: rotate(360deg); } }
+.ip-error { color: #DC2626; font-size: 13px; margin: 8px 0; }
+
+/* Dark mode */
+.dashboard.dark .ip-modal .ip-head h2,
+.dashboard.dark .ip-modal .ip-careers-title { color: #F1F5F9; }

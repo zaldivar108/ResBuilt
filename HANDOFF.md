@@ -1,6 +1,6 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 164 passing · HEAD `b392993`_
+_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 179 passing · v0.1.0_
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
@@ -10,9 +10,15 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Test suite: 164 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work.
+**Test suite: 179 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work.
 
-**SHIPPED THIS SESSION — 2026-07-07 (all TDD, pushed to `master`):**
+**SHIPPED THIS SESSION — 2026-07-07 (part 2) — all TDD, pushed to `master`:**
+
+1. **Version indicator** — `package.json` version bumped `0.0.0 → 0.1.0`; injected at build time via Vite `define` (`__APP_VERSION__`, single source = package.json) → surfaced through `src/version.js` (`APP_VERSION`) as a subtle pill by the logo on the landing nav. Bump `package.json` to update everywhere.
+2. **O*NET search relevance fix** — `searchOccupations` (seed fallback) matched raw substrings, so `"it"` surfaced Waiters/Childcare/Recreation ("wa**it**ers", "babys**it**ter", "activ**it**ies"). Now matches **whole-word prefixes** (`wordStartsWith`) — `cash`→Cashiers works, `it`→nothing. Added empty-state hint in `OnetSuggest.jsx`. Live O*NET path (via `vercel dev`) is unaffected; this only cleaned the seed. **Note: the live remote path only runs under `vercel dev`; plain `npm run dev` doesn't serve `/api`, so search falls back to the 10-job seed** (which has no IT/tech roles — that's why the seed looked broken).
+3. **Interest Profiler quiz (O*NET Mini-IP, live)** — new career-discovery feature. Dashboard button **"🎯 Find a job that fits"** → `InterestProfiler.jsx` modal → 30-question Mini-IP (5-point like/dislike) → RIASEC score bars + top-interest blurb → matched careers (🌟 Bright Outlook badges) → **"Start a résumé"** per career (`createResume("<Career> Resume")` → editor). Result cached in `localStorage` (`resbuilt_ip_result`) so reopening lands on results with a **Retake** option. **Privacy: no PII sent** — only the anonymous answer-digit string goes to O*NET. Same v2 API + `ONET_API_KEY` as the duties feature (no separate signup). Files: proxy `api/onetip.js` (GET-only; assembles all 30 questions across pagination, scores, matches careers, whitelists only the 6 RIASEC params), pure normalizers `src/lib/onetIpNormalize.js`, client repo `src/lib/onetIp.js`. Verified end-to-end against the live API (varied answers → real scores → matched careers). **Limit: no job-zone filter** (O*NET's `job_zone` param on this endpoint is unreliable; full filtering is on their H1-2026 roadmap), so career lists can include high-education roles (e.g. Chiropractors) — acceptable for MVP, easy to add later behind the same interface. **Needs `vercel dev` to run live.**
+
+**SHIPPED PREVIOUSLY THIS DAY — 2026-07-07 (part 1) — all TDD, pushed to `master`:**
 
 1. **Section-aware "Format" button** (`d3778a4`) — 4th AI action in the "Edit my text" tab. Reformats the active section into the conventional résumé layout for **its `type`**: contact → name + clean email/phone(normalized)/location/links; education → "**School** — City, State — Year"; experience → "**Title**, Employer — dates" + duty bullets; skills → skill list; summary → tight `<p>`; projects/certifications → named headings; else → generic bullets. Client sends `section.type`; proxy (`api/ai.js`) appends the matching `FORMAT_HINTS[type]` to the base `format` prompt. Groq 8B, HTML, streamed, sanitized. Result cache is keyed on section type. All prompts forbid inventing facts.
 2. **Tooltips** (`d3778a4`) — `title` + `aria-label` on all 4 task buttons and the 3 mode tabs; mode tabs refactored into a `MODE_TABS` map.
@@ -226,7 +232,9 @@ api/
 │                               #   tasks: improve, ideas, grammar, format, polish, tailor, retarget
 │                               #   (8B), import (70B, JSON). format appends FORMAT_HINTS[sectionType].
 │                               #   Opt-in `stream` passthrough for HTML tasks.
-└── onet.js                     # Vercel Edge proxy → O*NET v2 (X-API-Key). search + occupation.
+├── onet.js                     # Vercel Edge proxy → O*NET v2 (X-API-Key). search + occupation.
+└── onetip.js                   # Vercel Edge proxy → O*NET Interest Profiler v2 (shares ONET_API_KEY).
+                                #   actions: questions (all 30), results (score), careers (match).
 docs/
 ├── onet-extract.md             # how to replace the O*NET seed with full DB / live API
 └── adr/                        # (empty — ADR 0001 on PII→Groq still to write)
@@ -243,6 +251,7 @@ src/
 │   ├── ImportModal.jsx         # multi-format import consent gate + UI
 │   ├── layouts/                # Classic, Modern, Minimal, Executive, Compact, Timeline
 │   └── ui/                     # AiInput (dock, 3 tabs), OnetSuggest, JobTailor,
+│                               #   InterestProfiler (Mini-IP quiz modal),
 │                               #   AccentColorPicker, SelectDropdown, dropdown-menu, switch
 └── lib/
     ├── utils.js
@@ -256,6 +265,10 @@ src/
     ├── onet.js                 # occupation repository: seed search/getOccupation + live
     │                           #   searchOccupationsRemote/getOccupationRemote (→ api/onet.js)
     ├── onetNormalize.js        # pure normalizers for O*NET v2 JSON (career[], on_the_job…)
+    ├── onetIp.js               # Interest Profiler client repo (→ api/onetip): isValidAnswers,
+    │                           #   fetchProfilerQuestions / scoreAnswers / matchingCareers
+    ├── onetIpNormalize.js      # pure normalizers for Interest Profiler v2 JSON + scoresToCareerQuery
+    ├── version.js              # APP_VERSION (Vite-injected __APP_VERSION__ from package.json)
     ├── tailor.js               # parseTailorResult (job-match analysis)
     ├── scrubPii.js  aiCache.js  aiBudget.js  streamAi.js   # AI quota/privacy/streaming utils
     └── ...
