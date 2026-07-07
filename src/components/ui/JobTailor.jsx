@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { parseTailorResult } from '../../lib/tailor'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { bulletsFromTasks } from '../../lib/onet'
@@ -17,6 +17,12 @@ export default function JobTailor({ section, onApply }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
+  const abortRef = useRef(null)    // cancels the in-flight request on unmount/tab switch
+  const mountedRef = useRef(true)  // guards setState after unmount
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false; abortRef.current?.abort() }
+  }, [])
 
   const combined = `JOB POSTING:\n${posting}\n\nRÉSUMÉ SECTION:\n${section?.content ?? ''}`
 
@@ -34,13 +40,18 @@ export default function JobTailor({ section, onApply }) {
     }
     setBusy(true)
     setError('')
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task, text: combined }),
+        signal: controller.signal,
       })
       const data = await res.json().catch(() => ({}))
+      if (!mountedRef.current) return
       if (!res.ok) {
         setError(data.error || 'Something went wrong. Try again.')
         return
@@ -49,15 +60,17 @@ export default function JobTailor({ section, onApply }) {
       setCached(task, combined, result)
       recordUse(today())
       onResult(result)
-    } catch {
+    } catch (err) {
+      if (err?.name === 'AbortError' || !mountedRef.current) return
       setError('Could not reach the AI. If running locally, use `vercel dev`.')
     } finally {
-      setBusy(false)
+      if (mountedRef.current) setBusy(false)
     }
   }
 
   function analyze() {
     if (!posting.trim() || busy) return
+    setAnalysis(null) // drop any stale analysis so it can't render beside a new error
     callTask('tailor', result => {
       const parsed = parseTailorResult(result)
       if (!parsed.ok) { setError(parsed.error); return }
@@ -93,7 +106,7 @@ export default function JobTailor({ section, onApply }) {
         {busy ? 'Analyzing…' : 'Analyze match'}
       </button>
 
-      {error && <div className="ai-status ai-error">{error}</div>}
+      {error && <div className="ai-status ai-error" role="alert">{error}</div>}
 
       {analysis && !busy && (
         <div className="tailor-results">

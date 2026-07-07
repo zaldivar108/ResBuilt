@@ -25,19 +25,24 @@ export function splitSse(buffer) {
 /**
  * Stream an AI task, invoking onDelta(cumulativeText) as tokens arrive.
  * Falls back to a buffered JSON response if the server didn't stream.
+ * @param {object} payload - the task payload sent to /api/ai
+ * @param {(text: string) => void} onDelta - called with cumulative text
+ * @param {{ signal?: AbortSignal }} [opts] - pass a signal to cancel the request
  * @returns {Promise<string>} the full text
  * @throws {Error} with a user-friendly message on HTTP or network failure
  */
-export async function streamAiTask(payload, onDelta) {
+export async function streamAiTask(payload, onDelta, { signal } = {}) {
   let res
   try {
     res = await fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...payload, stream: true }),
+      signal,
     })
-  } catch {
-    throw new Error('Could not reach the AI. If running locally, use `vercel dev`.')
+  } catch (err) {
+    if (err?.name === 'AbortError') throw err
+    throw new Error('Could not reach the AI. If running locally, use `vercel dev`.', { cause: err })
   }
 
   if (!res.ok) {

@@ -3,6 +3,8 @@
 // The GROQ_API_KEY never reaches the browser. Set it as a Vercel env var
 // (and in .env.local for `vercel dev`); see .env.example.
 
+import { checkRateLimit } from './_rateLimit.js'
+
 export const config = { runtime: 'edge' }
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
@@ -125,15 +127,23 @@ const FORMAT_HINTS = {
     'Format this section with clean résumé conventions: use a <ul> with one concise <li> per item when it is a list of duties or facts, or tidy <p> lines otherwise. Split run-on paragraphs into separate points. Do not invent content.',
 }
 
-function json(obj, status = 200) {
+function json(obj, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
   })
 }
 
 export default async function handler(req) {
   if (req.method !== 'POST') return json({ error: 'Method not allowed.' }, 405)
+
+  // Per-IP throttle on the shared Groq key (best-effort; see api/_rateLimit.js).
+  const rl = checkRateLimit(req, { limit: 30 })
+  if (!rl.ok) {
+    return json({ error: 'Too many requests — please slow down and try again shortly.' }, 429, {
+      'Retry-After': String(rl.retryAfter),
+    })
+  }
 
   const key = process.env.GROQ_API_KEY
   if (!key) return json({ error: 'AI is not configured on the server.' }, 503)
@@ -146,7 +156,10 @@ export default async function handler(req) {
   }
 
   const { task, text } = body ?? {}
-  const config = TASKS[task]
+  // Own-property check: guards against inherited members like "__proto__" /
+  // "constructor" resolving to a truthy object and slipping past the allow-list
+  // (which would then bypass the maxInput cap on an undefined config).
+  const config = typeof task === 'string' && Object.hasOwn(TASKS, task) ? TASKS[task] : null
   if (!config) return json({ error: 'Unknown task.' }, 400)
   if (typeof text !== 'string' || !text.trim()) {
     return json({ error: 'Please enter some text first.' }, 400)
@@ -162,7 +175,10 @@ export default async function handler(req) {
   // "format" adapts to the active section: append the per-type layout hint.
   let systemPrompt = config.prompt
   if (task === 'format') {
-    systemPrompt += ' ' + (FORMAT_HINTS[body.sectionType] || FORMAT_HINTS.default)
+    const hint = typeof body.sectionType === 'string' && Object.hasOwn(FORMAT_HINTS, body.sectionType)
+      ? FORMAT_HINTS[body.sectionType]
+      : FORMAT_HINTS.default
+    systemPrompt += ' ' + hint
   }
 
   try {

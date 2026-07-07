@@ -13,6 +13,7 @@ import {
 } from '../components/ui/dropdown-menu'
 import AiInput from '../components/ui/AiInput'
 import AccentColorPicker from '../components/ui/AccentColorPicker'
+import { sanitizeHtml } from '../lib/sanitizeHtml'
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core'
@@ -119,8 +120,12 @@ export default function Editor() {
   }
 
   // Write an AI result back into the active section, keeping the contentEditable in sync.
-  function applyAiToSection(html) {
+  function applyAiToSection(rawHtml) {
     if (!activeSectionId) return
+    // Central sanitize at the write boundary: AI/O*NET/tailor output all funnels
+    // through here, so no upstream call site can forget to sanitize (defense in
+    // depth — the individual producers escape/sanitize too).
+    const html = sanitizeHtml(rawHtml)
     // Snapshot the current content so the AI edit can be undone for 8s.
     const prevContent = editorRef.current
       ? editorRef.current.innerHTML

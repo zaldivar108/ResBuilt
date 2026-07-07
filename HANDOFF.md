@@ -1,6 +1,6 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 182 passing · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
+_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 197 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
@@ -12,7 +12,25 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 **Test suite: 182 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work. **Production is deployed & verified live at https://resbuilt.vercel.app** (all `/api` proxies return 200: ai/onet/onetip).
 
-**SHIPPED THIS SESSION — 2026-07-07 (part 2) — all TDD, pushed to `master`:**
+**SHIPPED THIS SESSION — 2026-07-07 (part 3) — AI-surface review + hardening (tests 182 → 197):**
+
+_Deep code review of the whole AI surface (parallel react + security reviewers), then fixes. All Groq round-trips re-verified live via `vercel dev`._
+
+- **XSS fix (CRITICAL)** — `bulletsFromTasks` (`src/lib/onet.js`) interpolated task strings raw into `<li>`; a crafted job posting could steer the `tailor` model into emitting markup rendered via `dangerouslySetInnerHTML`. Now HTML-escapes every task; **and** `Editor.applyAiToSection` sanitizes centrally at the section-write boundary (defense in depth — no call site can forget).
+- **Stale-apply fix (CRITICAL)** — the AI dock kept a preview generated for a previous section; applying after switching sections silently overwrote the wrong section. Dock state now resets on section change and `applyResult` is guarded by the originating section id.
+- **Streaming/abort races (HIGH)** — `AiInput.runTask` now uses a `requestId` + `AbortController` (only the latest request touches state); `OnetSuggest`/`JobTailor` got `AbortController` + mounted-guards and abort on tab-switch/unmount; mode tabs disabled while busy; `pickOccupation` race-guarded.
+- **PII → Groq, contact section (H2)** — "Format" on a `contact` section now runs **fully on-device** via new pure `src/lib/contactFormat.js` (name/email/phone/links, phone normalized) — the minor's PII never leaves the browser. Improve/Suggest-ideas are disabled on contact sections (they'd send PII and aren't useful there). **Grammar stays on-device (harper.js), as always.**
+- **`api/ai.js` hardening (M1)** — `Object.hasOwn` guards on `TASKS`/`FORMAT_HINTS` lookups kill the `__proto__`/`constructor` allow-list + length-cap bypass (verified live → 400).
+- **`sanitizeHtml` (M3)** — dropped `style` from the allow-list (CSS-beacon vector); added an `afterSanitizeAttributes` hook forcing `rel="noopener noreferrer"` on any `target="_blank"`.
+- **Security headers + CSP (M2)** — `vercel.json` now sets CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (verified live). **CSP must keep** `fonts.googleapis.com`/`fonts.gstatic.com` (EB Garamond in `index.html`), `'wasm-unsafe-eval'` (harper.js), `worker-src blob:` (pdf.js).
+- **Server-side rate limiting (H1, best-effort)** — new `api/_rateLimit.js` per-IP sliding window on all three Edge proxies (ai 30/min, onet+onetip 60/min). **LIMITATION:** module-scope state is per warm isolate — a real speed-bump on prod, but NOT a hard distributed guarantee, and it does **not** accumulate under `vercel dev` (dev reloads the fn per request, so it can't be verified locally). Swap the Map for Vercel KV/Upstash for a strict limit (drop-in — same `checkRateLimit` contract).
+- **a11y** — `aria-live`/`role=alert` on all AI status/error/result regions; `InterestProfiler` got `role=dialog`, `aria-modal`, Escape-to-close, focus-on-open.
+- **AI UX** — daily-budget indicator ("N of 25 left today"), client length pre-flight (friendly message instead of a post-hoc 413), error "Try again" button, ideas↔O*NET grounding nudges on both tabs, JobTailor clears stale analysis before a retry, `tailor.js` dedupes lists (kills duplicate React keys).
+- **Deps (M4)** — bumped `react-router-dom` 7.14 → 7.18 + `npm audit fix` → **0 vulnerabilities** (was 1 high/1 mod/1 low).
+
+**Still open after this session:** H1 is best-effort only (provision KV for a hard limit). H2 residual: improve/ideas on *non-contact* sections still send text to Groq verbatim (by design; consent shown) — broaden `scrubPii` or confirm Groq zero-retention if pursued. Lower: `InterestProfiler` radiogroup lacks arrow-key roving-tabindex; contentEditable + toolbar `createLink` still store raw (self-XSS class, single-user). See memory `project-ai-security-followups`.
+
+**SHIPPED EARLIER THIS SESSION — 2026-07-07 (part 2) — all TDD, pushed to `master`:**
 
 7. **Fuller "Real job duties"** (`a2766f2`) — the My Next Move `on_the_job` list is only ~3 items. `api/onet.js` occupation action now makes a **2nd call** to `/online/occupations/{code}/details/tasks?end=20`, ranks **Core-first then by importance**, caps at 15, and prefers it over `on_the_job` (silent fallback if that endpoint fails). New pure normalizer `normalizeOnlineTasks` (in `onetNormalize.js`) + tests. Verified live: Waiters 3 → 15 tasks.
 8. **AI dock square** (`a2766f2`) — expanded AI Assist panel `540×340 → 540×540` (`FORM_HEIGHT` in `AiInput.jsx`).

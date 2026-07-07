@@ -1,6 +1,11 @@
 /* global process */
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import handler from './ai.js'
+import { __resetRateLimit } from './_rateLimit.js'
+
+// All test reqs share the same (headerless) IP bucket; reset between cases so
+// the per-IP limiter doesn't accumulate into a 429 across the suite.
+beforeEach(() => __resetRateLimit())
 
 // Build a minimal Request-like object the Edge handler understands.
 function req(body, method = 'POST') {

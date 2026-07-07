@@ -4,8 +4,9 @@ import { fixGrammarInHtml } from '../../lib/grammarFix'
 import { getLinter } from '../../lib/harperLinter'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { getCached, setCached } from '../../lib/aiCache'
-import { canUseAI, recordUse } from '../../lib/aiBudget'
+import { canUseAI, recordUse, remaining, DAILY_LIMIT } from '../../lib/aiBudget'
 import { scrubPii } from '../../lib/scrubPii'
+import { formatContactLocal } from '../../lib/contactFormat'
 import { streamAiTask } from '../../lib/streamAi'
 import OnetSuggest from './OnetSuggest'
 import JobTailor from './JobTailor'
@@ -24,6 +25,11 @@ const TASKS = [
   { id: 'format',  label: 'Format',          title: 'Reformat this section into the standard résumé layout for its type — clean contact lines, "School — City, State — Year" for education, title + duty bullets for experience, and so on. Sent to Groq AI.' },
   { id: 'ideas',   label: 'Suggest ideas',   title: 'Suggest 3 realistic bullet points you could add. Sent to Groq AI.' },
 ]
+
+// Server-side input caps per task (mirrors api/ai.js TASKS.maxInput). Used for a
+// friendly client pre-flight so the user isn't surprised by a 413 after waiting.
+// grammar runs on-device (harper.js), so it has no cap here.
+const MAX_INPUT = { improve: 2000, ideas: 2000, format: 6000 }
 
 const MODE_TABS = [
   { id: 'ai',     label: 'Edit my text',   title: 'Improve, fix grammar, reformat, or get bullet-point ideas for the selected section.' },
@@ -75,21 +81,61 @@ function DockBar() {
 function InputForm() {
   const { showForm, section, onApply } = useFormCtx()
   const [result, setResult] = useState('')
+  const [resultFor, setResultFor] = useState(null) // section id the result was generated for
   const [lastTask, setLastTask] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false) // drives the "Thinking…" spinner (off on first token)
+  const [busy, setBusy] = useState(false)        // request in flight — disables the buttons end-to-end
   const [error, setError] = useState('')
   const [applied, setApplied] = useState(false)
   const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = real job duties
   const [groundOcc, setGroundOcc] = useState(null) // O*NET occupation to ground "ideas" on
+  const [attempt, setAttempt] = useState(null)     // last task attempted, for the "Try again" button
   const coolingRef = useRef(false)
+  const reqIdRef = useRef(0)          // monotonic id: only the latest request may touch state
+  const abortRef = useRef(null)       // cancels a superseded/abandoned request
+
+  const sectionId = section?.id ?? null
+  const aiLeft = remaining(today())
+
+  // Switching sections must discard a preview generated for the old section —
+  // otherwise "Apply" could silently write section A's result into section B.
+  // Also aborts any in-flight request (and on unmount, e.g. tab switch).
+  useEffect(() => {
+    abortRef.current?.abort()
+    reqIdRef.current++ // invalidate in-flight callbacks
+    // Resetting local preview state when the section identity changes is the
+    // documented "adjust state on prop change" case; we keep it in an effect
+    // (rather than a key remount) to preserve the active tab + O*NET grounding.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResult(''); setResultFor(null); setLastTask(null); setAttempt(null)
+    setError(''); setApplied(false); setBusy(false); setLoading(false)
+    return () => abortRef.current?.abort()
+  }, [sectionId])
 
   async function runTask(task) {
-    if (loading) return
+    if (busy) return
     if (!section) { setError('Select a section to edit first.'); return }
     if (coolingRef.current) { setError('One moment — try again in a second.'); return }
+
+    // Friendly length pre-flight — better than a post-hoc 413 after waiting.
+    const limit = MAX_INPUT[task]
+    if (limit && section.content.length > limit) {
+      setError(`This section is long for AI (${section.content.length}/${limit} characters). Trim it or split it into two sections, then try again.`)
+      return
+    }
+
     coolingRef.current = true
     setTimeout(() => { coolingRef.current = false }, COOLDOWN_MS)
 
+    const forId = section.id
+    const reqId = ++reqIdRef.current
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const active = () => reqId === reqIdRef.current
+    setAttempt(task)
+
+    setBusy(true)
     setLoading(true)
     setError('')
     setResult('')
@@ -102,13 +148,23 @@ function InputForm() {
       try {
         const linter = await getLinter()
         const fixed = await fixGrammarInHtml(section.content, linter)
-        setResult(sanitizeHtml(fixed))
-        setLastTask('grammar')
+        if (!active()) return
+        setResult(sanitizeHtml(fixed)); setResultFor(forId); setLastTask('grammar')
       } catch {
-        setError('Grammar check failed to load. Please try again.')
+        if (active()) setError('Grammar check failed to load. Please try again.')
       } finally {
-        setLoading(false)
+        if (active()) { setBusy(false); setLoading(false) }
       }
+      return
+    }
+
+    // Contact "Format" runs fully on-device: a contact section is the person's
+    // name/email/phone (PII we won't send to Groq — the audience is minors).
+    if (task === 'format' && section.type === 'contact') {
+      const html = formatContactLocal(section.content)
+      if (!active()) return
+      setResult(sanitizeHtml(html)); setResultFor(forId); setLastTask('format')
+      setBusy(false); setLoading(false)
       return
     }
 
@@ -128,16 +184,15 @@ function InputForm() {
     const cacheKey = task === 'format' ? `${section.type}\n${sentText}` : sentText
     const cached = getCached(task, cacheKey)
     if (cached) {
-      setResult(cached)
-      setLastTask(task)
-      setLoading(false)
+      setResult(cached); setResultFor(forId); setLastTask(task)
+      setBusy(false); setLoading(false)
       return
     }
 
     // Soft per-device daily cap to protect the shared free-tier quota.
     if (!canUseAI(today())) {
       setError('You’ve reached today’s AI limit. Fix grammar still works offline — or come back tomorrow.')
-      setLoading(false)
+      setBusy(false); setLoading(false)
       return
     }
 
@@ -151,23 +206,26 @@ function InputForm() {
 
       let streamed = false
       const full = await streamAiTask(payload, partial => {
+        if (!active()) return
         if (!streamed) { streamed = true; setLoading(false) }
         setResult(sanitizeHtml(stripFences(partial)))
-      })
+      }, { signal: controller.signal })
+      if (!active()) return
       const clean = sanitizeHtml(stripFences(full))
-      setResult(clean)
-      setLastTask(task)
+      setResult(clean); setResultFor(forId); setLastTask(task)
       setCached(task, cacheKey, clean)
       recordUse(today())
     } catch (err) {
+      if (err?.name === 'AbortError' || !active()) return
       setError(err?.message || 'Could not reach the AI. If running locally, use `vercel dev`.')
     } finally {
-      setLoading(false)
+      if (active()) { setBusy(false); setLoading(false) }
     }
   }
 
   function applyResult() {
-    if (!result || !section) return
+    // Guard: never apply a preview built for a different section than the active one.
+    if (!result || !section || resultFor !== section.id) return
     // 'ideas' returns new bullets to append; other tasks return the rewritten section.
     const next = lastTask === 'ideas' ? section.content + result : result
     onApply(next)
@@ -214,7 +272,7 @@ function InputForm() {
                   title={tab.title}
                   aria-label={tab.title}
                   onClick={() => setMode(tab.id)}
-                  disabled={tab.id !== 'ai' && !section}
+                  disabled={busy || (tab.id !== 'ai' && !section)}
                 >
                   {tab.label}
                 </button>
@@ -231,32 +289,56 @@ function InputForm() {
             ) : (
               <>
                 <div className="ai-tasks">
-                  {TASKS.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className="ai-task-btn"
-                      title={t.title}
-                      aria-label={t.title}
-                      onClick={() => runTask(t.id)}
-                      disabled={loading || !section}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+                  {TASKS.map(t => {
+                    // On a contact section, Improve/Suggest ideas would send the
+                    // person's name/email/phone to Groq and aren't useful there.
+                    // Grammar + Format stay (both run on-device for contact).
+                    const contactBlocked = section?.type === 'contact' && (t.id === 'improve' || t.id === 'ideas')
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="ai-task-btn"
+                        title={contactBlocked ? 'Off for contact info — it stays private on your device.' : t.title}
+                        aria-label={contactBlocked ? 'Off for contact info — it stays private on your device.' : t.title}
+                        onClick={() => runTask(t.id)}
+                        disabled={busy || !section || contactBlocked}
+                      >
+                        {t.label}
+                      </button>
+                    )
+                  })}
                 </div>
-
-                {groundOcc && (
-                  <div className="ai-ground-hint">
-                    ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
+                {section?.type === 'contact' && (
+                  <div className="ai-ground-hint ai-ground-tip">
+                    🔒 Contact info stays on your device — Format &amp; Fix grammar run locally, nothing is sent.
                   </div>
                 )}
 
-                {loading && <div className="ai-status">Thinking…</div>}
-                {error && <div className="ai-status ai-error">{error}</div>}
+                {groundOcc ? (
+                  <div className="ai-ground-hint">
+                    ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
+                  </div>
+                ) : (
+                  <div className="ai-ground-hint ai-ground-tip">
+                    Tip: pick a job in <strong>Real job duties</strong> to ground “Suggest ideas” in real tasks.
+                  </div>
+                )}
+
+                {loading && <div className="ai-status" role="status" aria-live="polite">Thinking…</div>}
+                {error && (
+                  <div className="ai-status ai-error" role="alert">
+                    {error}
+                    {attempt && !busy && (
+                      <button type="button" className="ai-retry-btn" onClick={() => runTask(attempt)}>
+                        Try again
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {result && !loading && (
-                  <div className="ai-result">
+                  <div className="ai-result" aria-live="polite">
                     <div
                       className="ai-result-text"
                       dangerouslySetInnerHTML={{ __html: result }}
@@ -269,6 +351,7 @@ function InputForm() {
 
                 <div className="ai-consent">
                   🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
+                  <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
                 </div>
               </>
             )}

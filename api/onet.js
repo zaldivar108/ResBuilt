@@ -10,16 +10,17 @@
 //     (title passthrough is a fallback; the detail payload normally has it.)
 
 import { normalizeSearch, normalizeCareer, normalizeOnlineTasks } from '../src/lib/onetNormalize.js'
+import { checkRateLimit } from './_rateLimit.js'
 
 export const config = { runtime: 'edge' }
 
 const ONET_BASE = 'https://api-v2.onetcenter.org'
 const SEARCH_LIMIT = 10
 
-function json(obj, status = 200) {
+function json(obj, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
   })
 }
 
@@ -38,6 +39,9 @@ async function onetGet(path, key) {
 
 export default async function handler(req) {
   if (req.method !== 'GET') return json({ error: 'Method not allowed.' }, 405)
+
+  const rl = checkRateLimit(req, { limit: 60 })
+  if (!rl.ok) return json({ error: 'Too many requests — please slow down.' }, 429, { 'Retry-After': String(rl.retryAfter) })
 
   const key = process.env.ONET_API_KEY
   if (!key) return json({ error: 'O*NET is not configured on the server.' }, 503)

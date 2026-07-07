@@ -17,10 +17,19 @@ function coerceToObject(raw) {
 
 function cleanList(value, limit = Infinity) {
   if (!Array.isArray(value)) return []
-  return value
-    .filter(v => typeof v === 'string' && v.trim())
-    .map(v => v.trim())
-    .slice(0, limit)
+  const seen = new Set()
+  const out = []
+  for (const v of value) {
+    if (typeof v !== 'string') continue
+    const t = v.trim()
+    // Dedupe (case-insensitively) — the model sometimes repeats a keyword, which
+    // would otherwise produce duplicate React keys in the rendered chip lists.
+    if (!t || seen.has(t.toLowerCase())) continue
+    seen.add(t.toLowerCase())
+    out.push(t)
+    if (out.length >= limit) break
+  }
+  return out
 }
 
 /**

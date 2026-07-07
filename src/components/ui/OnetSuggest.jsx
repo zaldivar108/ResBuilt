@@ -29,7 +29,17 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
   // Debounce live search; a query counter drops out-of-order responses.
   const debounceRef = useRef(null)
   const queryIdRef = useRef(0)
-  useEffect(() => () => clearTimeout(debounceRef.current), [])
+  const pickIdRef = useRef(0)      // drops out-of-order occupation picks
+  const abortRef = useRef(null)    // cancels the in-flight "Make it mine" request
+  const mountedRef = useRef(true)  // guards setState after unmount (e.g. tab switch)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      clearTimeout(debounceRef.current)
+      abortRef.current?.abort()
+    }
+  }, [])
 
   function handleQuery(value) {
     setQuery(value)
@@ -52,13 +62,15 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
   }
 
   async function pickOccupation(code, title = '') {
+    const pickId = ++pickIdRef.current // only the latest pick may win
     // Prefer the live record (full task/skill lists); fall back to the seed.
     let occ = null
     try {
       occ = await getOccupationRemote(code, title)
     } catch {
-      occ = null
+      // Proxy unavailable/offline — fall back to the bundled seed below.
     }
+    if (pickId !== pickIdRef.current || !mountedRef.current) return
     if (!occ || !occ.tasks?.length) occ = getOccupation(code)
     if (!occ) { setError('Could not load that occupation. Try another.'); return }
     setOccupation(occ)
@@ -100,13 +112,18 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
     }
     setBusy(true)
     setError('')
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task: 'polish', text: selectedTasks.join('\n') }),
+        signal: controller.signal,
       })
       const data = await res.json().catch(() => ({}))
+      if (!mountedRef.current) return
       if (!res.ok) {
         setError(data.error || 'Something went wrong. Try again.')
         return
@@ -114,10 +131,11 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
       const raw = (data.result || '').replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim()
       const html = sanitizeHtml(raw)
       if (html) { onApply(html); recordUse(today()); flash('Added ✓') }
-    } catch {
+    } catch (err) {
+      if (err?.name === 'AbortError' || !mountedRef.current) return
       setError('Could not reach the AI. If running locally, use `vercel dev`.')
     } finally {
-      setBusy(false)
+      if (mountedRef.current) setBusy(false)
     }
   }
 
@@ -154,9 +172,10 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
             <button type="button" className="onet-change" onClick={() => { setOccupation(null); onOccupation(null) }}>Change</button>
           </div>
           <p className="onet-hint">Check the duties that apply to you:</p>
+          <p className="onet-ground-note">✦ Picking this job also grounds “Suggest ideas” (in Edit my text) in real duties.</p>
           <ul className="onet-tasks">
-            {occupation.tasks.map(task => (
-              <li key={task}>
+            {occupation.tasks.map((task, i) => (
+              <li key={`${task}-${i}`}>
                 <label className="onet-task">
                   <input type="checkbox" checked={checked.has(task)} onChange={() => toggleTask(task)} />
                   <span>{task}</span>
@@ -165,7 +184,7 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
             ))}
           </ul>
 
-          {error && <div className="ai-status ai-error">{error}</div>}
+          {error && <div className="ai-status ai-error" role="alert">{error}</div>}
 
           <div className="onet-actions">
             <button type="button" className="onet-add" disabled={!selectedTasks.length || busy} onClick={addRaw}>

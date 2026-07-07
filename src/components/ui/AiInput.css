@@ -214,6 +214,32 @@
   flex-shrink: 0;
 }
 .ai-error { color: #DC2626; }
+.ai-retry-btn {
+  margin-left: 8px;
+  border: 1px solid #FCA5A5;
+  background: #FEF2F2;
+  color: #DC2626;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.ai-retry-btn:hover { background: #FEE2E2; }
+
+/* Grounding tip (shown when no O*NET job is picked yet) */
+.ai-ground-tip { background: #F1F5F9; color: #64748B; font-weight: 400; }
+.editor-layout.dark .ai-ground-tip { background: #1E293B; color: #94A3B8; }
+
+/* Daily-budget indicator inside the consent notice */
+.ai-budget {
+  display: block;
+  margin-top: 4px;
+  font-weight: 700;
+  color: #6366F1;
+}
+.editor-layout.dark .ai-budget { color: #A5B4FC; }
 
 /* Result */
 .ai-result {
@@ -371,6 +397,8 @@
 .onet-occ-head { display: flex; align-items: center; justify-content: space-between; }
 .onet-change { border: none; background: none; color: #6366F1; font-size: 12px; cursor: pointer; }
 .onet-hint { font-size: 12px; color: #64748B; margin: 0; }
+.onet-ground-note { font-size: 11px; color: #4F46E5; margin: 2px 0 0; }
+.editor-layout.dark .onet-ground-note { color: #A5B4FC; }
 .onet-empty { font-size: 12px; color: #94A3B8; margin: 8px 2px 0; line-height: 1.4; }
 .onet-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .onet-task { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: #334155; cursor: pointer; line-height: 1.4; }

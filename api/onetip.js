@@ -18,6 +18,7 @@ import {
   normalizeCareers,
   RIASEC_ORDER,
 } from '../src/lib/onetIpNormalize.js'
+import { checkRateLimit } from './_rateLimit.js'
 
 export const config = { runtime: 'edge' }
 
@@ -27,10 +28,10 @@ const CAREERS_LIMIT = 15
 // Mini-IP is 30 items; the full short form is 60. Accept either length.
 const VALID_ANSWER_LENGTHS = new Set([30, 60])
 
-function json(obj, status = 200) {
+function json(obj, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
   })
 }
 
@@ -71,6 +72,9 @@ function isValidAnswers(answers) {
 
 export default async function handler(req) {
   if (req.method !== 'GET') return json({ error: 'Method not allowed.' }, 405)
+
+  const rl = checkRateLimit(req, { limit: 60 })
+  if (!rl.ok) return json({ error: 'Too many requests — please slow down.' }, 429, { 'Retry-After': String(rl.retryAfter) })
 
   const key = process.env.ONET_API_KEY
   if (!key) return json({ error: 'O*NET is not configured on the server.' }, 503)

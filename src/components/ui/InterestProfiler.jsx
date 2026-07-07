@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   fetchProfilerQuestions,
   scoreAnswers,
@@ -29,6 +29,15 @@ export default function InterestProfiler({ onClose, onStartResume }) {
   const [current, setCurrent] = useState(0) // position in the ordered question list
   const [areas, setAreas] = useState(saved?.areas ?? [])
   const [careers, setCareers] = useState(saved?.careers ?? [])
+  const closeRef = useRef(null)
+
+  // Dialog behavior: Escape closes; move focus into the modal on open.
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    closeRef.current?.focus()
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   // Questions in the order O*NET indexes them; drives the one-at-a-time flow.
   const ordered = [...questions].sort((a, b) => a.index - b.index)
@@ -103,14 +112,20 @@ export default function InterestProfiler({ onClose, onStartResume }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal ip-modal" onClick={e => e.stopPropagation()}>
-        <button className="ip-close" onClick={onClose} aria-label="Close">×</button>
+      <div
+        className="modal ip-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Find a job that fits you"
+        onClick={e => e.stopPropagation()}
+      >
+        <button ref={closeRef} className="ip-close" onClick={onClose} aria-label="Close">×</button>
 
-        {stage === 'loading' && <div className="ip-center"><div className="ip-spinner" />Loading the quiz…</div>}
+        {stage === 'loading' && <div className="ip-center" role="status" aria-live="polite"><div className="ip-spinner" />Loading the quiz…</div>}
 
         {stage === 'error' && (
           <div className="ip-center">
-            <p className="ip-error">{error}</p>
+            <p className="ip-error" role="alert">{error}</p>
             <button className="modal-btn create" onClick={onClose}>Close</button>
           </div>
         )}
@@ -146,7 +161,7 @@ export default function InterestProfiler({ onClose, onStartResume }) {
                 </div>
               </div>
 
-              {error && <p className="ip-error">{error}</p>}
+              {error && <p className="ip-error" role="alert">{error}</p>}
               <div className="ip-actions ip-actions-split">
                 <button className="modal-btn cancel" disabled={current === 0} onClick={() => setCurrent(c => Math.max(0, c - 1))}>
                   ← Back
@@ -165,7 +180,7 @@ export default function InterestProfiler({ onClose, onStartResume }) {
           )
         })()}
 
-        {stage === 'scoring' && <div className="ip-center"><div className="ip-spinner" />Scoring your answers…</div>}
+        {stage === 'scoring' && <div className="ip-center" role="status" aria-live="polite"><div className="ip-spinner" />Scoring your answers…</div>}
 
         {stage === 'results' && (
           <>

@@ -1,6 +1,10 @@
 /* global process */
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import handler from './onet.js'
+import { __resetRateLimit } from './_rateLimit.js'
+
+// Reset the per-IP limiter between cases (all reqs share the headerless bucket).
+beforeEach(() => __resetRateLimit())
 
 // Build a GET Request the Edge handler understands.
 function req(query, method = 'GET') {

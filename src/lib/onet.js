@@ -47,16 +47,30 @@ export function searchOccupations(query, { data = OCCUPATIONS, limit = DEFAULT_L
     .map(({ occ }) => ({ code: occ.code, title: occ.title }))
 }
 
+// Task strings are plain text (O*NET duties, AI-suggested bullets). They must
+// never be treated as markup — a crafted job posting can steer the AI `tailor`
+// task into emitting HTML here, and this output is later rendered via
+// dangerouslySetInnerHTML. Escape every string so it can only ever be text.
+function escapeHtml(s) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 /**
  * Build an HTML bullet list from selected task strings, ready to append to a
- * section's content. Skips blanks; returns '' when nothing is selected.
+ * section's content. Each task is HTML-escaped (they are plain text, not
+ * markup). Skips blanks; returns '' when nothing is selected.
  * @param {string[]} tasks
  * @returns {string}
  */
 export function bulletsFromTasks(tasks) {
   const items = (tasks ?? [])
     .filter(t => typeof t === 'string' && t.trim())
-    .map(t => `<li>${t.trim()}</li>`)
+    .map(t => `<li>${escapeHtml(t.trim())}</li>`)
   return items.length ? `<ul>${items.join('')}</ul>` : ''
 }
 

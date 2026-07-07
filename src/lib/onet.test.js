@@ -81,6 +81,14 @@ describe('bulletsFromTasks', () => {
     expect(bulletsFromTasks([])).toBe('')
     expect(bulletsFromTasks(undefined)).toBe('')
   })
+
+  test('HTML-escapes task strings so injected markup cannot execute (XSS)', () => {
+    const out = bulletsFromTasks(['<img src=x onerror=alert(1)>', 'a & b < c'])
+    expect(out).toBe(
+      '<ul><li>&lt;img src=x onerror=alert(1)&gt;</li><li>a &amp; b &lt; c</li></ul>'
+    )
+    expect(out).not.toContain('<img')
+  })
 })
 
 describe('getOccupation', () => {
