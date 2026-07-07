@@ -1,6 +1,6 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-06 · Branch `master` · Build: green · Tests: 135 passing · HEAD `ef2bb00`_
+_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 164 passing · HEAD `b392993`_
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
@@ -10,11 +10,15 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Test suite: 135 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work.
+**Test suite: 164 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work.
 
-**Foundation (earlier sessions):** free/teen pivot (paywalls stripped, login unlinked); 5 content starters (`starters.js`); 6 visual templates; AI Assist dock live on Groq.
+**SHIPPED THIS SESSION — 2026-07-07 (all TDD, pushed to `master`):**
 
-**SHIPPED THIS SESSION (all TDD, pushed to `master`):**
+1. **Section-aware "Format" button** (`d3778a4`) — 4th AI action in the "Edit my text" tab. Reformats the active section into the conventional résumé layout for **its `type`**: contact → name + clean email/phone(normalized)/location/links; education → "**School** — City, State — Year"; experience → "**Title**, Employer — dates" + duty bullets; skills → skill list; summary → tight `<p>`; projects/certifications → named headings; else → generic bullets. Client sends `section.type`; proxy (`api/ai.js`) appends the matching `FORMAT_HINTS[type]` to the base `format` prompt. Groq 8B, HTML, streamed, sanitized. Result cache is keyed on section type. All prompts forbid inventing facts.
+2. **Tooltips** (`d3778a4`) — `title` + `aria-label` on all 4 task buttons and the 3 mode tabs; mode tabs refactored into a `MODE_TABS` map.
+3. **Live O*NET v2 API** (`b392993`) — "Real job duties" now calls the live **O*NET Web Services v2** (`https://api-v2.onetcenter.org`, `X-API-Key` header, GET only) via a new server-side Edge proxy `api/onet.js`, **with the seed as offline fallback**. Search → `/mnm/search` (`career[]`); details → **one** `/mnm/careers/{code}/` call (`on_the_job` → tasks, `also_called` → keywords, `title`). Pure normalizers in `src/lib/onetNormalize.js` (verified against live JSON). Client helpers `searchOccupationsRemote` / `getOccupationRemote` in `onet.js`. `OnetSuggest.jsx` is **remote-first + seed fallback**, debounced 300ms search. **Verified end-to-end against the live API.** `ONET_API_KEY` set in `.env.local` (+ needs adding to Vercel env for prod). Consent line now notes the search query is sent to O*NET.
+
+**FOUNDATION + PRIOR SESSIONS (all TDD, on `master`):**
 
 1. **Multi-format Import** (`0f5ca37`, `3711275`) — Dashboard "📥 Import a résumé" → `ImportModal` consent gate → **on-device text extraction** → one Groq `import` call (JSON mode) → validated `sections[]` → new Résumé (Classic) → Editor. Supports **PDF (pdf.js), Word .docx (mammoth), .txt, .md** — all lazy-loaded; legacy `.doc` rejected with guidance. Modules: `pdfImport.js` (guards: `fileKind`/`validateImportFile`), `fileExtract.js` (format dispatch), `pdfExtract.js`, `importSections.js` (AI-JSON→Sections), `importResume.js` (`importResumeFromFile`, injectable deps). Context: `createResumeFromImport`.
 2. **On-device grammar** (`3f5a6ca`) — "Fix grammar" runs in-browser via **harper.js WASM** (lazy; ~8 MB first load, then cached). Nothing sent, no Groq quota. `grammarFix.js` (`correctText` + `fixGrammarInHtml`, preserves tags), `harperLinter.js`. Improve/Ideas still Groq.
@@ -26,11 +30,12 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
    - **Job tailor** — "Match a job" tab (`JobTailor.jsx`): paste posting → gap analysis (matched/missing/suggestions) via `tailor` task + optional grounded rewrite via `retarget` task. `tailor.js` parser. Scopes to the **active section**.
    - **UX** — undo toast after any AI edit (Editor `undoAiEdit`, 8s); Improve/Ideas **stream** token-by-token (`streamAi.js`, opt-in `stream` flag in `api/ai.js`).
 
-**NOT exercised end-to-end in a real browser** — all AI + import needs `vercel dev` + `GROQ_API_KEY`. Logic + build verified; live round-trips (real Groq JSON, real pdf.js/mammoth/harper output, SSE streaming, `.docx` parse) unconfirmed. **Test live first.**
+**Groq features NOT yet exercised in a real browser** — all **Groq** AI + import needs `vercel dev` + `GROQ_API_KEY`. Logic + build verified; live Groq round-trips (real JSON, pdf.js/mammoth/harper output, SSE streaming, `.docx` parse, and the new **`format`** task) still unconfirmed against real Groq. **Test those live first.** (The **O*NET** live path IS verified end-to-end — see §0 item 3.)
 
 **Open / next:**
 - **ADR 0001** still unwritten — "privacy-first app deliberately sends full-résumé PII to Groq for import." Write `docs/adr/0001-*` if pursued.
-- **O*NET seed is 10 jobs** — searches outside them return nothing. Full extract path documented (`docs/onet-extract.md`); the O*NET API key is **under approval** (swap to live API or bulk DB behind the same `onet.js` interface).
+- **Add `ONET_API_KEY` to Vercel prod env** — it's in local `.env.local` only. Without it, prod silently falls back to the 10-job seed (search still works, less coverage).
+- **O*NET tasks are ~3 per job** — the v2 `mnm` endpoint's `on_the_job` list is short by design (teen-friendly). If you want the full task bank, use the bulk DB (`docs/onet-extract.md` Option A) behind the same `onet.js` interface.
 - **Daily AI cap is per-browser localStorage** — a soft guard, not server-enforced.
 - **Job-tailor + O*NET grounding are per-section** (the dock only sees the active section); whole-résumé versions are clean future extensions.
 - **Streaming falls back** to buffered if the env doesn't stream — verify once on Vercel.
@@ -174,7 +179,7 @@ No PDF library. It clones the `.preview-paper` DOM node, inlines **all** stylesh
 ## 9. Mocked / placeholder features
 
 - **Auth** — mock and **unused**. Login page unlinked from the flow (no-account is the default). No backend.
-- **AI Assist** — **live** (free). `AiInput.jsx` dock, three tabs: **Edit my text** (Improve / Fix grammar / Suggest ideas), **Real job duties** (O*NET), **Match a job** (job-posting tailor). Calls `api/ai.js` (Vercel **Edge** proxy) → Groq. **Task→model routing:** editing/polish/tailor/retarget → `llama-3.1-8b-instant`; `import` → `llama-3.3-70b-versatile` (JSON mode). `GROQ_API_KEY` server-side only.
+- **AI Assist** — **live** (free). `AiInput.jsx` dock, three tabs: **Edit my text** (Improve / Fix grammar / **Format** / Suggest ideas), **Real job duties** (O*NET, now live v2 API), **Match a job** (job-posting tailor). All buttons + tabs have tooltips. Calls `api/ai.js` (Vercel **Edge** proxy) → Groq. **Task→model routing:** editing/polish/tailor/retarget → `llama-3.1-8b-instant`; `import` → `llama-3.3-70b-versatile` (JSON mode). `GROQ_API_KEY` server-side only.
   - **On-device (no Groq):** Fix grammar (harper.js WASM) + "Add selected" O*NET duties. Everything else sends text to Groq → consent notices shown.
   - **Quota guards:** `aiCache.js` (localStorage result cache), `aiBudget.js` (25 AI actions/device/day soft cap), `scrubPii.js` (redacts PII on Ideas). Improve/Ideas **stream** (`streamAi.js`).
 - **Business Cards** (Dashboard) — modal says "coming soon".
@@ -217,9 +222,11 @@ Most `src/lib/*.js` have a co-located `*.test.js`. Test env: jsdom.
 
 ```
 api/
-└── ai.js                       # Vercel Edge proxy → Groq. TASKS map (per-task model/caps/prompt);
-                                #   tasks: improve, ideas, grammar, polish, tailor, retarget (8B),
-                                #   import (70B, JSON). Opt-in `stream` passthrough for HTML tasks.
+├── ai.js                       # Vercel Edge proxy → Groq. TASKS map (per-task model/caps/prompt);
+│                               #   tasks: improve, ideas, grammar, format, polish, tailor, retarget
+│                               #   (8B), import (70B, JSON). format appends FORMAT_HINTS[sectionType].
+│                               #   Opt-in `stream` passthrough for HTML tasks.
+└── onet.js                     # Vercel Edge proxy → O*NET v2 (X-API-Key). search + occupation.
 docs/
 ├── onet-extract.md             # how to replace the O*NET seed with full DB / live API
 └── adr/                        # (empty — ADR 0001 on PII→Groq still to write)
@@ -246,7 +253,9 @@ src/
     ├── importSections.js       # AI-JSON → normalized Sections (one contact, first)
     ├── importResume.js         # importResumeFromFile orchestrator (injectable deps)
     ├── grammarFix.js  harperLinter.js   # on-device grammar (harper.js WASM)
-    ├── onet.js                 # occupation repository (search / getOccupation / bulletsFromTasks)
+    ├── onet.js                 # occupation repository: seed search/getOccupation + live
+    │                           #   searchOccupationsRemote/getOccupationRemote (→ api/onet.js)
+    ├── onetNormalize.js        # pure normalizers for O*NET v2 JSON (career[], on_the_job…)
     ├── tailor.js               # parseTailorResult (job-match analysis)
     ├── scrubPii.js  aiCache.js  aiBudget.js  streamAi.js   # AI quota/privacy/streaming utils
     └── ...
