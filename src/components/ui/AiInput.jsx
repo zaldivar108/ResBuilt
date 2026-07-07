@@ -7,6 +7,7 @@ import { getCached, setCached } from '../../lib/aiCache'
 import { canUseAI, recordUse } from '../../lib/aiBudget'
 import { scrubPii } from '../../lib/scrubPii'
 import OnetSuggest from './OnetSuggest'
+import JobTailor from './JobTailor'
 
 const today = () => new Date().toISOString().slice(0, 10)
 import './AiInput.css'
@@ -208,6 +209,14 @@ function InputForm() {
               >
                 Real job duties
               </button>
+              <button
+                type="button"
+                className={`ai-mode-tab${mode === 'tailor' ? ' active' : ''}`}
+                onClick={() => setMode('tailor')}
+                disabled={!section}
+              >
+                Match a job
+              </button>
             </div>
 
             {mode === 'onet' ? (
@@ -215,6 +224,8 @@ function InputForm() {
                 onApply={html => onApply(section.content + html)}
                 onOccupation={setGroundOcc}
               />
+            ) : mode === 'tailor' ? (
+              <JobTailor section={section} onApply={onApply} />
             ) : (
               <>
                 <div className="ai-tasks">

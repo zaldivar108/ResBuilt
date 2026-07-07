@@ -82,6 +82,27 @@ describe('api/ai polish task (O*NET-grounded rewrite)', () => {
   })
 })
 
+describe('api/ai tailor + retarget tasks', () => {
+  test('tailor is recognized and requests JSON mode on the 8B model', async () => {
+    await handler(req({ task: 'tailor', text: 'POSTING: cashier\n\nSECTION: <p>I sold things</p>' }))
+    const body = sentBody()
+    expect(body.response_format).toEqual({ type: 'json_object' })
+    expect(body.model).toBe('llama-3.1-8b-instant')
+  })
+
+  test('retarget is recognized, no JSON mode (returns HTML)', async () => {
+    await handler(req({ task: 'retarget', text: 'POSTING: cashier\n\nSECTION: <p>x</p>' }))
+    expect(sentBody().response_format).toBeUndefined()
+  })
+
+  test('both accept posting+section text up to 6000 chars', async () => {
+    const res = await handler(req({ task: 'tailor', text: 'a'.repeat(6000) }))
+    expect(res.status).toBe(200)
+    const over = await handler(req({ task: 'tailor', text: 'a'.repeat(6001) }))
+    expect(over.status).toBe(413)
+  })
+})
+
 describe('api/ai regression — existing per-section tasks', () => {
   test('improve still rejects text over 2000 chars', async () => {
     const res = await handler(req({ task: 'improve', text: 'a'.repeat(2001) }))

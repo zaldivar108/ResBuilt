@@ -54,6 +54,31 @@ const TASKS = {
     prompt:
       'You turn real job duties into résumé bullet points for a teenager or young adult writing a first résumé. The user sends one or more real tasks for a specific job (sourced from O*NET occupational data). Rewrite them as concise, first-person-implied résumé bullets with strong action verbs, in a voice believable for someone with limited experience. Keep them truthful to the duties given — do NOT invent employers, numbers, dates, or achievements. Return ONLY an HTML fragment: a single <ul> with one <li> per bullet. No commentary, no code fences.',
   },
+  tailor: {
+    model: MODEL_SMALL,
+    maxInput: 6000,
+    maxTokens: 700,
+    temperature: 0.3,
+    json: true,
+    prompt:
+      'You compare a résumé section to a job posting for a teenager or young adult. The input has two labeled parts: JOB POSTING and RÉSUMÉ SECTION. ' +
+      'Return ONLY a JSON object {"matched":[string],"missing":[string],"suggestions":[string]}. ' +
+      'matched = important skills/keywords from the posting that ALREADY appear in the section. ' +
+      'missing = important skills/keywords from the posting that are NOT in the section. ' +
+      'suggestions = up to 3 short résumé bullet ideas relevant to the posting that the person could add IF true — phrase them as suggestions, never as facts, and never invent specific employers, numbers, or achievements. ' +
+      'Keep every item short. No markdown, no code fences, no commentary — the JSON object only.',
+  },
+  retarget: {
+    model: MODEL_SMALL,
+    maxInput: 6000,
+    maxTokens: 700,
+    temperature: 0.4,
+    prompt:
+      'You rewrite ONE résumé section to better match a job posting, for a teenager or young adult. The input has two labeled parts: JOB POSTING and RÉSUMÉ SECTION (HTML). ' +
+      'Reorder and rephrase ONLY information already present in the section to emphasize what is relevant to the posting and mirror its wording where honest. ' +
+      'Do NOT add skills, employers, numbers, dates, or achievements that are not already in the section. Preserve the HTML structure and tags (<p>, <ul>, <li>, <strong>, <em>). ' +
+      'Return ONLY the rewritten HTML — no markdown, no code fences, no commentary.',
+  },
   import: {
     model: MODEL_LARGE,
     maxInput: 8000,
