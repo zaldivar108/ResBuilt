@@ -66,7 +66,8 @@ describe('api/onet search action', () => {
 })
 
 describe('api/onet occupation action', () => {
-  test('fetches the career detail and returns a full record in one call', async () => {
+  test('fetches career detail then the fuller task bank, preferring the latter', async () => {
+    // 1st call: mnm career detail (title, keywords, short on_the_job).
     fetchMock.mockResolvedValueOnce(
       onetOk({
         code: '41-2011.00',
@@ -75,16 +76,36 @@ describe('api/onet occupation action', () => {
         also_called: [{ title: 'Checker' }],
       })
     )
+    // 2nd call: online task detail — fuller, Core-first, importance-ranked.
+    fetchMock.mockResolvedValueOnce(
+      onetOk({
+        task: [
+          { title: 'Count money in cash drawers.', importance: 90, category: 'Core' },
+          { title: 'Greet customers.', importance: 80, category: 'Core' },
+        ],
+      })
+    )
     const res = await handler(req('action=occupation&code=41-2011.00&title=Cashiers'))
     const data = await res.json()
     expect(data.occupation).toMatchObject({
       code: '41-2011.00',
       title: 'Cashiers',
-      tasks: ['Receive payment by cash.'],
+      tasks: ['Count money in cash drawers.', 'Greet customers.'],
       keywords: ['Checker'],
     })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls[0][0]).toContain('/mnm/careers/41-2011.00/')
+    expect(fetchMock.mock.calls[1][0]).toContain('/online/occupations/41-2011.00/details/tasks')
+  })
+
+  test('falls back to on_the_job when the fuller task endpoint fails', async () => {
+    fetchMock.mockResolvedValueOnce(
+      onetOk({ code: '41-2011.00', title: 'Cashiers', on_the_job: ['Receive payment by cash.'], also_called: [] })
+    )
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+    const res = await handler(req('action=occupation&code=41-2011.00&title=Cashiers'))
+    const data = await res.json()
+    expect(data.occupation.tasks).toEqual(['Receive payment by cash.'])
   })
 
   test('requires a code', async () => {

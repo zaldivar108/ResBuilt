@@ -1,6 +1,6 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 179 passing · v0.1.0_
+_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 182 passing · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
@@ -10,9 +10,17 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Test suite: 179 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work.
+**Test suite: 182 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work. **Production is deployed & verified live at https://resbuilt.vercel.app** (all `/api` proxies return 200: ai/onet/onetip).
 
 **SHIPPED THIS SESSION — 2026-07-07 (part 2) — all TDD, pushed to `master`:**
+
+7. **Fuller "Real job duties"** (`a2766f2`) — the My Next Move `on_the_job` list is only ~3 items. `api/onet.js` occupation action now makes a **2nd call** to `/online/occupations/{code}/details/tasks?end=20`, ranks **Core-first then by importance**, caps at 15, and prefers it over `on_the_job` (silent fallback if that endpoint fails). New pure normalizer `normalizeOnlineTasks` (in `onetNormalize.js`) + tests. Verified live: Waiters 3 → 15 tasks.
+8. **AI dock square** (`a2766f2`) — expanded AI Assist panel `540×340 → 540×540` (`FORM_HEIGHT` in `AiInput.jsx`).
+9. **Format cap raised** (`a2766f2`) — `format` task was rejecting full sections ("Text is too long (max 2000)"). Bumped `maxInput` 2000→6000 and `maxTokens` 600→1200 in `api/ai.js`. **Note: `improve`/`grammar` still cap at 2000** — same use case; bump if reported.
+10. **Interest Profiler UX** (`e0db863`) — quiz now serves **one question at a time** (large prompt, stacked options, auto-advance, Back/Next, "Question X of 30"). Modal widened `620→760px`. **Dark-mode contrast fixed** (modal bg `#0F172A`; text lifted to light, option/bar/career surfaces restyled).
+11. **Vercel env + prod deploy** — `ONET_API_KEY` + `GROQ_API_KEY` set (encrypted) in all 3 Vercel envs; **prod redeployed** (`vercel --prod`). Gotcha found: piping a key through PowerShell to `vercel env add` appends `\r` and corrupts it (caused a 502) — **re-add O*NET keys from bash (LF-only)**. `vercel dev` also **rewrites `.env.local`** on start by pulling cloud env, so keys must live in the cloud Development env or they get stripped.
+
+**SHIPPED EARLIER THIS SESSION — 2026-07-07 (part 2) — all TDD, pushed to `master`:**
 
 1. **Version indicator** — `package.json` version bumped `0.0.0 → 0.1.0`; injected at build time via Vite `define` (`__APP_VERSION__`, single source = package.json) → surfaced through `src/version.js` (`APP_VERSION`) as a subtle pill by the logo on the landing nav. Bump `package.json` to update everywhere.
 2. **O*NET search relevance fix** — `searchOccupations` (seed fallback) matched raw substrings, so `"it"` surfaced Waiters/Childcare/Recreation ("wa**it**ers", "babys**it**ter", "activ**it**ies"). Now matches **whole-word prefixes** (`wordStartsWith`) — `cash`→Cashiers works, `it`→nothing. Added empty-state hint in `OnetSuggest.jsx`. Live O*NET path (via `vercel dev`) is unaffected; this only cleaned the seed. **Note: the live remote path only runs under `vercel dev`; plain `npm run dev` doesn't serve `/api`, so search falls back to the 10-job seed** (which has no IT/tech roles — that's why the seed looked broken).
@@ -40,7 +48,7 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 **Open / next:**
 - **ADR 0001** still unwritten — "privacy-first app deliberately sends full-résumé PII to Groq for import." Write `docs/adr/0001-*` if pursued.
-- **Add `ONET_API_KEY` to Vercel prod env** — it's in local `.env.local` only. Without it, prod silently falls back to the 10-job seed (search still works, less coverage).
+- **~~Add `ONET_API_KEY` to Vercel prod env~~ DONE (2026-07-07)** — `ONET_API_KEY` + `GROQ_API_KEY` now set (encrypted) in all three Vercel environments (Production/Preview/Development) via `vercel env add`. A production **redeploy** is still needed to pick up the new prod vars. `vercel dev` now pulls both keys into `.env.local` on start (they no longer get stripped).
 - **O*NET tasks are ~3 per job** — the v2 `mnm` endpoint's `on_the_job` list is short by design (teen-friendly). If you want the full task bank, use the bulk DB (`docs/onet-extract.md` Option A) behind the same `onet.js` interface.
 - **Daily AI cap is per-browser localStorage** — a soft guard, not server-enforced.
 - **Job-tailor + O*NET grounding are per-section** (the dock only sees the active section); whole-résumé versions are clean future extensions.

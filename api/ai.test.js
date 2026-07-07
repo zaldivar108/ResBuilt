@@ -123,10 +123,11 @@ describe('api/ai format task (paragraph → bullet points)', () => {
     expect(data.result).toContain('<li>')
   })
 
-  test('rejects text over the 2000-char per-section cap', async () => {
-    const res = await handler(req({ task: 'format', text: 'a'.repeat(2001) }))
-    expect(res.status).toBe(413)
-    expect(fetchMock).not.toHaveBeenCalled()
+  test('accepts a full section up to 6000 chars, rejects beyond', async () => {
+    const ok = await handler(req({ task: 'format', text: 'a'.repeat(6000) }))
+    expect(ok.status).toBe(200)
+    const over = await handler(req({ task: 'format', text: 'a'.repeat(6001) }))
+    expect(over.status).toBe(413)
   })
 
   test('appends the per-type layout hint for the section type', async () => {
