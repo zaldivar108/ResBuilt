@@ -20,5 +20,5 @@ A named **content preset** chosen when creating a résumé — a set of **Sectio
 **AI Assist**:
 The in-editor helper that acts on the active **Section** — rewrites, fixes grammar, or suggests bullets — via a server-side proxy to Groq. Operates on one Section's HTML at a time.
 
-**Import** _(planned)_:
-Turning an uploaded résumé PDF into a new **Résumé**. The PDF's text is extracted **on the device** (the file never leaves it), sent once to **AI Assist**, and returned as structured **Sections**. Fills content only — the visual **Template** stays a separate, defaulted choice. The **Editor** is the review surface; there is no separate confirmation screen. Only text-based PDFs are supported (no OCR of scans).
+**Import** _(shipped)_:
+Turning an uploaded résumé PDF into a new **Résumé**. The PDF's text is extracted **on the device** with pdf.js (the file never leaves it), sent once to the AI proxy's `import` task, and returned as structured **Sections**. Fills content only — the visual **Template** stays a separate, defaulted choice (Classic). The **Editor** is the review surface; there is no separate confirmation screen. Only text-based PDFs are supported (no OCR of scans). Implemented across `src/lib/pdfImport.js` (guards), `src/lib/pdfExtract.js` (lazy pdf.js), `src/lib/importSections.js` (AI-JSON → Sections), `src/lib/importResume.js` (orchestrator), and `src/components/ImportModal.jsx` (consent gate + UI).

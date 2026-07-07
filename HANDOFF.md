@@ -16,16 +16,17 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 3. **3 visual templates** — Executive, Compact, Timeline (now 6 total). Template picker is a 3-col grid.
 4. **AI Assist — live** (free, Groq). Per-section editing in the `AiInput` dock (Improve / Fix grammar / Suggest ideas → Apply/Add). Backed by `api/ai.js` (Vercel Edge proxy). `GROQ_API_KEY` set in all Vercel envs. See the "AI setup" note in §9.
 
-**NEXT UP — PDF Import (fully designed, NOT built).** Grilled out this session; the resolved design is the `Import` term in `CONTEXT.md`. Summary:
-- Dashboard "Import from PDF" → **pdf.js extracts plaintext in-browser** (file never leaves device) → **one** Groq call (JSON mode) → validated `sections[]` → new Résumé (default Classic, no Starter) → open Editor (= the review surface, no separate confirm screen).
-- New proxy task `import` in `api/ai.js`: returns strict JSON `{ sections:[{title,type,content(HTML)}] }`; **exactly one `contact` section first, name = first `<p>`**; unknown blocks → `type:'custom'`; `max_tokens ~2000`.
-- Guards: `.pdf` only, ≤5 MB; <~100 chars extracted → "scanned/image PDF" bail (no OCR); cap sent text ~15k chars.
-- Privacy: client-side extraction + explicit consent gate before upload (full-résumé text → Groq; users are minors). Title = filename. Nothing created until the AI call succeeds.
-- **Open:** offered but not yet written — an ADR recording "privacy-first app deliberately sends full-résumé PII to Groq for import." Write `docs/adr/0001-*` if pursued. Also need to add `pdfjs-dist` (or `pdf.js`) as a dep.
+**SHIPPED THIS SESSION — PDF Import (built + tested, TDD).** Matches the design in the `Import` term of `CONTEXT.md`. What landed:
+- Dashboard "📥 Import from PDF" → `ImportModal` consent gate → **pdf.js extracts plaintext in-browser** (file never leaves device; pdf.js lazy-loaded) → **one** Groq call (`import` task, JSON mode) → validated `sections[]` → new Résumé (Classic default, no Starter) → open Editor.
+- Modules: `src/lib/pdfImport.js` (file + extracted-text guards), `src/lib/pdfExtract.js` (lazy pdf.js text extraction), `src/lib/importSections.js` (AI-JSON → normalized Sections, enforces "one contact, first"), `src/lib/importResume.js` (orchestrator with injectable deps), `src/components/ImportModal.jsx` + `.css`. Context gained `createResumeFromImport(title, sections)`.
+- `api/ai.js` refactored to **per-task config** (`TASKS` map): `import` gets `maxInput 15000`, `maxTokens 2000`, `response_format json_object`; the three editing tasks unchanged (2000/600).
+- Guards enforced: `.pdf` only, ≤5 MB; <100 chars extracted → "scanned/image PDF" bail (no OCR); text capped 15k chars.
+- **Tests:** Vitest added (`npm test` / `test:run`). 52 tests across `pdfImport`, `importSections`, `importResume`, `api/ai`, and `ImportModal` (component). Build green, main chunk back to ~180KB gzip (pdf.js split into its own on-demand chunk).
+- **Not yet done / open:** (1) not exercised end-to-end in a real browser — needs `vercel dev` + `GROQ_API_KEY`. (2) ADR still unwritten — "privacy-first app deliberately sends full-résumé PII to Groq for import"; write `docs/adr/0001-*` if pursued. (3) imported HTML rendered via `dangerouslySetInnerHTML` like all sections — sanitize before any share feature.
 
 **Other roadmap (TASKS.md):** inline "not sure what to write?" content guidance; mobile-responsive editor (4-col `Editor.jsx` is desktop-only); dashboard rename-on-card / sort / last-edited; optional harper.js in-browser grammar (privacy-max, no data leaves device).
 
-**Open / caveats:** AI import + section editing not exercised end-to-end in a browser (needs `vercel dev` + the Groq key). AI output is injected as HTML via `dangerouslySetInnerHTML` — fine single-user, sanitize before any share/multi-user. Login page orphaned. No tests. Pre-existing `useResume` react-refresh lint error (present at HEAD). `README.md` still stock Vite. New: `CONTEXT.md` is the domain glossary — keep it current.
+**Open / caveats:** AI import + section editing not exercised end-to-end in a browser (needs `vercel dev` + the Groq key). AI output is injected as HTML via `dangerouslySetInnerHTML` — fine single-user, sanitize before any share/multi-user. Login page orphaned. **Tests:** Vitest now covers the PDF-import logic (52 tests); the rest of the app (Editor, layouts, context) is still untested. Pre-existing `useResume` react-refresh lint error + other pre-existing Editor/toolbar lint errors (present at HEAD, not from import work). `README.md` still stock Vite. `CONTEXT.md` is the domain glossary — keep it current.
 
 ---
 
@@ -37,9 +38,10 @@ npm run dev      # http://localhost:5173
 npm run build    # production build → dist/
 npm run preview  # serve the build
 npm run lint     # eslint
+npm test         # vitest (watch)  ·  npm run test:run (once)  ·  npm run coverage
 ```
 
-No tests, no CI, no env vars. Deploys to Vercel (`vercel.json` rewrites all routes → `index.html` for SPA client routing).
+Vitest covers the PDF-import logic (52 tests). No CI. Deploys to Vercel (`vercel.json` rewrites all routes → `index.html` for SPA client routing).
 
 ---
 
@@ -176,7 +178,7 @@ No PDF library. It clones the `.preview-paper` DOM node, inlines **all** stylesh
 - **`execCommand` is deprecated** — works in all current browsers but is the toolbar's foundation. Font-size marker-swap hack (`applyFontSize`) is the most brittle path.
 - **localStorage only** — by design (privacy). Clearing storage wipes everything; no cross-device sync; ~5MB cap. Warn users before adding anything that assumes durability.
 - **Bundle is one 546KB chunk** (173KB gzip) — no code-splitting. Build warns. Consider lazy-loading routes / framer-motion.
-- **No tests at all.** TASKS.md lists a full intended Vitest + Playwright plan (none started).
+- **Tests cover PDF import only.** Vitest is set up (`vite.config.js` `test` block, `src/test/setup.js`); 52 tests for the import path. Editor, layouts, context, and toolbar remain untested. TASKS.md lists the fuller Vitest + Playwright plan.
 - **Pre-existing lint error** — `ResumeContext.jsx` exports `useResume` (a hook) beside the provider, tripping `react-refresh/only-export-components`. Present at HEAD; harmless (dev HMR only). Fix by moving the hook to its own file if it bothers you.
 
 ---

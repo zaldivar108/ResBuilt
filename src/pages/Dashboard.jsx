@@ -2,18 +2,26 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useResume } from '../context/ResumeContext'
 import ResumeCard from '../components/ResumeCard'
+import ImportModal from '../components/ImportModal'
 import Switch from '../components/ui/switch'
 import { STARTERS, DEFAULT_STARTER_ID } from '../config/starters'
 import './Dashboard.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { resumes, createResume, deleteResume, duplicateResume, darkMode, setDarkMode } = useResume()
+  const { resumes, createResume, createResumeFromImport, deleteResume, duplicateResume, darkMode, setDarkMode } = useResume()
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [starter, setStarter] = useState(DEFAULT_STARTER_ID)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [bizCardModal, setBizCardModal] = useState(false)
+  const [importing, setImporting] = useState(false)
+
+  function handleImported({ title, sections }) {
+    const resume = createResumeFromImport(title, sections)
+    setImporting(false)
+    navigate(`/editor/${resume.id}`)
+  }
 
   function openCreate() {
     setNewTitle('')
@@ -52,6 +60,9 @@ export default function Dashboard() {
           <div className="dash-header-actions">
             <button className="btn-new-bizcard" onClick={() => setBizCardModal(true)}>
               + New Business Card
+            </button>
+            <button className="btn-new-bizcard" onClick={() => setImporting(true)}>
+              📥 Import from PDF
             </button>
             <button className="btn-new-resume" onClick={openCreate}>
               + New Resume
@@ -99,6 +110,10 @@ export default function Dashboard() {
           </div>
         )
       })()}
+
+      {importing && (
+        <ImportModal onClose={() => setImporting(false)} onImported={handleImported} />
+      )}
 
       {bizCardModal && (
         <div className="modal-overlay" onClick={() => setBizCardModal(false)}>

@@ -1,0 +1,66 @@
+// Orchestrates the "Import from PDF" flow: validate → extract (on-device) →
+// assess → one AI call → normalize into resume sections.
+//
+// The pieces it depends on (PDF text extraction, the AI network call) are
+// injected so this coordinator is fully unit-testable without pdf.js or a
+// server. The defaults wire in the real implementations.
+
+import { validatePdfFile, assessExtractedText } from './pdfImport.js'
+import { normalizeImportedSections } from './importSections.js'
+import { extractPdfText } from './pdfExtract.js'
+
+/** Derive a resume title from the uploaded filename. */
+export function titleFromFilename(name) {
+  const base = typeof name === 'string' ? name.replace(/\.pdf$/i, '').trim() : ''
+  return base || 'Imported Resume'
+}
+
+// Default AI call: POST the extracted text to the Edge proxy's `import` task.
+// Returns { ok, result } | { ok:false, error } — the same envelope the UI uses.
+async function defaultCallImport(text) {
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task: 'import', text }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { ok: false, error: data.error || 'The AI could not process your résumé. Try again.' }
+    }
+    return { ok: true, result: data.result || '' }
+  } catch {
+    return { ok: false, error: 'Could not reach the AI. If running locally, use `vercel dev`.' }
+  }
+}
+
+/**
+ * @param {File | {name,type,size}} file
+ * @param {{ extractText?: (file) => Promise<string>, callImport?: (text) => Promise<{ok,result?,error?}> }} [deps]
+ * @returns {Promise<{ ok: true, title: string, sections: Array } | { ok: false, error: string }>}
+ */
+export async function importResumeFromPdf(file, deps = {}) {
+  const extractText = deps.extractText ?? extractPdfText
+  const callImport = deps.callImport ?? defaultCallImport
+
+  const fileCheck = validatePdfFile(file)
+  if (!fileCheck.ok) return fileCheck
+
+  let rawText
+  try {
+    rawText = await extractText(file)
+  } catch {
+    return { ok: false, error: 'We couldn’t read that PDF. It may be corrupted or password-protected.' }
+  }
+
+  const textCheck = assessExtractedText(rawText)
+  if (!textCheck.ok) return textCheck
+
+  const ai = await callImport(textCheck.text)
+  if (!ai.ok) return { ok: false, error: ai.error }
+
+  const normalized = normalizeImportedSections(ai.result)
+  if (!normalized.ok) return normalized
+
+  return { ok: true, title: titleFromFilename(file.name), sections: normalized.sections }
+}

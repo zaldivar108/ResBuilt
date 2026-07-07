@@ -7,6 +7,22 @@ function genId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
+function defaultStyles() {
+  return {
+    fontFamily: 'Georgia, serif',
+    fontSize: 11,
+    lineSpacing: 1.5,
+    sectionSpacing: 14,
+    marginTop: 54,
+    marginBottom: 54,
+    marginLeft: 54,
+    marginRight: 54,
+    paperSize: 'letter',
+    template: 'classic',
+    accentColor: '#1E293B',
+  }
+}
+
 function createNewResume(title = 'Untitled Resume', starterId = DEFAULT_STARTER_ID) {
   const starter = STARTERS[starterId] ?? STARTERS[DEFAULT_STARTER_ID]
   return {
@@ -14,19 +30,19 @@ function createNewResume(title = 'Untitled Resume', starterId = DEFAULT_STARTER_
     title,
     lastEdited: new Date().toISOString(),
     sections: starter.sections.map(s => ({ ...s, id: genId() })),
-    styles: {
-      fontFamily: 'Georgia, serif',
-      fontSize: 11,
-      lineSpacing: 1.5,
-      sectionSpacing: 14,
-      marginTop: 54,
-      marginBottom: 54,
-      marginLeft: 54,
-      marginRight: 54,
-      paperSize: 'letter',
-      template: 'classic',
-      accentColor: '#1E293B',
-    },
+    styles: defaultStyles(),
+  }
+}
+
+// Build a resume from imported sections (from a PDF). Fills content only —
+// the visual template stays the defaulted Classic layout, not a starter.
+function createImportedResume(title, sections) {
+  return {
+    id: genId(),
+    title,
+    lastEdited: new Date().toISOString(),
+    sections: sections.map(s => ({ ...s, id: genId() })),
+    styles: defaultStyles(),
   }
 }
 
@@ -70,6 +86,12 @@ export function ResumeProvider({ children }) {
     return resume
   }
 
+  function createResumeFromImport(title, sections) {
+    const resume = createImportedResume(title, sections)
+    setResumes(prev => [resume, ...prev])
+    return resume
+  }
+
   function updateResume(id, updates) {
     setResumes(prev =>
       prev.map(r => r.id === id ? { ...r, ...updates, lastEdited: new Date().toISOString() } : r)
@@ -101,7 +123,7 @@ export function ResumeProvider({ children }) {
     <ResumeContext.Provider value={{
       user, resumes,
       login, logout,
-      createResume, updateResume, deleteResume, duplicateResume, getResume,
+      createResume, createResumeFromImport, updateResume, deleteResume, duplicateResume, getResume,
       darkMode, setDarkMode,
     }}>
       {children}
