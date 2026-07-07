@@ -66,6 +66,21 @@ describe('api/ai import task', () => {
   })
 })
 
+describe('api/ai polish task (O*NET-grounded rewrite)', () => {
+  test('is a recognized task', async () => {
+    const res = await handler(req({ task: 'polish', text: 'Receive payment by cash.' }))
+    expect(res.status).toBe(200)
+  })
+
+  test('does not request JSON mode and returns { result }', async () => {
+    fetchMock.mockResolvedValue(groqOk('<ul><li>Handled cash and card payments accurately.</li></ul>'))
+    const res = await handler(req({ task: 'polish', text: 'Receive payment by cash.' }))
+    expect(sentBody().response_format).toBeUndefined()
+    const data = await res.json()
+    expect(data.result).toContain('<li>')
+  })
+})
+
 describe('api/ai regression — existing per-section tasks', () => {
   test('improve still rejects text over 2000 chars', async () => {
     const res = await handler(req({ task: 'improve', text: 'a'.repeat(2001) }))

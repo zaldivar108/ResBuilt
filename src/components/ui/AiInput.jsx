@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo, createContext, useContext } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { fixGrammarInHtml } from '../../lib/grammarFix'
+import { getLinter } from '../../lib/harperLinter'
 import './AiInput.css'
 
 const SPEED_FACTOR = 1
@@ -74,6 +76,24 @@ function InputForm() {
     setError('')
     setResult('')
     setApplied(false)
+
+    // Grammar runs fully on-device with harper.js — the text never leaves the
+    // browser (and it doesn't spend the shared Groq quota). Improve / ideas are
+    // generative and still go to Groq.
+    if (task === 'grammar') {
+      try {
+        const linter = await getLinter()
+        const fixed = await fixGrammarInHtml(section.content, linter)
+        setResult(fixed)
+        setLastTask('grammar')
+      } catch {
+        setError('Grammar check failed to load. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
@@ -163,7 +183,7 @@ function InputForm() {
             )}
 
             <div className="ai-consent">
-              🔒 The section's text is sent to Groq's AI to generate suggestions. Don't put anything you want to keep private in your résumé.
+              🔒 Fix grammar runs on your device — nothing is sent. Improve wording &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
             </div>
           </motion.div>
         )}
