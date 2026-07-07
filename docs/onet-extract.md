@@ -1,5 +1,14 @@
 # O*NET data — how to replace the seed with the full dataset
 
+> **Status (live):** Option B is **implemented**. The app now calls the O*NET
+> **v2 API** (`https://api-v2.onetcenter.org`) through the `api/onet.js` Edge
+> proxy when `ONET_API_KEY` is set, and falls back to the bundled seed otherwise.
+> Search → `/mnm/search` (`career[]`); details → `/mnm/careers/{code}/` (one call:
+> `on_the_job` → tasks, `also_called` → keywords, `title`). Auth is the
+> `X-API-Key` header, GET only. Normalizers: `src/lib/onetNormalize.js`;
+> client helpers: `searchOccupationsRemote` / `getOccupationRemote` in
+> `src/lib/onet.js`. Section below documents the alternatives.
+
 The résumé builder grounds its suggestions in **O*NET** occupational data
 (tasks + skills per job) so the AI doesn't invent duties. Right now
 [`src/config/onetData.js`](../src/config/onetData.js) holds a **hand-curated seed**

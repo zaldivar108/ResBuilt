@@ -1,9 +1,16 @@
-import { useState } from 'react'
-import { searchOccupations, getOccupation, bulletsFromTasks } from '../../lib/onet'
+import { useState, useRef, useEffect } from 'react'
+import {
+  searchOccupations,
+  getOccupation,
+  searchOccupationsRemote,
+  getOccupationRemote,
+  bulletsFromTasks,
+} from '../../lib/onet'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
 import { canUseAI, recordUse } from '../../lib/aiBudget'
 
 const today = () => new Date().toISOString().slice(0, 10)
+const SEARCH_DEBOUNCE_MS = 300
 
 // Grounds résumé bullets in real O*NET occupational data instead of AI guesses.
 // Flow: search a job → pick it → check the real duties that apply →
@@ -19,13 +26,41 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
 
+  // Debounce live search; a query counter drops out-of-order responses.
+  const debounceRef = useRef(null)
+  const queryIdRef = useRef(0)
+  useEffect(() => () => clearTimeout(debounceRef.current), [])
+
   function handleQuery(value) {
     setQuery(value)
+    const q = value.trim()
+    // Instant local results keep the box responsive; the live search (if the
+    // proxy is configured) replaces them a beat later with the full catalog.
     setResults(searchOccupations(value))
+    clearTimeout(debounceRef.current)
+    if (!q) return
+    const id = ++queryIdRef.current
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const remote = await searchOccupationsRemote(q)
+        if (id !== queryIdRef.current) return // a newer keystroke won
+        if (remote.length) setResults(remote)
+      } catch {
+        // Proxy unavailable/offline — the seed results already shown stand.
+      }
+    }, SEARCH_DEBOUNCE_MS)
   }
 
-  function pickOccupation(code) {
-    const occ = getOccupation(code)
+  async function pickOccupation(code, title = '') {
+    // Prefer the live record (full task/skill lists); fall back to the seed.
+    let occ = null
+    try {
+      occ = await getOccupationRemote(code, title)
+    } catch {
+      occ = null
+    }
+    if (!occ || !occ.tasks?.length) occ = getOccupation(code)
+    if (!occ) { setError('Could not load that occupation. Try another.'); return }
     setOccupation(occ)
     onOccupation(occ) // share it so "Suggest ideas" can ground on it too
     setChecked(new Set())
@@ -102,7 +137,7 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
           <ul className="onet-results">
             {results.map(r => (
               <li key={r.code}>
-                <button type="button" className="onet-result-btn" onClick={() => pickOccupation(r.code)}>
+                <button type="button" className="onet-result-btn" onClick={() => pickOccupation(r.code, r.title)}>
                   {r.title}
                 </button>
               </li>
@@ -141,7 +176,7 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
       )}
 
       <div className="ai-consent onet-attr">
-        Job data from <a href="https://services.onetcenter.org/" target="_blank" rel="noreferrer">O*NET</a> (U.S. Dept. of Labor, CC BY 4.0). “Add selected” stays on your device; “Make it mine” sends the checked duties to Groq.
+        Job data from <a href="https://services.onetcenter.org/" target="_blank" rel="noreferrer">O*NET</a> (U.S. Dept. of Labor, CC BY 4.0). Your search is sent to O*NET to fetch real duties. “Add selected” then stays on your device; “Make it mine” sends the checked duties to Groq.
       </div>
     </div>
   )

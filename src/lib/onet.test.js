@@ -1,5 +1,13 @@
-import { describe, test, expect } from 'vitest'
-import { searchOccupations, getOccupation, bulletsFromTasks } from './onet.js'
+import { describe, test, expect, vi } from 'vitest'
+import {
+  searchOccupations,
+  getOccupation,
+  searchOccupationsRemote,
+  getOccupationRemote,
+  bulletsFromTasks,
+} from './onet.js'
+
+const okJson = body => ({ ok: true, status: 200, json: async () => body })
 
 // Fixture shaped like the real O*NET seed so the repository stays pure/testable.
 const DATA = [
@@ -69,5 +77,43 @@ describe('getOccupation', () => {
 
   test('returns null for an unknown code', () => {
     expect(getOccupation('99-9999.99', { data: DATA })).toBeNull()
+  })
+})
+
+describe('searchOccupationsRemote', () => {
+  test('calls the proxy and returns its results', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(okJson({ results: [{ code: '1', title: 'A' }] }))
+    const out = await searchOccupationsRemote('cook', { fetchImpl })
+    expect(out).toEqual([{ code: '1', title: 'A' }])
+    expect(fetchImpl).toHaveBeenCalledWith('/api/onet?action=search&keyword=cook')
+  })
+
+  test('returns [] for a blank query without hitting the network', async () => {
+    const fetchImpl = vi.fn()
+    expect(await searchOccupationsRemote('  ', { fetchImpl })).toEqual([])
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
+  test('throws when the proxy responds not-OK (so callers can fall back to the seed)', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) })
+    await expect(searchOccupationsRemote('cook', { fetchImpl })).rejects.toThrow()
+  })
+})
+
+describe('getOccupationRemote', () => {
+  test('passes code + title to the proxy and unwraps the occupation', async () => {
+    const occ = { code: '41-2011.00', title: 'Cashiers', tasks: ['t'], skills: ['s'] }
+    const fetchImpl = vi.fn().mockResolvedValue(okJson({ occupation: occ }))
+    const out = await getOccupationRemote('41-2011.00', 'Cashiers', { fetchImpl })
+    expect(out).toEqual(occ)
+    const calledUrl = fetchImpl.mock.calls[0][0]
+    expect(calledUrl).toContain('action=occupation')
+    expect(calledUrl).toContain('code=41-2011.00')
+    expect(calledUrl).toContain('title=Cashiers')
+  })
+
+  test('throws when the proxy responds not-OK', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) })
+    await expect(getOccupationRemote('x', 'y', { fetchImpl })).rejects.toThrow()
   })
 })

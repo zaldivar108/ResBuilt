@@ -62,3 +62,40 @@ export function bulletsFromTasks(tasks) {
 export function getOccupation(code, { data = OCCUPATIONS } = {}) {
   return data.find(occ => occ.code === code) ?? null
 }
+
+// --- Live O*NET (via the /api/onet proxy) -------------------------------
+// These hit the server-side proxy so the full O*NET catalog is available when
+// ONET_API_KEY is configured. Callers fall back to the bundled seed above when
+// these reject (proxy not configured, offline, rate-limited) — so search always
+// works, just with less coverage. fetchImpl is injectable for tests.
+
+/**
+ * Search the live O*NET catalog through the proxy.
+ * @param {string} query
+ * @param {{ fetchImpl?: typeof fetch }} [opts]
+ * @returns {Promise<Array<{ code: string, title: string }>>}
+ */
+export async function searchOccupationsRemote(query, { fetchImpl = fetch } = {}) {
+  const q = (query ?? '').trim()
+  if (!q) return []
+  const res = await fetchImpl(`/api/onet?action=search&keyword=${encodeURIComponent(q)}`)
+  if (!res.ok) throw new Error(`O*NET search failed (${res.status})`)
+  const data = await res.json()
+  return Array.isArray(data?.results) ? data.results : []
+}
+
+/**
+ * Fetch a full live occupation record through the proxy. Title is passed
+ * through from the search result so the proxy needn't spend a call to fetch it.
+ * @param {string} code
+ * @param {string} title
+ * @param {{ fetchImpl?: typeof fetch }} [opts]
+ * @returns {Promise<object | null>}
+ */
+export async function getOccupationRemote(code, title = '', { fetchImpl = fetch } = {}) {
+  const params = new URLSearchParams({ action: 'occupation', code, title })
+  const res = await fetchImpl(`/api/onet?${params}`)
+  if (!res.ok) throw new Error(`O*NET lookup failed (${res.status})`)
+  const data = await res.json()
+  return data?.occupation ?? null
+}
