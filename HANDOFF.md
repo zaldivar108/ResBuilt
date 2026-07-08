@@ -16,7 +16,7 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ### ⭐ NEXT SESSION — work the AI-experience gaps (user-chosen priority)
 
-Ranked list from the 2026-07-07 AI-gaps review. **Approach for #2–#9 is now locked in ADRs `docs/adr/0002`–`0009`** (part 7) — read the matching ADR before implementing. Work top-down; #2's on-device half is quota-free.
+Ranked list from the 2026-07-07 AI-gaps review. **Approach for #2–#9 locked in ADRs `docs/adr/0002`–`0009`; work is broken into grabbable vertical-slice issues in `docs/issues/` (001–009, file-based tracker — see its README for the grab protocol)** (part 7). Work top-down; #2's on-device half is quota-free.
 
 1. ~~**Quiz result discards its own data**~~ **DONE (part 7, `8c3022e`)** — "Start a résumé" from the quiz now fetches the career's occupation (live proxy → bundled seed → none, 5s timeout, `fetchOccupationForCareer`) and seeds the student starter's Experience (up to 6 real duties, framed as ideas-to-adapt, escaped) + Skills (occupation skills) via new pure `src/lib/careerSeed.js` (`seedSectionsFromOccupation`) → `createResumeFromImport`. Degrades to title-only when no record. `InterestProfiler` now passes the full career object and shows a disabled "Starting…" state. +14 tests. **Not live-verified in browser yet** (needs `vercel dev`: quiz → results → Start a résumé → editor shows seeded duties).
 2. **No whole-résumé review** (ADR 0002) — AI acts on one section at a time. Two halves:
