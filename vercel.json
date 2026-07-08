@@ -16,7 +16,7 @@
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.groq.com https://api-v2.onetcenter.org; worker-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-Z2/iFzh9VMlVkEOar1f/oSHWwQk3ve1qk/C2WdsC4Xk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.groq.com https://api-v2.onetcenter.org; worker-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
         }
       ]
     }
