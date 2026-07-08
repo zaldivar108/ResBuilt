@@ -1,6 +1,8 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 197 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
+_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 262 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
+
+_AI provider: **OpenCode Zen** free models (primary) → **Groq** (automatic fallback). Keys `OPENCODE_API_KEY` + `GROQ_API_KEY` set in all 3 Vercel envs._
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
@@ -11,6 +13,19 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 ## 0. Session status — where to continue
 
 **Test suite: 182 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work. **Production is deployed & verified live at https://resbuilt.vercel.app** (all `/api` proxies return 200: ai/onet/onetip).
+
+**SHIPPED THIS SESSION — 2026-07-07 (part 4) — tests, quiz→tailor, OpenCode provider, UI fixes (tests 197 → 262):**
+
+_All committed on `master`. **First 4 commits pushed** (up to `058b14e`); **last 2 committed but NOT pushed** (`ee3da30` scroll fix, `e3291ca` import shape-fallback) — `git push origin master` to ship them + deploy._
+
+1. **Test coverage +45** (`3462658`) — new `ResumeContext.test.jsx` (CRUD, persistence, corrupt-JSON hydration, immutability, dark mode, mock auth), `toolbarUtils.test.js`, `layouts.test.jsx` (Modern/Compact partitioning). **Refactor:** extracted the fragile font-size/family helpers + FONTS/SIZES out of `EditorToolbar.jsx` into new pure `src/lib/toolbarUtils.js` (import-only change) to make them testable. Still untested: Editor (contentEditable — needs jsdom execCommand shims or Playwright), 4 simpler layouts, EditorToolbar render.
+2. **Quiz → tailor bridge** (`be142ce`) — in AI Assist → **Match a job**, a "🎯 Take the quiz" button opens the Interest Profiler; picking a matched career fetches its real O*NET duties and prefills the posting box (degrades to the title if duties can't load; empty box fills silently, non-empty replaces + notice). New pure `occupationToPosting()` in `onet.js`; `InterestProfiler` got an optional `onPickCareer(career)` prop (dashboard "Start a résumé" path unchanged). +10 tests. CONTEXT.md updated (3 AI modes; **Job match** + **Interest Profiler** terms).
+3. **OpenCode Zen provider + Groq fallback** (`a51706e`) — `api/ai.js` is now a 2-provider proxy. Tasks declare a `tier` (small→`deepseek-v4-flash-free`, large→`nemotron-3-ultra-free`); other free models `mimo-v2.5-free`/`north-mini-code-free` noted in-code. Providers tried in order, only if their key is set (Groq-only = old behavior). Fallback on non-2xx / network / empty / (JSON tasks) bad-shape. **All 4 free models are REASONING models** — verified live they burn 1100–1900+ tokens on hidden reasoning before content; `REASONING_HEADROOM = 2000` keeps output from truncating to empty (ceiling only, no Groq cost). +9 tests.
+4. **AI consent copy fix** (`058b14e`) — dropped stale "Groq's AI" wording (say "the AI service"); on a **contact** section the consent line + tips were contradictory (nothing is actually sent there) — now one accurate on-device line, removed the redundant banner + irrelevant grounding tip.
+5. **O*NET list scroll fix** (`ee3da30`, unpushed) — `.onet-panel` scrolled as a whole; now it fills the dock and only `.onet-results`/`.onet-tasks` scroll internally.
+6. **Import "AI failed" fix** (`e3291ca`, unpushed) — nemotron's JSON mode can return valid-but-wrong-shape JSON (e.g. `{"html":…}`), which passed the parse-only check and beat Groq → client found no `sections`. JSON tasks now declare a required key (`import`→`sections`, `tailor`→`matched`); missing it falls through to Groq.
+
+**LIVE-VERIFY STILL OWED (needs `vercel dev` + browser):** OpenCode **streaming** on reasoning models (improve/ideas/format/polish/retarget via `streamAi`) — content deltas should arrive after reasoning deltas, buffered-fallback covers it, but not browser-exercised. Also confirm prod `/api/ai` actually hits `opencode.ai` (200) and isn't silently always-falling-back to Groq (would mean headroom still too tight). Quiz→tailor full 30-Q→results→pick flow is stubbed in tests, only runs live.
 
 **SHIPPED THIS SESSION — 2026-07-07 (part 3) — AI-surface review + hardening (tests 182 → 197):**
 
