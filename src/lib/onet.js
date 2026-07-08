@@ -51,7 +51,7 @@ export function searchOccupations(query, { data = OCCUPATIONS, limit = DEFAULT_L
 // never be treated as markup — a crafted job posting can steer the AI `tailor`
 // task into emitting HTML here, and this output is later rendered via
 // dangerouslySetInnerHTML. Escape every string so it can only ever be text.
-function escapeHtml(s) {
+export function escapeHtml(s) {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

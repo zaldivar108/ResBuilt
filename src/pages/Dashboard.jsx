@@ -7,6 +7,7 @@ import ImportModal from '../components/ImportModal'
 import InterestProfiler from '../components/ui/InterestProfiler'
 import Switch from '../components/ui/switch'
 import { STARTERS, DEFAULT_STARTER_ID } from '../config/starters'
+import { fetchOccupationForCareer, seedSectionsFromOccupation } from '../lib/careerSeed'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -26,8 +27,13 @@ export default function Dashboard() {
     navigate(`/editor/${resume.id}`)
   }
 
-  function handleStartFromCareer(careerTitle) {
-    const resume = createResume(`${careerTitle} Resume`, DEFAULT_STARTER_ID)
+  // Start a résumé from a quiz-matched career: fetch its real O*NET duties
+  // (live → seed → none) and seed the starter's Experience/Skills with them.
+  async function handleStartFromCareer(career) {
+    const occupation = await fetchOccupationForCareer(career)
+    const starter = STARTERS[DEFAULT_STARTER_ID]
+    const sections = seedSectionsFromOccupation(starter.sections, occupation)
+    const resume = createResumeFromImport(`${career.title} Resume`, sections)
     setProfiling(false)
     navigate(`/editor/${resume.id}`)
   }

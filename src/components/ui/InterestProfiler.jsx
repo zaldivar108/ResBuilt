@@ -19,10 +19,12 @@ function saveResult(result) {
 // the three proxied O*NET calls (questions, scoring, matching careers — no PII
 // leaves the browser). Flow: intro/loading → quiz → results (RIASEC + careers).
 // A finished result is cached in localStorage so reopening lands on results.
-// `onStartResume(title)` is the dashboard action (create a new résumé). When
+// `onStartResume(career)` is the dashboard action (create a new résumé seeded
+// with the career's O*NET duties — may await a network fetch). When
 // `onPickCareer(career)` is supplied (from the editor's Job match tab), the
 // career buttons instead hand back the full career object to tailor toward.
 export default function InterestProfiler({ onClose, onStartResume, onPickCareer }) {
+  const [startingCode, setStartingCode] = useState(null) // career being started (disables the list)
   const [saved] = useState(loadSaved) // lazy init: read the cached result once
   const [stage, setStage] = useState(saved ? 'results' : 'loading') // loading|quiz|scoring|results|error
   const [error, setError] = useState('')
@@ -213,7 +215,16 @@ export default function InterestProfiler({ onClose, onStartResume, onPickCareer 
                   {onPickCareer ? (
                     <button className="ip-start" onClick={() => onPickCareer(c)}>Tailor for this →</button>
                   ) : (
-                    <button className="ip-start" onClick={() => onStartResume(c.title)}>Start a résumé →</button>
+                    <button
+                      className="ip-start"
+                      disabled={!!startingCode}
+                      onClick={async () => {
+                        setStartingCode(c.code)
+                        try { await onStartResume(c) } finally { setStartingCode(null) }
+                      }}
+                    >
+                      {startingCode === c.code ? 'Starting…' : 'Start a résumé →'}
+                    </button>
                   )}
                 </li>
               ))}
