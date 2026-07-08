@@ -96,6 +96,31 @@
 .ai-tasks-side { flex-wrap: wrap; margin-top: 0; }
 .ai-tasks-side .ai-task-btn { flex: 1 1 45%; }
 
+/* Whole-résumé "Improve" trigger — a separate, résumé-scoped action, not part
+   of the per-section mode tabs above. */
+.ai-improve-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--accent-strong);
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, opacity 0.14s;
+}
+.ai-improve-all-btn:hover:not(:disabled) { background: var(--accent-tint); }
+.ai-improve-all-btn.active { background: var(--accent-tint-strong); border-color: var(--accent); }
+.ai-improve-all-btn:disabled { opacity: 0.5; cursor: default; }
+.editor-layout.dark .ai-improve-all-btn { background: #14161C; border-color: var(--accent-soft); color: var(--accent-soft); }
+.editor-layout.dark .ai-improve-all-btn:hover:not(:disabled) { background: rgba(59,91,219,0.18); }
+.editor-layout.dark .ai-improve-all-btn.active { background: rgba(59,91,219,0.28); }
+
 /* ── Editor-column workspace (Col 2): textbox + answers ──
    Fixed 30% of the editor column (between the requested 1/4–1/3) in every
    mode and state — empty, streaming, results. Long content scrolls inside
@@ -298,6 +323,24 @@
   transition: background 0.14s;
 }
 .ai-apply-btn:hover { background: var(--accent-tint-strong); }
+
+/* Whole-résumé "Improve" workspace — trigger, per-section diff + checkbox
+   list, and the apply action. Buttons here stand alone (not nested inside
+   .ai-result), so give them their own border/radius instead of relying on
+   that wrapper's border-top. */
+.ai-improve-all-ws { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+.ai-improve-all-ws > .ai-apply-btn,
+.ai-improve-all-actions .ai-apply-btn {
+  border: 1px solid var(--accent-tint-strong);
+  border-radius: 8px;
+}
+.ai-improve-all-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.ai-improve-all-item { padding: 8px 10px; border-radius: 8px; background: #F1F5F9; }
+.ai-improve-all-check { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+.ai-improve-all-title { line-height: 1; }
+.ai-improve-all-actions { margin-top: 4px; }
+.editor-layout.dark .ai-improve-all-item { background: #1E293B; }
+.editor-layout.dark .ai-improve-all-check { color: #94A3B8; }
 
 /* Word-level diff preview (ADR 0003) — accent + underline for additions,
    muted strikethrough for removals. Never color-only (a11y). */

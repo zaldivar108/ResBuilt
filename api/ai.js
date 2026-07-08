@@ -148,6 +148,19 @@ const TASKS = {
       'Be encouraging and honest for a first-time résumé writer; never invent facts about them, only comment on how the text is written. Omit a section entirely if you have nothing useful to say about it. ' +
       'No markdown, no code fences, no commentary — the JSON object only.',
   },
+  improveAll: {
+    tier: 'large',
+    maxInput: 8000,
+    maxTokens: 2400,
+    temperature: 0.5,
+    json: true,
+    jsonRequire: 'sections',
+    prompt:
+      'You improve a whole résumé for a teenager or young adult, one section at a time. The input has one or more blocks of the form "SECTION <type> (id: <id>, title: \\"<title>\\"):" followed by that section\'s HTML content. ' +
+      'Rewrite each section for clarity and impact — strong action verbs, concise, honest — never invent experience, employers, numbers, dates, or credentials. Preserve each section\'s HTML structure and tags (<p>, <ul>, <li>, <strong>, <em>). ' +
+      'Return ONLY a JSON object of the form {"sections":{"<id>":"<rewritten HTML>"}} — one entry per section id you were given, using the EXACT id strings from the input. Omit a section entirely if it is already excellent and needs no change. ' +
+      'No markdown, no code fences, no commentary — the JSON object only.',
+  },
   import: {
     tier: 'large',
     maxInput: 8000,

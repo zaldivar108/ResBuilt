@@ -129,6 +129,47 @@ describe('api/ai review task (whole-résumé review)', () => {
   })
 })
 
+describe('api/ai improveAll task (whole-résumé improve)', () => {
+  test('is a recognized task', async () => {
+    const res = await handler(req({ task: 'improveAll', text: 'SECTION summary (id: s1, title: "Summary"):\n<p>Hi</p>' }))
+    expect(res.status).toBe(200)
+  })
+
+  test('requests JSON mode, a larger token budget, and the 70B model', async () => {
+    await handler(req({ task: 'improveAll', text: 'a'.repeat(500) }))
+    const body = sentBody()
+    expect(body.response_format).toEqual({ type: 'json_object' })
+    expect(body.max_tokens).toBeGreaterThanOrEqual(2400)
+    expect(body.model).toBe('llama-3.3-70b-versatile')
+  })
+
+  test('accepts up to 8000 chars, rejects beyond', async () => {
+    const ok = await handler(req({ task: 'improveAll', text: 'a'.repeat(8000) }))
+    expect(ok.status).toBe(200)
+    const over = await handler(req({ task: 'improveAll', text: 'a'.repeat(8001) }))
+    expect(over.status).toBe(413)
+  })
+
+  test('returns the raw JSON string as { result }', async () => {
+    fetchMock.mockResolvedValue(groqOk('{"sections":{"s1":"<p>Improved.</p>"}}'))
+    const res = await handler(req({ task: 'improveAll', text: 'a'.repeat(200) }))
+    const data = await res.json()
+    expect(data.result).toContain('Improved.')
+  })
+
+  test('falls back to Groq when OpenCode returns valid JSON of the wrong shape', async () => {
+    process.env.OPENCODE_API_KEY = 'oc-key'
+    mockByUrl({
+      [OC]: groqOk('{"html":"<p>oops</p>"}'),
+      [GROQ]: groqOk('{"sections":{"s1":"<p>From Groq.</p>"}}'),
+    })
+    const res = await handler(req({ task: 'improveAll', text: 'a'.repeat(200) }))
+    expect(res.status).toBe(200)
+    expect(callUrl(1)).toContain(GROQ)
+    expect((await res.json()).result).toContain('From Groq.')
+  })
+})
+
 describe('api/ai polish task (O*NET-grounded rewrite)', () => {
   test('is a recognized task', async () => {
     const res = await handler(req({ task: 'polish', text: 'Receive payment by cash.' }))

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, createContext, useContext } from 'react'
+import { Wand2 } from 'lucide-react'
 import { suggestGroundingOccupation } from '../../lib/groundingSuggest'
 import GroundingSuggestChip from './GroundingSuggestChip'
 import { fixGrammarInHtml } from '../../lib/grammarFix'
@@ -9,6 +10,7 @@ import { canUseAI, recordUse, remaining, DAILY_LIMIT } from '../../lib/aiBudget'
 import { scrubPii } from '../../lib/scrubPii'
 import { formatContactLocal } from '../../lib/contactFormat'
 import { streamAiTask } from '../../lib/streamAi'
+import { buildImproveAllPrompt, parseImproveAllResult } from '../../lib/resumeImprove'
 import OnetSuggest from './OnetSuggest'
 import JobTailor from './JobTailor'
 import DiffPreview from './DiffPreview'
@@ -56,7 +58,7 @@ const AiCtx = createContext(null)
 export const useAi = () => useContext(AiCtx)
 
 export function AiProvider({
-  section = null, onApply = () => {}, onApplyRange = () => ({ ok: false }),
+  section = null, onApply = () => {}, onApplyRange = () => ({ ok: false }), onApplyAll = () => {},
   targetJob = null, onSaveTargetJob = () => {},
   resumeTitle = '', sections = [], groundingDismissed = false, onDismissGrounding = () => {},
   children,
@@ -68,9 +70,19 @@ export function AiProvider({
   const [busy, setBusy] = useState(false)        // request in flight — disables the buttons end-to-end
   const [error, setError] = useState('')
   const [applied, setApplied] = useState(false)
-  const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = duties · 'tailor' = match
+  const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = duties · 'tailor' = match · 'improveAll' = whole résumé
   const [groundOcc, setGroundOcc] = useState(null) // O*NET occupation to ground "ideas" on
   const [attempt, setAttempt] = useState(null)     // last task attempted, for the "Try again" button
+
+  // Whole-résumé "Improve" — a separate, résumé-scoped action (not tied to the
+  // active section like everything else here). Rewrites several sections in
+  // one call; the user picks which ones to actually apply via a diff + checkbox
+  // list in the workspace, same trust model as single-section Improve (verbatim
+  // text, contact section excluded — see resumeImprove.js).
+  const [improveAllState, setImproveAllState] = useState('idle') // idle | loading | done | error
+  const [improveAllResult, setImproveAllResult] = useState(null) // bySection from parseImproveAllResult
+  const [improveAllError, setImproveAllError] = useState('')
+  const [improveAllSelected, setImproveAllSelected] = useState(new Set())
   // Selection-level "Improve this" (ADR 0006): set only while the current
   // result/Apply cycle is scoped to a captured text range, never a whole
   // section. Cleared the moment a normal (whole-section) task runs, or after
@@ -311,6 +323,65 @@ export function AiProvider({
     flashApplied()
   }
 
+  async function runImproveAll() {
+    if (improveAllState === 'loading') return
+    const { text, sectionTitles } = buildImproveAllPrompt(sections)
+    if (!text.trim()) return
+
+    function land(rawResult) {
+      const parsed = parseImproveAllResult(rawResult, sectionTitles)
+      if (!parsed.ok) { setImproveAllError(parsed.error); setImproveAllState('error'); return }
+      setImproveAllResult(parsed.bySection)
+      setImproveAllSelected(new Set(parsed.bySection.map(s => s.sectionId)))
+      setImproveAllState('done')
+    }
+
+    const cached = getCached('improveAll', text)
+    if (cached) { land(cached); return }
+    if (!canUseAI(today())) {
+      setImproveAllError('You’ve reached today’s AI limit. Come back tomorrow.')
+      setImproveAllState('error')
+      return
+    }
+
+    setImproveAllState('loading')
+    setImproveAllError('')
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: 'improveAll', text }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setImproveAllError(data.error || 'Something went wrong. Try again.'); setImproveAllState('error'); return }
+      setCached('improveAll', text, data.result)
+      recordUse(today())
+      land(data.result)
+    } catch {
+      setImproveAllError('Could not reach the AI. If running locally, use `vercel dev`.')
+      setImproveAllState('error')
+    }
+  }
+
+  function toggleImproveAllSelected(sectionId) {
+    setImproveAllSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(sectionId)) next.delete(sectionId)
+      else next.add(sectionId)
+      return next
+    })
+  }
+
+  function applyImproveAllSelected() {
+    if (!improveAllResult || !improveAllSelected.size) return
+    const edits = improveAllResult
+      .filter(s => improveAllSelected.has(s.sectionId))
+      .map(s => ({ sectionId: s.sectionId, html: s.html }))
+    onApplyAll(edits)
+    setImproveAllState('idle')
+    setImproveAllResult(null)
+  }
+
   // The value changes on every state transition anyway (state lives here), so
   // memoizing it would buy nothing — build it plainly each render.
   const groundingSuggestion = useMemo(() => {
@@ -321,11 +392,13 @@ export function AiProvider({
   const value = {
     section, onApply, aiLeft, targetJob, onSaveTargetJob,
     groundingSuggestion, onDismissGrounding,
-    mode, setMode,
+    mode, setMode, sections,
     result, resultFor, lastTask, loading, busy, error, applied, attempt,
     groundOcc, setGroundOcc,
     runTask, applyResult, runFragmentTask, fragmentCaptured,
     applyLabel: lastTask === 'ideas' ? 'Add to section' : 'Apply to section',
+    improveAllState, improveAllResult, improveAllError, improveAllSelected,
+    runImproveAll, toggleImproveAllSelected, applyImproveAllSelected,
   }
 
   return <AiCtx.Provider value={value}>{children}</AiCtx.Provider>
@@ -357,6 +430,17 @@ export function AiControls() {
         ))}
       </div>
 
+      <button
+        type="button"
+        className={`ai-improve-all-btn${mode === 'improveAll' ? ' active' : ''}`}
+        title="Rewrite every section for clarity in one AI pass — review each change before applying."
+        aria-label="Improve whole résumé"
+        onClick={() => setMode('improveAll')}
+        disabled={busy}
+      >
+        <Wand2 size={14} /> Improve whole résumé
+      </button>
+
       {mode === 'ai' ? (
         <div className="ai-tasks ai-tasks-side">
           {TASKS.map(t => {
@@ -381,9 +465,11 @@ export function AiControls() {
         </div>
       ) : (
         <p className="ai-side-note">
-          {section
-            ? 'The search box and results show in the editor →'
-            : 'Select a section first.'}
+          {mode === 'improveAll'
+            ? 'Results show in the editor →'
+            : section
+              ? 'The search box and results show in the editor →'
+              : 'Select a section first.'}
         </p>
       )}
     </div>
@@ -443,22 +529,84 @@ export function AiInfoOrb() {
 // ── Editor-column workspace: the textbox + answers ──
 export function AiWorkspace() {
   const {
-    section, onApply, mode, groundOcc, setGroundOcc,
+    section, onApply, mode, groundOcc, setGroundOcc, sections,
     loading, error, busy, attempt, runTask,
     result, lastTask, applied, applyResult, applyLabel, aiLeft,
     targetJob, onSaveTargetJob, groundingSuggestion, onDismissGrounding,
     fragmentCaptured,
+    improveAllState, improveAllResult, improveAllError, improveAllSelected,
+    runImproveAll, toggleImproveAllSelected, applyImproveAllSelected,
   } = useAi()
 
   return (
     <div className="ai-workspace" aria-label="AI Assist workspace">
       <div className="ai-section-tag">
-        {section
-          ? <>AI is editing: <strong>{section.title}</strong></>
-          : 'Select a section to edit'}
+        {mode === 'improveAll'
+          ? 'Improving your whole résumé'
+          : section
+            ? <>AI is editing: <strong>{section.title}</strong></>
+            : 'Select a section to edit'}
       </div>
 
-      {mode === 'onet' ? (
+      {mode === 'improveAll' ? (
+        <div className="ai-improve-all-ws">
+          {improveAllState !== 'done' && (
+            <>
+              <button
+                type="button"
+                className="ai-apply-btn"
+                onClick={runImproveAll}
+                disabled={improveAllState === 'loading' || aiLeft <= 0}
+              >
+                {improveAllState === 'loading' ? 'Improving…' : 'Ask the AI to improve it'}
+              </button>
+              <p className="ai-consent">
+                Rewrites every section for clarity — sends your whole résumé (except contact info) to the AI service verbatim — uses 1 of today's actions. You'll review every change before anything is applied.
+                <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
+              </p>
+              {improveAllState === 'error' && (
+                <div className="ai-status ai-error" role="alert">
+                  {improveAllError}
+                  <button type="button" className="ai-retry-btn" onClick={runImproveAll}>Try again</button>
+                </div>
+              )}
+            </>
+          )}
+
+          {improveAllState === 'done' && improveAllResult && (
+            <div aria-live="polite">
+              <ul className="ai-improve-all-list">
+                {improveAllResult.map(s => {
+                  const before = sections.find(sec => sec.id === s.sectionId)?.content ?? ''
+                  return (
+                    <li key={s.sectionId} className="ai-improve-all-item">
+                      <label className="ai-improve-all-check">
+                        <input
+                          type="checkbox"
+                          checked={improveAllSelected.has(s.sectionId)}
+                          onChange={() => toggleImproveAllSelected(s.sectionId)}
+                        />
+                        <span className="ai-improve-all-title">{s.sectionTitle}</span>
+                      </label>
+                      <DiffPreview before={before} after={s.html} />
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="ai-improve-all-actions">
+                <button
+                  type="button"
+                  className="ai-apply-btn"
+                  onClick={applyImproveAllSelected}
+                  disabled={improveAllSelected.size === 0}
+                >
+                  Apply {improveAllSelected.size || ''} {improveAllSelected.size === 1 ? 'change' : 'changes'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : mode === 'onet' ? (
         section ? (
           <OnetSuggest
             onApply={html => onApply(section.content + html)}

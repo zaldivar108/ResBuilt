@@ -65,7 +65,7 @@ export default function Editor() {
   const [stylesSidebarCollapsed, setStylesSidebarCollapsed] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
-  const [lastAiEdit, setLastAiEdit] = useState(null) // { sectionId, prevContent }
+  const [lastAiEdit, setLastAiEdit] = useState(null) // { edits: [{ sectionId, prevContent }] }
   const [checklistOpen, setChecklistOpen] = useState(false)
 
   const editorRef      = useRef(null)
@@ -133,7 +133,7 @@ export default function Editor() {
     const prevContent = editorRef.current
       ? editorRef.current.innerHTML
       : resume.sections.find(s => s.id === activeSectionId)?.content ?? ''
-    setLastAiEdit({ sectionId: activeSectionId, prevContent })
+    setLastAiEdit({ edits: [{ sectionId: activeSectionId, prevContent }] })
     clearTimeout(aiUndoTimerRef.current)
     aiUndoTimerRef.current = setTimeout(() => setLastAiEdit(null), 8000)
 
@@ -142,6 +142,41 @@ export default function Editor() {
       sections: prev.sections.map(s => s.id === activeSectionId ? { ...s, content: html } : s),
     }))
     if (editorRef.current) editorRef.current.innerHTML = html
+  }
+
+  // Whole-résumé "Improve" (AI rewrites several sections in one call, from
+  // ResumeChecklistPanel's improve-all flow). `edits` is the user-checked
+  // subset of the AI's per-section results: [{ sectionId, html }]. Snapshots
+  // every touched section's prior content so the whole batch can be undone
+  // together, same 8s window as a single-section AI edit.
+  function applyAiToAllSections(edits) {
+    if (!Array.isArray(edits) || !edits.length) return
+    const activeContent = editorRef.current?.innerHTML
+    const prevBySection = new Map(
+      edits.map(({ sectionId }) => [
+        sectionId,
+        sectionId === activeSectionId && activeContent !== undefined
+          ? activeContent
+          : resume.sections.find(s => s.id === sectionId)?.content ?? '',
+      ])
+    )
+    const sanitizedBySection = new Map(edits.map(({ sectionId, html }) => [sectionId, sanitizeHtml(html)]))
+
+    setLastAiEdit({
+      edits: edits.map(({ sectionId }) => ({ sectionId, prevContent: prevBySection.get(sectionId) })),
+    })
+    clearTimeout(aiUndoTimerRef.current)
+    aiUndoTimerRef.current = setTimeout(() => setLastAiEdit(null), 8000)
+
+    patch(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        sanitizedBySection.has(s.id) ? { ...s, content: sanitizedBySection.get(s.id) } : s
+      ),
+    }))
+    if (editorRef.current && sanitizedBySection.has(activeSectionId)) {
+      editorRef.current.innerHTML = sanitizedBySection.get(activeSectionId)
+    }
   }
 
   // Selection-level "Improve this" (ADR 0006): replace exactly the captured
@@ -159,7 +194,7 @@ export default function Editor() {
     if (!replaced) return { ok: false, reason: 'stale' }
 
     const newContent = editorRef.current.innerHTML
-    setLastAiEdit({ sectionId: activeSectionId, prevContent })
+    setLastAiEdit({ edits: [{ sectionId: activeSectionId, prevContent }] })
     clearTimeout(aiUndoTimerRef.current)
     aiUndoTimerRef.current = setTimeout(() => setLastAiEdit(null), 8000)
 
@@ -172,12 +207,14 @@ export default function Editor() {
 
   function undoAiEdit() {
     if (!lastAiEdit) return
-    const { sectionId, prevContent } = lastAiEdit
+    const prevBySection = new Map(lastAiEdit.edits.map(({ sectionId, prevContent }) => [sectionId, prevContent]))
     patch(prev => ({
       ...prev,
-      sections: prev.sections.map(s => s.id === sectionId ? { ...s, content: prevContent } : s),
+      sections: prev.sections.map(s => prevBySection.has(s.id) ? { ...s, content: prevBySection.get(s.id) } : s),
     }))
-    if (editorRef.current && activeSectionId === sectionId) editorRef.current.innerHTML = prevContent
+    if (editorRef.current && prevBySection.has(activeSectionId)) {
+      editorRef.current.innerHTML = prevBySection.get(activeSectionId)
+    }
     clearTimeout(aiUndoTimerRef.current)
     setLastAiEdit(null)
   }
@@ -385,6 +422,7 @@ export default function Editor() {
          section={activeSection}
          onApply={applyAiToSection}
          onApplyRange={applyAiToRange}
+         onApplyAll={applyAiToAllSections}
          targetJob={resume.targetJob ?? null}
          onSaveTargetJob={saveTargetJob}
          resumeTitle={resume.title}
@@ -453,7 +491,9 @@ export default function Editor() {
 
             {lastAiEdit && (
               <div className="undo-toast">
-                <span className="undo-toast-label">AI edit applied</span>
+                <span className="undo-toast-label">
+                  {lastAiEdit.edits.length > 1 ? `AI improved ${lastAiEdit.edits.length} sections` : 'AI edit applied'}
+                </span>
                 <button className="undo-btn" onClick={undoAiEdit}>Undo</button>
               </div>
             )}
