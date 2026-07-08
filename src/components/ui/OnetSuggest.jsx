@@ -198,7 +198,7 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
       )}
 
       <div className="ai-consent onet-attr">
-        Job data from <a href="https://services.onetcenter.org/" target="_blank" rel="noreferrer">O*NET</a> (U.S. Dept. of Labor, CC BY 4.0). Your search is sent to O*NET to fetch real duties. “Add selected” then stays on your device; “Make it mine” sends the checked duties to Groq.
+        Job data from <a href="https://services.onetcenter.org/" target="_blank" rel="noreferrer">O*NET</a> (U.S. Dept. of Labor, CC BY 4.0). Your search is sent to O*NET to fetch real duties. “Add selected” then stays on your device; “Make it mine” sends the checked duties to the AI service.
       </div>
     </div>
   )
