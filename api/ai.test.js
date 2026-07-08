@@ -170,6 +170,54 @@ describe('api/ai improveAll task (whole-résumé improve)', () => {
   })
 })
 
+describe('api/ai concise task (shorten wording)', () => {
+  test('is a recognized task, no JSON mode, fast 8B model', async () => {
+    const res = await handler(req({ task: 'concise', text: '<p>Helped customers at the register every day.</p>' }))
+    expect(res.status).toBe(200)
+    const body = sentBody()
+    expect(body.response_format).toBeUndefined()
+    expect(body.model).toBe('llama-3.1-8b-instant')
+  })
+
+  test('accepts up to 3500 chars and rejects beyond', async () => {
+    const ok = await handler(req({ task: 'concise', text: 'a'.repeat(3500) }))
+    expect(ok.status).toBe(200)
+    const over = await handler(req({ task: 'concise', text: 'a'.repeat(3501) }))
+    expect(over.status).toBe(413)
+  })
+
+  test('returns the shortened HTML as { result }', async () => {
+    fetchMock.mockResolvedValue(groqOk('<p>Helped customers daily.</p>'))
+    const res = await handler(req({ task: 'concise', text: '<p>Helped customers at the register every day.</p>' }))
+    const data = await res.json()
+    expect(data.result).toContain('Helped customers')
+  })
+})
+
+describe('api/ai elaborate task (expand thin wording)', () => {
+  test('is a recognized task, no JSON mode, fast 8B model', async () => {
+    const res = await handler(req({ task: 'elaborate', text: '<p>Helped customers.</p>' }))
+    expect(res.status).toBe(200)
+    const body = sentBody()
+    expect(body.response_format).toBeUndefined()
+    expect(body.model).toBe('llama-3.1-8b-instant')
+  })
+
+  test('accepts up to 3500 chars and rejects beyond', async () => {
+    const ok = await handler(req({ task: 'elaborate', text: 'a'.repeat(3500) }))
+    expect(ok.status).toBe(200)
+    const over = await handler(req({ task: 'elaborate', text: 'a'.repeat(3501) }))
+    expect(over.status).toBe(413)
+  })
+
+  test('returns the expanded HTML as { result }', async () => {
+    fetchMock.mockResolvedValue(groqOk('<p>Helped customers with inquiries and checkout, ensuring a smooth experience.</p>'))
+    const res = await handler(req({ task: 'elaborate', text: '<p>Helped customers.</p>' }))
+    const data = await res.json()
+    expect(data.result).toContain('Helped customers')
+  })
+})
+
 describe('api/ai polish task (O*NET-grounded rewrite)', () => {
   test('is a recognized task', async () => {
     const res = await handler(req({ task: 'polish', text: 'Receive payment by cash.' }))

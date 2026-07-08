@@ -20,16 +20,18 @@ const today = () => new Date().toISOString().slice(0, 10)
 const COOLDOWN_MS = 3000
 
 const TASKS = [
-  { id: 'improve', label: 'Improve wording', title: 'Rewrite this section for clarity and impact — stronger verbs, more concise. Sent to the AI service.' },
-  { id: 'grammar', label: 'Fix grammar',     title: 'Fix spelling and grammar only, keeping your wording. Runs on your device — nothing is sent.' },
-  { id: 'format',  label: 'Format',          title: 'Reformat this section into the standard résumé layout for its type — clean contact lines, "School — City, State — Year" for education, title + duty bullets for experience, and so on. Sent to the AI service.' },
-  { id: 'ideas',   label: 'Suggest ideas',   title: 'Suggest 3 realistic bullet points you could add. Sent to the AI service.' },
+  { id: 'improve',  label: 'Improve wording', title: 'Rewrite this section for clarity and impact — stronger verbs, more concise. Sent to the AI service.' },
+  { id: 'concise',  label: 'Make concise',    title: 'Shorten wordy phrasing while keeping every fact. Sent to the AI service.' },
+  { id: 'elaborate', label: 'Elaborate',      title: 'Expand a thin section with more natural detail, without inventing new facts. Sent to the AI service.' },
+  { id: 'grammar',  label: 'Fix grammar',     title: 'Fix spelling and grammar only, keeping your wording. Runs on your device — nothing is sent.' },
+  { id: 'format',   label: 'Format',          title: 'Reformat this section into the standard résumé layout for its type — clean contact lines, "School — City, State — Year" for education, title + duty bullets for experience, and so on. Sent to the AI service.' },
+  { id: 'ideas',    label: 'Suggest ideas',   title: 'Suggest 3 realistic bullet points you could add. Sent to the AI service.' },
 ]
 
 // Server-side input caps per task (mirrors api/ai.js TASKS.maxInput). Used for a
 // friendly client pre-flight so the user isn't surprised by a 413 after waiting.
 // grammar runs on-device (harper.js), so it has no cap here.
-const MAX_INPUT = { improve: 3500, ideas: 2000, format: 6000 }
+const MAX_INPUT = { improve: 3500, concise: 3500, elaborate: 3500, ideas: 2000, format: 6000 }
 
 const MODE_TABS = [
   { id: 'ai',     label: 'Edit my text',   title: 'Improve, fix grammar, reformat, or get bullet-point ideas for the selected section.' },
@@ -444,10 +446,11 @@ export function AiControls() {
       {mode === 'ai' ? (
         <div className="ai-tasks ai-tasks-side">
           {TASKS.map(t => {
-            // On a contact section, Improve/Suggest ideas would send the person's
-            // name/email/phone to the AI service and aren't useful there. Grammar +
-            // Format stay (both run on-device for contact).
-            const contactBlocked = section?.type === 'contact' && (t.id === 'improve' || t.id === 'ideas')
+            // On a contact section, any task that rewrites the actual text would
+            // send the person's name/email/phone to the AI service and isn't
+            // useful there anyway. Grammar + Format stay (both run on-device for contact).
+            const contactBlocked = section?.type === 'contact' &&
+              (t.id === 'improve' || t.id === 'concise' || t.id === 'elaborate' || t.id === 'ideas')
             return (
               <button
                 key={t.id}
@@ -503,7 +506,7 @@ export function AiInfoOrb() {
           <p>Fix grammar, adding real job duties, and formatting your contact info all run inside your browser. That text never leaves your device.</p>
 
           <h4 className="ai-info-h">Sent to the AI service</h4>
-          <p>Improve wording, Format, Suggest ideas, and Match a job send that section’s text to our AI provider — <strong>OpenCode Zen</strong> free models, with <strong>Groq</strong> as an automatic backup. So don’t put anything private (ID numbers, passwords) in your résumé.</p>
+          <p>Improve wording, Make concise, Elaborate, Format, Suggest ideas, and Match a job send that section’s text to our AI provider — <strong>OpenCode Zen</strong> free models, with <strong>Groq</strong> as an automatic backup. So don’t put anything private (ID numbers, passwords) in your résumé.</p>
 
           <h4 className="ai-info-h">Job search</h4>
           <p>“Real job duties” sends your search to <strong>O*NET</strong> (U.S. Dept. of Labor) to pull real occupation data.</p>
@@ -680,7 +683,7 @@ export function AiWorkspace() {
           <div className="ai-consent">
             {section?.type === 'contact'
               ? 'On a contact section everything runs on your device — nothing is sent.'
-              : 'Fix grammar runs on your device — nothing is sent. Improve wording, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
+              : 'Fix grammar runs on your device — nothing is sent. Improve wording, Make concise, Elaborate, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
             <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
           </div>
         </>

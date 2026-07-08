@@ -76,6 +76,22 @@ const TASKS = {
     prompt:
       'You improve one section of a first résumé for a teenager or young adult. The user sends the section as simple HTML. Rewrite for clarity and impact: strong action verbs, concise, honest — never invent experience, employers, numbers, or credentials. Preserve the HTML structure and the same tags (<p>, <ul>, <li>, <strong>, <em>). Return ONLY the improved HTML — no markdown, no code fences, no commentary.',
   },
+  concise: {
+    tier: 'small',
+    maxInput: 3500,
+    maxTokens: 500,
+    temperature: 0.4,
+    prompt:
+      'You shorten one section of a first résumé for a teenager or young adult. The user sends the section as simple HTML. Tighten wordy phrasing into a more concise version — cut filler words and redundant phrases — but keep every fact, number, and claim that is already there; never drop real content just to shorten it, and never invent anything new. Preserve the HTML structure and the same tags (<p>, <ul>, <li>, <strong>, <em>). Return ONLY the shortened HTML — no markdown, no code fences, no commentary.',
+  },
+  elaborate: {
+    tier: 'small',
+    maxInput: 3500,
+    maxTokens: 700,
+    temperature: 0.5,
+    prompt:
+      'You expand one section of a first résumé for a teenager or young adult that is currently too short or thin. The user sends the section as simple HTML. Elaborate on what is already stated — add natural detail, context, or a plausible outcome that is a reasonable elaboration of the existing wording — but never invent a new employer, date, number, credential, or duty that was not implied by the original text. If you are unsure whether a detail is implied, leave it out rather than guessing. Preserve the HTML structure and the same tags (<p>, <ul>, <li>, <strong>, <em>). Return ONLY the expanded HTML — no markdown, no code fences, no commentary.',
+  },
   ideas: {
     tier: 'small',
     maxInput: 2000,
