@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo, createContext, useContext } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useState, useRef, useEffect, createContext, useContext } from 'react'
 import { fixGrammarInHtml } from '../../lib/grammarFix'
 import { getLinter } from '../../lib/harperLinter'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
@@ -10,20 +9,16 @@ import { formatContactLocal } from '../../lib/contactFormat'
 import { streamAiTask } from '../../lib/streamAi'
 import OnetSuggest from './OnetSuggest'
 import JobTailor from './JobTailor'
-
-const today = () => new Date().toISOString().slice(0, 10)
 import './AiInput.css'
 
-const SPEED_FACTOR = 1
-const FORM_WIDTH = 540
-const FORM_HEIGHT = 540 // square: match the largest dock dimension
+const today = () => new Date().toISOString().slice(0, 10)
 const COOLDOWN_MS = 3000
 
 const TASKS = [
-  { id: 'improve', label: 'Improve wording', title: 'Rewrite this section for clarity and impact — stronger verbs, more concise. Sent to Groq AI.' },
+  { id: 'improve', label: 'Improve wording', title: 'Rewrite this section for clarity and impact — stronger verbs, more concise. Sent to the AI service.' },
   { id: 'grammar', label: 'Fix grammar',     title: 'Fix spelling and grammar only, keeping your wording. Runs on your device — nothing is sent.' },
-  { id: 'format',  label: 'Format',          title: 'Reformat this section into the standard résumé layout for its type — clean contact lines, "School — City, State — Year" for education, title + duty bullets for experience, and so on. Sent to Groq AI.' },
-  { id: 'ideas',   label: 'Suggest ideas',   title: 'Suggest 3 realistic bullet points you could add. Sent to Groq AI.' },
+  { id: 'format',  label: 'Format',          title: 'Reformat this section into the standard résumé layout for its type — clean contact lines, "School — City, State — Year" for education, title + duty bullets for experience, and so on. Sent to the AI service.' },
+  { id: 'ideas',   label: 'Suggest ideas',   title: 'Suggest 3 realistic bullet points you could add. Sent to the AI service.' },
 ]
 
 // Server-side input caps per task (mirrors api/ai.js TASKS.maxInput). Used for a
@@ -42,7 +37,7 @@ function stripFences(s) {
   return s.replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim()
 }
 
-function ColorOrb({ dimension = '24px', spinDuration = 20 }) {
+export function ColorOrb({ dimension = '24px', spinDuration = 20 }) {
   return (
     <div
       className="ai-orb"
@@ -51,35 +46,13 @@ function ColorOrb({ dimension = '24px', spinDuration = 20 }) {
   )
 }
 
-const FormContext = createContext({})
-const useFormCtx = () => useContext(FormContext)
+// Shared AI state. The controls (sidebar) trigger tasks; the workspace (editor
+// column) shows the textbox/answers. Both read from this single provider so the
+// two surfaces stay in sync.
+const AiCtx = createContext(null)
+const useAi = () => useContext(AiCtx)
 
-function DockBar() {
-  const { showForm, triggerOpen } = useFormCtx()
-  return (
-    <AnimatePresence>
-      {!showForm && (
-        <motion.footer
-          className="ai-dock-bar"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          <div className="ai-dock-inner">
-            <ColorOrb dimension="20px" />
-            <button type="button" className="ai-trigger-btn" onClick={triggerOpen}>
-              ✦ AI Assist
-            </button>
-          </div>
-        </motion.footer>
-      )}
-    </AnimatePresence>
-  )
-}
-
-function InputForm() {
-  const { showForm, section, onApply } = useFormCtx()
+export function AiProvider({ section = null, onApply = () => {}, children }) {
   const [result, setResult] = useState('')
   const [resultFor, setResultFor] = useState(null) // section id the result was generated for
   const [lastTask, setLastTask] = useState(null)
@@ -87,7 +60,7 @@ function InputForm() {
   const [busy, setBusy] = useState(false)        // request in flight — disables the buttons end-to-end
   const [error, setError] = useState('')
   const [applied, setApplied] = useState(false)
-  const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = real job duties
+  const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = duties · 'tailor' = match
   const [groundOcc, setGroundOcc] = useState(null) // O*NET occupation to ground "ideas" on
   const [attempt, setAttempt] = useState(null)     // last task attempted, for the "Try again" button
   const coolingRef = useRef(false)
@@ -103,9 +76,6 @@ function InputForm() {
   useEffect(() => {
     abortRef.current?.abort()
     reqIdRef.current++ // invalidate in-flight callbacks
-    // Resetting local preview state when the section identity changes is the
-    // documented "adjust state on prop change" case; we keep it in an effect
-    // (rather than a key remount) to preserve the active tab + O*NET grounding.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setResult(''); setResultFor(null); setLastTask(null); setAttempt(null)
     setError(''); setApplied(false); setBusy(false); setLoading(false)
@@ -143,7 +113,7 @@ function InputForm() {
 
     // Grammar runs fully on-device with harper.js — the text never leaves the
     // browser (and it doesn't spend the shared Groq quota). Improve / ideas are
-    // generative and still go to Groq.
+    // generative and still go to the AI service.
     if (task === 'grammar') {
       try {
         const linter = await getLinter()
@@ -159,7 +129,7 @@ function InputForm() {
     }
 
     // Contact "Format" runs fully on-device: a contact section is the person's
-    // name/email/phone (PII we won't send to Groq — the audience is minors).
+    // name/email/phone (PII we won't send to the AI service — the audience is minors).
     if (task === 'format' && section.type === 'contact') {
       const html = formatContactLocal(section.content)
       if (!active()) return
@@ -200,7 +170,6 @@ function InputForm() {
       // Stream tokens in as they arrive — swap the "Thinking…" spinner for the
       // growing preview on the first token. Content is sanitized on every update
       // so nothing unsafe is ever rendered mid-stream.
-      // "format" adapts to the section type — the proxy picks the right layout.
       const payload = { task, text: sentText }
       if (task === 'format') payload.sectionType = section.type
 
@@ -233,208 +202,212 @@ function InputForm() {
     setTimeout(() => setApplied(false), 1500)
   }
 
-  const applyLabel = lastTask === 'ideas' ? 'Add to section' : 'Apply to section'
+  // The value changes on every state transition anyway (state lives here), so
+  // memoizing it would buy nothing — build it plainly each render.
+  const value = {
+    section, onApply, aiLeft,
+    mode, setMode,
+    result, resultFor, lastTask, loading, busy, error, applied, attempt,
+    groundOcc, setGroundOcc,
+    runTask, applyResult,
+    applyLabel: lastTask === 'ideas' ? 'Add to section' : 'Apply to section',
+  }
 
-  return (
-    <form
-      onSubmit={e => e.preventDefault()}
-      className="ai-form"
-      style={{ width: FORM_WIDTH, height: FORM_HEIGHT, pointerEvents: showForm ? 'all' : 'none' }}
-    >
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 550 / SPEED_FACTOR, damping: 45, mass: 0.7 }}
-            className="ai-form-inner"
-          >
-            <div className="ai-form-header">
-              <span className="ai-form-title">AI Assist</span>
-              <div className="ai-key-hints">
-                <kbd className="ai-kbd">Esc</kbd>
-              </div>
-            </div>
-
-            <div className="ai-section-tag">
-              {section
-                ? <>Editing: <strong>{section.title}</strong></>
-                : 'Select a section to edit'}
-            </div>
-
-            <div className="ai-mode-tabs">
-              {MODE_TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`ai-mode-tab${mode === tab.id ? ' active' : ''}`}
-                  title={tab.title}
-                  aria-label={tab.title}
-                  onClick={() => setMode(tab.id)}
-                  disabled={busy || (tab.id !== 'ai' && !section)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {mode === 'onet' ? (
-              <OnetSuggest
-                onApply={html => onApply(section.content + html)}
-                onOccupation={setGroundOcc}
-              />
-            ) : mode === 'tailor' ? (
-              <JobTailor section={section} onApply={onApply} />
-            ) : (
-              <>
-                <div className="ai-tasks">
-                  {TASKS.map(t => {
-                    // On a contact section, Improve/Suggest ideas would send the
-                    // person's name/email/phone to Groq and aren't useful there.
-                    // Grammar + Format stay (both run on-device for contact).
-                    const contactBlocked = section?.type === 'contact' && (t.id === 'improve' || t.id === 'ideas')
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        className="ai-task-btn"
-                        title={contactBlocked ? 'Off for contact info — it stays private on your device.' : t.title}
-                        aria-label={contactBlocked ? 'Off for contact info — it stays private on your device.' : t.title}
-                        onClick={() => runTask(t.id)}
-                        disabled={busy || !section || contactBlocked}
-                      >
-                        {t.label}
-                      </button>
-                    )
-                  })}
-                </div>
-                {/* Grounding only applies to "Suggest ideas", which is disabled
-                    on contact sections — so hide this hint there. */}
-                {section?.type !== 'contact' && (
-                  groundOcc ? (
-                    <div className="ai-ground-hint">
-                      ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
-                    </div>
-                  ) : (
-                    <div className="ai-ground-hint ai-ground-tip">
-                      Tip: pick a job in <strong>Real job duties</strong> to ground “Suggest ideas” in real tasks.
-                    </div>
-                  )
-                )}
-
-                {loading && <div className="ai-status" role="status" aria-live="polite">Thinking…</div>}
-                {error && (
-                  <div className="ai-status ai-error" role="alert">
-                    {error}
-                    {attempt && !busy && (
-                      <button type="button" className="ai-retry-btn" onClick={() => runTask(attempt)}>
-                        Try again
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {result && !loading && (
-                  <div className="ai-result" aria-live="polite">
-                    <div
-                      className="ai-result-text"
-                      dangerouslySetInnerHTML={{ __html: result }}
-                    />
-                    <button type="button" className="ai-apply-btn" onClick={applyResult}>
-                      {applied ? 'Applied ✓' : applyLabel}
-                    </button>
-                  </div>
-                )}
-
-                <div className="ai-consent">
-                  {section?.type === 'contact'
-                    ? '🔒 On a contact section everything runs on your device — nothing is sent.'
-                    : '🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
-                  <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
-                </div>
-              </>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="ai-orb-absolute"
-          >
-            <ColorOrb dimension="20px" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </form>
-  )
+  return <AiCtx.Provider value={value}>{children}</AiCtx.Provider>
 }
 
-export function AiInput({ section = null, onApply = () => {} }) {
-  const wrapperRef = useRef(null)
-  const [showForm, setShowForm] = useState(false)
-
-  const triggerClose = useCallback(() => setShowForm(false), [])
-  const triggerOpen = useCallback(() => setShowForm(true), [])
-
-  useEffect(() => {
-    function clickOutside(e) {
-      if (!showForm) return
-      if (wrapperRef.current && wrapperRef.current.contains(e.target)) return
-      // Keep the dock open while working inside the editor — switching sections,
-      // editing text, or clicking the preview shouldn't dismiss it. Only a click
-      // fully outside the editor closes it.
-      if (e.target.closest && e.target.closest('.editor-layout')) return
-      triggerClose()
-    }
-    function onKey(e) {
-      if (e.key === 'Escape' && showForm) triggerClose()
-    }
-    document.addEventListener('mousedown', clickOutside)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', clickOutside)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [showForm, triggerClose])
-
-  const ctx = useMemo(
-    () => ({ showForm, triggerOpen, triggerClose, section, onApply }),
-    [showForm, triggerOpen, triggerClose, section, onApply]
-  )
-
+// ── Sidebar controls: mode tabs + (in "Edit my text") the task buttons ──
+export function AiControls() {
+  const { section, mode, setMode, runTask, busy } = useAi()
   return (
-    <div className="ai-input-wrapper">
-      <motion.div
-        ref={wrapperRef}
-        className="ai-panel"
-        initial={false}
-        animate={{
-          width: showForm ? FORM_WIDTH : 'auto',
-          height: showForm ? FORM_HEIGHT : 44,
-          borderRadius: showForm ? 14 : 24,
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 550 / SPEED_FACTOR,
-          damping: 45,
-          mass: 0.7,
-          delay: showForm ? 0 : 0.08,
-        }}
-      >
-        <FormContext.Provider value={ctx}>
-          <DockBar />
-          <InputForm />
-        </FormContext.Provider>
-      </motion.div>
+    <div className="ai-side">
+      <div className="ai-side-head">
+        <ColorOrb dimension="18px" spinDuration={22} />
+        <span className="ai-side-title">AI Assist</span>
+      </div>
+
+      <div className="ai-mode-tabs ai-mode-tabs-side">
+        {MODE_TABS.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`ai-mode-tab${mode === tab.id ? ' active' : ''}`}
+            title={tab.title}
+            aria-label={tab.title}
+            onClick={() => setMode(tab.id)}
+            disabled={busy || (tab.id !== 'ai' && !section)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'ai' ? (
+        <div className="ai-tasks ai-tasks-side">
+          {TASKS.map(t => {
+            // On a contact section, Improve/Suggest ideas would send the person's
+            // name/email/phone to the AI service and aren't useful there. Grammar +
+            // Format stay (both run on-device for contact).
+            const contactBlocked = section?.type === 'contact' && (t.id === 'improve' || t.id === 'ideas')
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className="ai-task-btn"
+                title={contactBlocked ? 'Off for contact info — it stays private on your device.' : t.title}
+                aria-label={contactBlocked ? 'Off for contact info — it stays private on your device.' : t.title}
+                onClick={() => runTask(t.id)}
+                disabled={busy || !section || contactBlocked}
+              >
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="ai-side-note">
+          {section
+            ? 'The search box and results show in the editor →'
+            : 'Select a section first.'}
+        </p>
+      )}
     </div>
   )
 }
 
-export default AiInput
+// ── Floating orb → click for a plain-language "how the AI & your data work" card ──
+export function AiInfoOrb() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div className="ai-orb-float" ref={ref}>
+      {open && (
+        <div className="ai-info-card" role="dialog" aria-label="How the AI and your data work">
+          <div className="ai-info-title">✦ How the AI works — and your privacy</div>
+
+          <h4 className="ai-info-h ok">On your device — nothing is sent</h4>
+          <p>Fix grammar, adding real job duties, and formatting your contact info all run inside your browser. That text never leaves your device.</p>
+
+          <h4 className="ai-info-h">Sent to the AI service</h4>
+          <p>Improve wording, Format, Suggest ideas, and Match a job send that section’s text to our AI provider — <strong>OpenCode Zen</strong> free models, with <strong>Groq</strong> as an automatic backup. So don’t put anything private (ID numbers, passwords) in your résumé.</p>
+
+          <h4 className="ai-info-h">Job search</h4>
+          <p>“Real job duties” sends your search to <strong>O*NET</strong> (U.S. Dept. of Labor) to pull real occupation data.</p>
+
+          <h4 className="ai-info-h">Your résumé stays here</h4>
+          <p>No account needed. Everything saves in <strong>this browser</strong> only — never on our servers. There’s a soft limit of {DAILY_LIMIT} AI actions per day to keep the free service running.</p>
+        </div>
+      )}
+      <button
+        type="button"
+        className="ai-orb-btn"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        aria-label="About the AI and how your data is handled"
+        title="About the AI & your privacy"
+      >
+        <ColorOrb dimension="30px" />
+      </button>
+    </div>
+  )
+}
+
+// ── Editor-column workspace: the textbox + answers ──
+export function AiWorkspace() {
+  const {
+    section, onApply, mode, groundOcc, setGroundOcc,
+    loading, error, busy, attempt, runTask,
+    result, applied, applyResult, applyLabel, aiLeft,
+  } = useAi()
+
+  return (
+    <div className="ai-workspace" aria-label="AI Assist workspace">
+      <div className="ai-section-tag">
+        {section
+          ? <>AI is editing: <strong>{section.title}</strong></>
+          : 'Select a section to edit'}
+      </div>
+
+      {mode === 'onet' ? (
+        section ? (
+          <OnetSuggest
+            onApply={html => onApply(section.content + html)}
+            onOccupation={setGroundOcc}
+          />
+        ) : (
+          <p className="ai-ws-empty">Select a section, then search a real job to pull in its duties.</p>
+        )
+      ) : mode === 'tailor' ? (
+        <JobTailor section={section} onApply={onApply} />
+      ) : (
+        <>
+          {/* Grounding only applies to "Suggest ideas", which is disabled on
+              contact sections — so hide this hint there. */}
+          {section?.type !== 'contact' && (
+            groundOcc ? (
+              <div className="ai-ground-hint">
+                ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
+              </div>
+            ) : (
+              <div className="ai-ground-hint ai-ground-tip">
+                Tip: pick a job in <strong>Real job duties</strong> to ground “Suggest ideas” in real tasks.
+              </div>
+            )
+          )}
+
+          {loading && <div className="ai-status" role="status" aria-live="polite">Thinking…</div>}
+          {error && (
+            <div className="ai-status ai-error" role="alert">
+              {error}
+              {attempt && !busy && (
+                <button type="button" className="ai-retry-btn" onClick={() => runTask(attempt)}>
+                  Try again
+                </button>
+              )}
+            </div>
+          )}
+
+          {result && !loading && (
+            <div className="ai-result" aria-live="polite">
+              <div
+                className="ai-result-text"
+                dangerouslySetInnerHTML={{ __html: result }}
+              />
+              <button type="button" className="ai-apply-btn" onClick={applyResult}>
+                {applied ? 'Applied ✓' : applyLabel}
+              </button>
+            </div>
+          )}
+
+          {!result && !loading && !error && (
+            <p className="ai-ws-empty">
+              {section
+                ? <>Pick an action on the left to work on <strong>{section.title}</strong>.</>
+                : 'Select a section to start.'}
+            </p>
+          )}
+
+          <div className="ai-consent">
+            {section?.type === 'contact'
+              ? '🔒 On a contact section everything runs on your device — nothing is sent.'
+              : '🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
+            <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

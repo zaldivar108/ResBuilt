@@ -11,7 +11,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator,
 } from '../components/ui/dropdown-menu'
-import AiInput from '../components/ui/AiInput'
+import { AiProvider, AiControls, AiWorkspace, AiInfoOrb } from '../components/ui/AiInput'
 import AccentColorPicker from '../components/ui/AccentColorPicker'
 import { sanitizeHtml } from '../lib/sanitizeHtml'
 import {
@@ -328,8 +328,10 @@ export default function Editor() {
         </div>
       </nav>
 
-      {/* Body: 4-column layout */}
+      {/* Body: 4-column layout. AiProvider spans the sections sidebar (controls)
+          and the editor column (workspace) so the two AI surfaces share state. */}
       <div className="editor-body">
+       <AiProvider section={activeSection} onApply={applyAiToSection}>
 
         {/* Col 1 — Sections sidebar (dark) */}
         <aside className={`sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>
@@ -423,6 +425,9 @@ export default function Editor() {
               </button>
             )}
           </div>
+
+          {/* AI Assist controls — pinned to the lower portion of the sidebar */}
+          <AiControls />
         </aside>
 
         {/* Col 2 — Editor */}
@@ -449,6 +454,8 @@ export default function Editor() {
           ) : (
             <div className="edit-empty">Select a section to start editing</div>
           )}
+          {/* AI textbox + answers live in the editor column, next to the sidebar */}
+          <AiWorkspace />
         </div>
 
         {/* Col 3 — Preview */}
@@ -492,7 +499,8 @@ export default function Editor() {
             zoom={zoom}
             onPageCount={setPageCount}
           />
-          <AiInput section={activeSection} onApply={applyAiToSection} />
+          {/* Orb → click for an "how the AI & your data work" info card */}
+          <AiInfoOrb />
         </div>
 
         {/* Delete confirmation modal */}
@@ -661,6 +669,7 @@ export default function Editor() {
           </div>
         </aside>
 
+       </AiProvider>
       </div>
     </div>
   )

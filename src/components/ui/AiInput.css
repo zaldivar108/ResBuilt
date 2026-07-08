@@ -51,128 +51,141 @@
   .ai-orb::before { animation: none; }
 }
 
-/* ── Floating wrapper ── */
-.ai-input-wrapper {
-  position: absolute;
-  bottom: 24px;
-  right: 24px;
-  z-index: 50;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-}
-
-/* ── Morphing panel ── */
-.ai-panel {
-  background: #ffffff;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+/* ── Sidebar AI controls (Col 1, pinned below the sections list) ── */
+.ai-side {
+  flex-shrink: 0;
+  max-height: 62%;               /* sections list is short — give AI the room */
+  overflow-y: auto;
+  padding: 12px 12px 14px;
+  border-top: 1px solid #E2E8F0;
+  background: #F8FAFC;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  position: relative;
+  gap: 10px;
+}
+.sidebar.collapsed .ai-side {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* ── Dock bar (collapsed state) ── */
-.ai-dock-bar {
-  margin-top: auto;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-.ai-dock-inner {
+.ai-side-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
 }
-
-.ai-trigger-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
+.ai-side-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: #6366F1;
-  padding: 2px 4px;
-  border-radius: 6px;
-  transition: color 0.15s;
-  font-family: inherit;
 }
 
-.ai-trigger-btn:hover { color: #4F46E5; }
-
-/* ── Expanded form ── */
-.ai-form {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+.ai-side-note {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #64748B;
+  margin: 0;
 }
 
-.ai-form-inner {
+/* Sidebar variants of the shared tab/button rows: stack full-width */
+.ai-mode-tabs-side { flex-direction: column; gap: 3px; margin-bottom: 0; }
+.ai-mode-tabs-side .ai-mode-tab { text-align: left; }
+.ai-tasks-side { flex-wrap: wrap; margin-top: 0; }
+.ai-tasks-side .ai-task-btn { flex: 1 1 45%; }
+
+/* ── Editor-column workspace (Col 2): textbox + answers ── */
+.ai-workspace {
+  flex-shrink: 0;
+  max-height: 68%;
+  overflow-y: auto;
+  padding: 12px 24px 16px;
+  border-top: 1px solid #F1F5F9;
+  background: #FBFCFE;
   display: flex;
   flex-direction: column;
-  padding: 6px;
-  height: 100%;
-  box-sizing: border-box;
 }
-
-.ai-form-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 8px 4px 38px;
-}
-
-.ai-form-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #0F172A;
-  user-select: none;
-}
-
-.ai-key-hints {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.ai-kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 22px;
-  padding: 0 6px;
-  font-size: 11px;
-  font-family: inherit;
-  border: 1px solid #E2E8F0;
-  border-radius: 4px;
+.ai-ws-empty {
+  font-size: 12.5px;
+  line-height: 1.5;
   color: #94A3B8;
-  background: #F8FAFC;
+  margin: 8px 0 0;
 }
 
-.ai-textarea {
-  height: 68px;
-  flex-shrink: 0;
-  width: 100%;
-  resize: none;
+/* ── Info orb (bottom-right of the preview) ── */
+.ai-orb-float {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 40;
+}
+.ai-orb-btn {
+  display: block;
   border: none;
-  outline: none;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  font-family: inherit;
-  color: #0F172A;
-  background: #F8FAFC;
-  box-sizing: border-box;
+  background: none;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease;
 }
+.ai-orb-btn:hover { transform: scale(1.12); }
+.ai-orb-btn:focus-visible { outline: 2px solid #6366F1; outline-offset: 3px; }
 
-.ai-textarea::placeholder { color: #94A3B8; }
+.ai-info-card {
+  position: absolute;
+  bottom: 46px;
+  right: 0;
+  width: 300px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 14px 16px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+}
+.ai-info-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 8px;
+}
+.ai-info-h {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #6366F1;
+  margin: 10px 0 3px;
+}
+.ai-info-h.ok { color: #059669; }
+.ai-info-card p { margin: 0; }
+.ai-info-card strong { color: #0F172A; font-weight: 600; }
+
+.editor-layout.dark .ai-info-card {
+  background: #1E293B;
+  border-color: #334155;
+  color: #CBD5E1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.editor-layout.dark .ai-info-title { color: #F1F5F9; }
+.editor-layout.dark .ai-info-h { color: #A5B4FC; }
+.editor-layout.dark .ai-info-h.ok { color: #34D399; }
+.editor-layout.dark .ai-info-card strong { color: #F1F5F9; }
+
+.editor-layout.dark .ai-side {
+  background: #111827;
+  border-top-color: #334155;
+}
+.editor-layout.dark .ai-side-note { color: #94A3B8; }
+.editor-layout.dark .ai-workspace {
+  background: #0F172A;
+  border-top-color: #1E293B;
+}
+.editor-layout.dark .ai-ws-empty { color: #64748B; }
 
 /* Which section the AI is acting on */
 .ai-section-tag {
@@ -289,26 +302,7 @@
   user-select: none;
 }
 
-.ai-orb-absolute {
-  position: absolute;
-  top: 10px;
-  left: 12px;
-}
-
 /* ── Dark mode ── */
-.editor-layout.dark .ai-panel {
-  background: #1E293B;
-  border-color: #334155;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-.editor-layout.dark .ai-form-title { color: #F1F5F9; }
-
-.editor-layout.dark .ai-textarea {
-  background: #0F172A;
-  color: #F1F5F9;
-}
-
 .editor-layout.dark .ai-kbd {
   border-color: #334155;
   background: #0F172A;
@@ -432,7 +426,7 @@
 .editor-layout.dark .ai-ground-hint { background: #312E81; color: #C7D2FE; }
 
 /* ── Job tailor tab ────────────────────────────────────────────── */
-.tailor-panel { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.tailor-panel { display: flex; flex-direction: column; gap: 8px; }
 .tailor-textarea {
   width: 100%;
   border: 1px solid #E2E8F0;
