@@ -246,10 +246,10 @@ describe('api/ai tailor + retarget tasks', () => {
     expect(sentBody().response_format).toBeUndefined()
   })
 
-  test('both accept posting+section text up to 6000 chars', async () => {
-    const res = await handler(req({ task: 'tailor', text: 'a'.repeat(6000) }))
+  test('both accept posting+section text up to 16000 chars', async () => {
+    const res = await handler(req({ task: 'tailor', text: 'a'.repeat(16000) }))
     expect(res.status).toBe(200)
-    const over = await handler(req({ task: 'tailor', text: 'a'.repeat(6001) }))
+    const over = await handler(req({ task: 'tailor', text: 'a'.repeat(16001) }))
     expect(over.status).toBe(413)
   })
 })

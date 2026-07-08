@@ -126,7 +126,7 @@ const TASKS = {
   },
   tailor: {
     tier: 'small',
-    maxInput: 6000,
+    maxInput: 16000,
     maxTokens: 700,
     temperature: 0.3,
     json: true,
@@ -141,7 +141,7 @@ const TASKS = {
   },
   retarget: {
     tier: 'small',
-    maxInput: 6000,
+    maxInput: 16000,
     maxTokens: 700,
     temperature: 0.4,
     prompt:
