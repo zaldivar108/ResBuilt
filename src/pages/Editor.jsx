@@ -763,7 +763,7 @@ export default function Editor() {
 
             <p className="onet-editor-credit">
               Job suggestions incorporate information from{' '}
-              <a href="https://services.onetcenter.org/" target="_blank" rel="noreferrer">O*NET Web Services</a>{' '}
+              <a href="https://www.onetonline.org/" target="_blank" rel="noreferrer">O*NET Web Services</a>{' '}
               (USDOL/ETA). O*NET® is a trademark of USDOL/ETA.
             </p>
           </div>

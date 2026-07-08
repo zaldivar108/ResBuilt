@@ -103,7 +103,7 @@ export default function Landing() {
           rel="noreferrer"
         >
           <img
-            src="/onet/onet-in-it.svg"
+            src="/onet/onet-in-it-transparent.svg"
             style={{ width: 130, height: 60, border: 'none' }}
             alt="O*NET in-it"
           />
