@@ -1,6 +1,6 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 262 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
+_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 276 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
 
 _AI provider: **OpenCode Zen** free models (primary) → **Groq** (automatic fallback). Keys `OPENCODE_API_KEY` + `GROQ_API_KEY` set in all 3 Vercel envs._
 
@@ -12,23 +12,28 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Test suite: 262 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: pre-existing errors only (Editor's `setState`-in-effect + 2 unused-vars, EditorToolbar/AccentColorPicker + `useResume` react-refresh) — none from this session's work. Parts 1–5 pushed (`8fdc22b`); **part 6 (UI redesign) is uncommitted in the working tree** — commit before starting new work.
+**Test suite: 276 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: pre-existing errors only (Editor's `setState`-in-effect + 2 unused-vars, EditorToolbar/AccentColorPicker + `useResume` react-refresh) — none from this session's work. Part 6 (UI redesign) committed `34ecd18`; gap #1 shipped `8c3022e` — **both unpushed**.
 
 ### ⭐ NEXT SESSION — work the AI-experience gaps (user-chosen priority)
 
-Ranked list from the 2026-07-07 AI-gaps review. Work top-down; #1 and #2's on-device half are quota-free.
+Ranked list from the 2026-07-07 AI-gaps review. **Approach for #2–#9 is now locked in ADRs `docs/adr/0002`–`0009`** (part 7) — read the matching ADR before implementing. Work top-down; #2's on-device half is quota-free.
 
-1. **Quiz result discards its own data** — "Find a job that fits" → "Start a résumé" only puts the career in the *title* (`Dashboard.jsx` `handleStartFromCareer` → `createResume(\`${careerTitle} Resume\`, DEFAULT_STARTER_ID)`). The career's real O*NET duties are already reachable (`occupationToPosting()` in `src/lib/onet.js`, used by the quiz→tailor bridge). Seed the new résumé's Experience/Skills starter content with those duties, or auto-set them as the AI grounding target (`groundOcc`) when the editor opens. Cheapest, biggest win.
-2. **No whole-résumé review** — AI acts on one section at a time. Two halves:
+1. ~~**Quiz result discards its own data**~~ **DONE (part 7, `8c3022e`)** — "Start a résumé" from the quiz now fetches the career's occupation (live proxy → bundled seed → none, 5s timeout, `fetchOccupationForCareer`) and seeds the student starter's Experience (up to 6 real duties, framed as ideas-to-adapt, escaped) + Skills (occupation skills) via new pure `src/lib/careerSeed.js` (`seedSectionsFromOccupation`) → `createResumeFromImport`. Degrades to title-only when no record. `InterestProfiler` now passes the full career object and shows a disabled "Starting…" state. +14 tests. **Not live-verified in browser yet** (needs `vercel dev`: quiz → results → Start a résumé → editor shows seeded duties).
+2. **No whole-résumé review** (ADR 0002) — AI acts on one section at a time. Two halves:
    a. *On-device checklist (free, do first)*: heuristics over all sections — bullets without numbers, generic objective, tense inconsistency, duplicate skills, length vs 1 page. New pure lib (`resumeChecklist.js`) + panel in the editor; TDD-friendly.
    b. *AI pass (one call)*: PII-scrubbed all-sections review via a new `review` task in `api/ai.js` (JSON: strengths/issues per section). Mind `maxInput` caps + reasoning-model headroom (see part-4 notes).
-3. **Apply is blind — no diff view** — AI preview replaces the section wholesale (`AiWorkspace` → `applyResult`). Word-level diff (ins/del marks) between `section.content` and result before Apply; matters most for Fix grammar (teens learning writing). Diff lib candidates: `diff` (jsdiff) — small, no new provider.
-4. **Job-match target not persisted** — `JobTailor` posting state is component-local; retailoring each section means re-supplying context. Persist `targetJob` on the résumé object (survives reload, drives whole-doc tailoring later).
-5. **Ideas grounding manual/buried** — `groundOcc` only set after visiting "Real job duties" and picking a job. Auto-suggest occupation from résumé title/objective (seed search is on-device already).
-6. **No selection-level AI** — can't improve one bullet; toolbar has no AI entry. Inline "rewrite this bullet" on text selection.
-7. **One-shot results** — no "another version"/tone variants. Cache keyed on input, so a variant needs a nonce or tone param (`api/ai.js` prompt tweak).
-8. **O*NET seed = ~10 occupations** — plain `npm run dev` (no `/api`) and offline fallback dead-end most searches. Ship fuller extract per `docs/onet-extract.md` behind the same `onet.js` interface.
-9. **PII scrub only on "ideas"** — extend `scrubPii` to improve/format outbound text (ties into security follow-up H2).
+3. **Apply is blind — no diff view** (ADR 0003) — AI preview replaces the section wholesale (`AiWorkspace` → `applyResult`). Word-level diff (ins/del marks) between `section.content` and result before Apply; matters most for Fix grammar (teens learning writing). Decided: `diff` (jsdiff), diff the *text* layer not HTML.
+4. **Job-match target not persisted** (ADR 0004) — `JobTailor` posting state is component-local; retailoring each section means re-supplying context. Decided: `resume.targetJob = { text, title?, source, savedAt }` via `updateResume`.
+5. **Ideas grounding manual/buried** (ADR 0005) — `groundOcc` only set after visiting "Real job duties" and picking a job. Decided: auto-*suggest* (never auto-apply) from title/objective; quiz/targetJob source wins over title guess.
+6. **No selection-level AI** (ADR 0006) — can't improve one bullet. Decided: toolbar AI button on selection → existing `improve` task with fragment hint; capture-and-verify range on Apply.
+7. **One-shot results** (ADR 0007) — no "another version"/tone variants. Decided: `tone` + `variant` request params, allow-listed server-side, cache key includes both; flip back to cached variants free.
+8. **O*NET seed = ~10 occupations** (ADR 0008) — plain `npm run dev` (no `/api`) and offline fallback dead-end most searches. Decided: fuller extract per `docs/onet-extract.md` Option A (zones 1–3), lazy-loaded if >~100 kB gzip, same `onet.js` interface.
+9. **PII scrub only on "ideas"** (ADR 0009) — extend to all outbound tasks. Decided: scrub-and-restore with stable placeholders (`[EMAIL_1]`) for rewriting tasks; scrub-only for analysis; contact never sent.
+
+**SHIPPED THIS SESSION — 2026-07-07 (part 7) — gap #1 + ADRs (`8c3022e` + docs):**
+- **Gap #1 done** — see item 1 above. New `src/lib/careerSeed.js` + 14 tests (276 total).
+- **ADRs written** — `docs/adr/0001` (PII→hosted AI trade-off, the long-owed one — status Accepted, documents existing rules) and `0002`–`0009` (one per remaining gap, status "Accepted — not yet implemented", approach locked). Index at `docs/adr/README.md` incl. standing constraints (free providers, 25/day budget, reasoning headroom, TDD, Paper & Ink).
+- Part 6 (UI redesign) committed `34ecd18`.
 
 Constraints to respect: 25/day device budget (`aiBudget.js`), shared free-tier quota, reasoning-model token headroom (`REASONING_HEADROOM`), TDD workflow, no new paid providers.
 
@@ -124,7 +129,7 @@ _Deep code review of the whole AI surface (parallel react + security reviewers),
 - **PII → Groq residual (H2)** — contact-section Format is now on-device (`contactFormat.js`); but improve/ideas on *non-contact* sections still send section text to Groq verbatim (by design, consent shown). Broaden `scrubPii` or confirm Groq zero-retention if pursued.
 - **a11y leftover** — `InterestProfiler` radiogroup uses `role=radio` on plain buttons without arrow-key roving-tabindex (APG mismatch); implement roving tabindex or drop the radio roles for `aria-pressed`.
 - **Raw-store paths (self-XSS class, single-user)** — `Editor.handleEditorInput` (contentEditable) and toolbar `createLink` still store unsanitized HTML/`javascript:` URLs. Sanitize these too before any shared-link/multi-user feature.
-- **ADR 0001** still unwritten — "privacy-first app deliberately sends full-résumé PII to Groq for import." Write `docs/adr/0001-*` if pursued.
+- **~~ADR 0001 still unwritten~~ DONE (2026-07-07 part 7)** — `docs/adr/0001-resume-text-to-hosted-ai.md` (Accepted); ADRs 0002–0009 cover the AI-gap approaches.
 - **~~Add `ONET_API_KEY` to Vercel prod env~~ DONE (2026-07-07)** — `ONET_API_KEY` + `GROQ_API_KEY` now set (encrypted) in all three Vercel environments (Production/Preview/Development) via `vercel env add`. A production **redeploy** is still needed to pick up the new prod vars. `vercel dev` now pulls both keys into `.env.local` on start (they no longer get stripped).
 - **O*NET tasks are ~3 per job** — the v2 `mnm` endpoint's `on_the_job` list is short by design (teen-friendly). If you want the full task bank, use the bulk DB (`docs/onet-extract.md` Option A) behind the same `onet.js` interface.
 - **Daily AI cap is per-browser localStorage** — a soft guard, not server-enforced.
@@ -321,7 +326,8 @@ api/
                                 #   actions: questions (all 30), results (score), careers (match).
 docs/
 ├── onet-extract.md             # how to replace the O*NET seed with full DB / live API
-└── adr/                        # (empty — ADR 0001 on PII→Groq still to write)
+└── adr/                        # 0001 PII→AI trade-off (Accepted); 0002–0009 AI-gap
+                                #   approaches (Accepted — pending). README.md = index.
 public/onet/                    # self-hosted O*NET "in-it" logo (svg + png)
 src/
 ├── App.jsx  main.jsx
@@ -348,6 +354,8 @@ src/
     ├── grammarFix.js  harperLinter.js   # on-device grammar (harper.js WASM)
     ├── onet.js                 # occupation repository: seed search/getOccupation + live
     │                           #   searchOccupationsRemote/getOccupationRemote (→ api/onet.js)
+    ├── careerSeed.js           # quiz→résumé seeding: fetchOccupationForCareer (live→seed→null)
+    │                           #   + seedSectionsFromOccupation (duties→Experience, skills→Skills)
     ├── onetNormalize.js        # pure normalizers for O*NET v2 JSON (career[], on_the_job…)
     ├── onetIp.js               # Interest Profiler client repo (→ api/onetip): isValidAnswers,
     │                           #   fetchProfilerQuestions / scoreAnswers / matchingCareers
