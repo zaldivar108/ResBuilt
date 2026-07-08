@@ -24,7 +24,8 @@ let fetchMock
 
 beforeEach(() => {
   process.env.GROQ_API_KEY = 'test-key'
-  fetchMock = vi.fn().mockResolvedValue(groqOk('{"sections":[]}'))
+  // Shape satisfies any JSON task's jsonRequire (import→sections, tailor→matched).
+  fetchMock = vi.fn().mockResolvedValue(groqOk('{"sections":[],"matched":[],"missing":[],"suggestions":[]}'))
   vi.stubGlobal('fetch', fetchMock)
 })
 
@@ -247,6 +248,16 @@ describe('api/ai provider routing — OpenCode primary → Groq fallback', () =>
 
   test('falls back when a JSON task gets unparseable JSON from OpenCode', async () => {
     mockByUrl({ [OC]: groqOk('sorry, here is your resume!'), [GROQ]: groqOk('{"sections":[]}') })
+    const res = await handler(req({ task: 'import', text: 'a'.repeat(300) }))
+    expect(res.status).toBe(200)
+    expect(callUrl(1)).toContain(GROQ)
+    expect((await res.json()).result).toBe('{"sections":[]}')
+  })
+
+  test('falls back when OpenCode returns valid JSON of the wrong shape', async () => {
+    // nemotron JSON mode can invent its own key (e.g. {"html":...}) instead of
+    // the {"sections":[...]} import needs — that must not win over Groq.
+    mockByUrl({ [OC]: groqOk('{"html":"<p>oops</p>"}'), [GROQ]: groqOk('{"sections":[]}') })
     const res = await handler(req({ task: 'import', text: 'a'.repeat(300) }))
     expect(res.status).toBe(200)
     expect(callUrl(1)).toContain(GROQ)

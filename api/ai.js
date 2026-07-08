@@ -102,6 +102,7 @@ const TASKS = {
     maxTokens: 700,
     temperature: 0.3,
     json: true,
+    jsonRequire: 'matched',
     prompt:
       'You compare a résumé section to a job posting for a teenager or young adult. The input has two labeled parts: JOB POSTING and RÉSUMÉ SECTION. ' +
       'Return ONLY a JSON object {"matched":[string],"missing":[string],"suggestions":[string]}. ' +
@@ -127,6 +128,7 @@ const TASKS = {
     maxTokens: 2000,
     temperature: 0.2,
     json: true,
+    jsonRequire: 'sections',
     prompt:
       'You convert the plain text of a résumé into structured JSON. Return ONLY a JSON object of the form {"sections":[{"title":string,"type":string,"content":string}]}. ' +
       'Rules: (1) The FIRST section must be exactly one section with type "contact"; its content is HTML whose FIRST <p> is the person\'s name, followed by <p> lines for email, phone, location, and links. ' +
@@ -267,10 +269,16 @@ export default async function handler(req) {
       continue // malformed response envelope — try the fallback
     }
     if (!result) { lastStatus = 502; continue }
-    // JSON tasks must return parseable JSON; a free model that ignores JSON mode
-    // shouldn't win over a fallback that honors it.
+    // JSON tasks must return parseable JSON with the expected top-level shape;
+    // a free model that ignores JSON mode (or returns valid-but-wrong-shape
+    // JSON, or truncates) shouldn't win over a fallback that honors it.
     if (config.json) {
-      try { JSON.parse(result) } catch { lastStatus = 502; continue }
+      let parsed
+      try { parsed = JSON.parse(result) } catch { lastStatus = 502; continue }
+      if (config.jsonRequire && !(parsed && typeof parsed === 'object' && config.jsonRequire in parsed)) {
+        lastStatus = 502
+        continue // right JSON, wrong shape — let the fallback try
+      }
     }
     return json({ result })
   }
