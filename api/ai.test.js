@@ -199,6 +199,28 @@ describe('api/ai regression — existing per-section tasks', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  test('does not stream improve requests, so an empty primary can fall back', async () => {
+    process.env.OPENCODE_API_KEY = 'oc-key'
+    mockByUrl({
+      [OC]: groqOk(''),
+      [GROQ]: groqOk('<p>Improved by fallback.</p>'),
+    })
+
+    const res = await handler(req({ task: 'improve', text: '<p>Helped customers.</p>', stream: true }))
+    const data = await res.json()
+
+    expect(res.headers.get('Content-Type')).toContain('application/json')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(callBody(0).stream).toBeUndefined()
+    expect(callBody(1).stream).toBeUndefined()
+    expect(data.result).toContain('Improved by fallback')
+  })
+
+  test('still streams ideas requests', async () => {
+    await handler(req({ task: 'ideas', text: '<p>Helped customers.</p>', stream: true }))
+    expect(sentBody().stream).toBe(true)
+  })
+
   test('improve does not request JSON mode', async () => {
     await handler(req({ task: 'improve', text: 'hello' }))
     expect(sentBody().response_format).toBeUndefined()

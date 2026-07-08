@@ -54,10 +54,10 @@ const PROVIDER_TIMEOUT_MS = { opencode: 9000, groq: 12000 }
 // short outputs; if reasoning still overruns, the Groq fallback catches it.
 const REASONING_HEADROOM = 2000
 
-// Streaming is useful for short generative edits, but it prevents provider
-// fallback after the first byte. Keep larger/structured edits buffered so an
+// Streaming is useful for lightweight idea generation, but it prevents provider
+// fallback after the first byte. Rewrite/format tasks stay buffered so an
 // OK-but-empty primary response can still fall through to the backup provider.
-const STREAMABLE_TASKS = new Set(['improve', 'ideas'])
+const STREAMABLE_TASKS = new Set(['ideas'])
 
 // One entry per supported task. Per-section editing tasks are tailored for
 // teen / young-adult first-time résumé writers — truthful, concise, encouraging.
@@ -217,8 +217,8 @@ export default async function handler(req) {
     return json({ error: `Text is too long (max ${config.maxInput} characters).` }, 413)
   }
 
-  // Streaming is opt-in for short plain-HTML tasks. JSON tasks must arrive
-  // whole to parse, and larger format jobs stay buffered so fallback can catch
+  // Streaming is opt-in for lightweight plain-HTML tasks. JSON tasks must
+  // arrive whole to parse, and rewrites stay buffered so fallback can catch
   // empty/truncated primary completions.
   const wantStream = body.stream === true && STREAMABLE_TASKS.has(task) && !config.json
 
