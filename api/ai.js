@@ -35,6 +35,13 @@ const PROVIDERS = {
 }
 const PROVIDER_ORDER = ['opencode', 'groq'] // primary → fallback
 
+// Edge functions have a hard wall-clock ceiling (~25s). Without a per-provider
+// timeout, a slow/hanging primary (OpenCode's free reasoning models are
+// multi-second by nature) can burn the entire budget and the Groq fallback
+// never gets a turn — the request just times out (504) instead of degrading.
+// Budget primary tighter than fallback so there's always room left to retry.
+const PROVIDER_TIMEOUT_MS = { opencode: 9000, groq: 12000 }
+
 // OpenCode Zen's free models are all REASONING models: they spend tokens on
 // hidden reasoning before emitting `content`, and that reasoning counts against
 // max_tokens. Without headroom a tight per-task cap gets fully consumed by
@@ -236,11 +243,21 @@ export default async function handler(req) {
   let lastStatus = 502
   for (const p of providers) {
     let res
+    const timeoutMs = PROVIDER_TIMEOUT_MS[p.name] ?? 10000
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
-      res = await fetch(p.url, { method: 'POST', headers: headersFor(p), body: requestBody(p.models[config.tier]) })
+      res = await fetch(p.url, {
+        method: 'POST',
+        headers: headersFor(p),
+        body: requestBody(p.models[config.tier]),
+        signal: controller.signal,
+      })
     } catch {
       lastStatus = 502
-      continue // network error — try the fallback
+      continue // network error or timeout — try the fallback
+    } finally {
+      clearTimeout(timer)
     }
 
     if (!res.ok) {
