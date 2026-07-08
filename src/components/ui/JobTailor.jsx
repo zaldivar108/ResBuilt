@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { parseTailorResult } from '../../lib/tailor'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
-import { bulletsFromTasks } from '../../lib/onet'
+import { bulletsFromTasks, getOccupationRemote, occupationToPosting } from '../../lib/onet'
 import { getCached, setCached } from '../../lib/aiCache'
 import { canUseAI, recordUse } from '../../lib/aiBudget'
+import InterestProfiler from './InterestProfiler'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -17,6 +18,8 @@ export default function JobTailor({ section, onApply }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
+  const [showQuiz, setShowQuiz] = useState(false) // Interest Profiler modal open
+  const [notice, setNotice] = useState('')        // one-line note after a quiz prefill
   const abortRef = useRef(null)    // cancels the in-flight request on unmount/tab switch
   const mountedRef = useRef(true)  // guards setState after unmount
   useEffect(() => {
@@ -29,6 +32,30 @@ export default function JobTailor({ section, onApply }) {
   function flash(msg) {
     setDone(msg)
     setTimeout(() => setDone(''), 1500)
+  }
+
+  function note(msg) {
+    setNotice(msg)
+    setTimeout(() => setNotice(''), 4000)
+  }
+
+  // Quiz result → target job. Fetch the chosen career's real O*NET duties and
+  // prefill the posting box (editable). Degrades to the title if duties can't be
+  // loaded, and never silently discards text the user already typed.
+  async function pickCareer(career) {
+    setShowQuiz(false)
+    // Offline / proxy down → null, and occupationToPosting degrades to the title.
+    const occupation = await getOccupationRemote(career.code, career.title).catch(() => null)
+    if (!mountedRef.current) return
+    const { text, degraded } = occupationToPosting(occupation, career.title)
+    const hadText = posting.trim().length > 0
+    setPosting(text)
+    setAnalysis(null) // any prior analysis was for a different job
+    if (degraded) {
+      note(`Couldn’t load full duties — analyzing against “${career.title}”. Paste the real posting for a sharper match.`)
+    } else if (hadText) {
+      note(`Replaced with ${career.title} duties.`)
+    }
   }
 
   async function callTask(task, onResult) {
@@ -102,11 +129,24 @@ export default function JobTailor({ section, onApply }) {
         placeholder="Paste the job description here…"
         rows={4}
       />
-      <button type="button" className="onet-polish" disabled={!posting.trim() || busy} onClick={analyze}>
-        {busy ? 'Analyzing…' : 'Analyze match'}
-      </button>
+      <div className="tailor-actions">
+        <button type="button" className="onet-polish" disabled={!posting.trim() || busy} onClick={analyze}>
+          {busy ? 'Analyzing…' : 'Analyze match'}
+        </button>
+        <button type="button" className="tailor-quiz-btn" disabled={busy} onClick={() => setShowQuiz(true)}>
+          🎯 Not sure? Take the quiz
+        </button>
+      </div>
 
+      {notice && <div className="ai-status" role="status" aria-live="polite">{notice}</div>}
       {error && <div className="ai-status ai-error" role="alert">{error}</div>}
+
+      {showQuiz && (
+        <InterestProfiler
+          onClose={() => setShowQuiz(false)}
+          onPickCareer={pickCareer}
+        />
+      )}
 
       {analysis && !busy && (
         <div className="tailor-results">

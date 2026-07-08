@@ -84,6 +84,24 @@ export function getOccupation(code, { data = OCCUPATIONS } = {}) {
   return data.find(occ => occ.code === code) ?? null
 }
 
+/**
+ * Turn a fetched occupation record into plain "job posting" text for the Job
+ * match analysis. When the occupation is missing or has no tasks (proxy offline,
+ * unknown career), degrades to just the job title so the flow never dead-ends.
+ * @param {object | null} occupation  the record from getOccupationRemote, or null
+ * @param {string} [fallbackTitle]    career title to use when the record is thin
+ * @returns {{ text: string, degraded: boolean }}
+ */
+export function occupationToPosting(occupation, fallbackTitle = '') {
+  const title = (occupation?.title || fallbackTitle || '').trim()
+  const tasks = (occupation?.tasks ?? []).filter(t => typeof t === 'string' && t.trim())
+  if (!tasks.length) {
+    return { text: title, degraded: true }
+  }
+  const body = tasks.map(t => `- ${t.trim()}`).join('\n')
+  return { text: `${title}\n\nTypical duties:\n${body}`, degraded: false }
+}
+
 // --- Live O*NET (via the /api/onet proxy) -------------------------------
 // These hit the server-side proxy so the full O*NET catalog is available when
 // ONET_API_KEY is configured. Callers fall back to the bundled seed above when

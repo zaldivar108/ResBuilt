@@ -5,6 +5,7 @@ import {
   searchOccupationsRemote,
   getOccupationRemote,
   bulletsFromTasks,
+  occupationToPosting,
 } from './onet.js'
 
 const okJson = body => ({ ok: true, status: 200, json: async () => body })
@@ -138,5 +139,42 @@ describe('getOccupationRemote', () => {
   test('throws when the proxy responds not-OK', async () => {
     const fetchImpl = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) })
     await expect(getOccupationRemote('x', 'y', { fetchImpl })).rejects.toThrow()
+  })
+})
+
+describe('occupationToPosting (career → tailor posting bridge)', () => {
+  test('builds title + duty bullets from a full occupation', () => {
+    const occ = { title: 'Waiters and Waitresses', tasks: ['Take orders.', 'Serve food.'] }
+    const { text, degraded } = occupationToPosting(occ, 'ignored')
+    expect(degraded).toBe(false)
+    expect(text).toContain('Waiters and Waitresses')
+    expect(text).toContain('Typical duties:')
+    expect(text).toContain('- Take orders.')
+    expect(text).toContain('- Serve food.')
+  })
+
+  test('prefers the occupation title over the fallback', () => {
+    const occ = { title: 'Real Title', tasks: ['x'] }
+    expect(occupationToPosting(occ, 'Fallback').text.startsWith('Real Title')).toBe(true)
+  })
+
+  test('degrades to the fallback title when occupation is null', () => {
+    expect(occupationToPosting(null, 'Barista')).toEqual({ text: 'Barista', degraded: true })
+  })
+
+  test('degrades when the occupation has no usable tasks', () => {
+    expect(occupationToPosting({ title: 'Clerk', tasks: [] }, 'x')).toEqual({ text: 'Clerk', degraded: true })
+    expect(occupationToPosting({ title: 'Clerk', tasks: ['', '   '] }, 'x').degraded).toBe(true)
+  })
+
+  test('trims blank tasks but keeps the real ones', () => {
+    const { text } = occupationToPosting({ title: 'Cook', tasks: ['  Grill.  ', '', 'Prep.'] }, '')
+    expect(text).toContain('- Grill.')
+    expect(text).toContain('- Prep.')
+    expect(text).not.toContain('- \n')
+  })
+
+  test('returns an empty string, not a crash, when everything is missing', () => {
+    expect(occupationToPosting(null, '')).toEqual({ text: '', degraded: true })
   })
 })

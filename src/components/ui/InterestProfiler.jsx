@@ -19,7 +19,10 @@ function saveResult(result) {
 // the three proxied O*NET calls (questions, scoring, matching careers — no PII
 // leaves the browser). Flow: intro/loading → quiz → results (RIASEC + careers).
 // A finished result is cached in localStorage so reopening lands on results.
-export default function InterestProfiler({ onClose, onStartResume }) {
+// `onStartResume(title)` is the dashboard action (create a new résumé). When
+// `onPickCareer(career)` is supplied (from the editor's Job match tab), the
+// career buttons instead hand back the full career object to tailor toward.
+export default function InterestProfiler({ onClose, onStartResume, onPickCareer }) {
   const [saved] = useState(loadSaved) // lazy init: read the cached result once
   const [stage, setStage] = useState(saved ? 'results' : 'loading') // loading|quiz|scoring|results|error
   const [error, setError] = useState('')
@@ -197,7 +200,9 @@ export default function InterestProfiler({ onClose, onStartResume }) {
               ))}
             </ul>
 
-            <h3 className="ip-careers-title">Jobs that match — start a résumé for any of them</h3>
+            <h3 className="ip-careers-title">
+              {onPickCareer ? 'Jobs that match — tailor your résumé for any of them' : 'Jobs that match — start a résumé for any of them'}
+            </h3>
             <ul className="ip-careers">
               {careers.map(c => (
                 <li key={c.code} className="ip-career">
@@ -205,7 +210,11 @@ export default function InterestProfiler({ onClose, onStartResume }) {
                     {c.title}
                     {c.brightOutlook && <span className="ip-badge" title="Bright Outlook: expected to grow rapidly">🌟 Bright Outlook</span>}
                   </span>
-                  <button className="ip-start" onClick={() => onStartResume(c.title)}>Start a résumé →</button>
+                  {onPickCareer ? (
+                    <button className="ip-start" onClick={() => onPickCareer(c)}>Tailor for this →</button>
+                  ) : (
+                    <button className="ip-start" onClick={() => onStartResume(c.title)}>Start a résumé →</button>
+                  )}
                 </li>
               ))}
             </ul>

@@ -462,6 +462,24 @@
 .tailor-rewrite { width: 100%; }
 .tailor-note { font-size: 10.5px; color: #94A3B8; margin: 0; }
 
+.tailor-actions { display: flex; gap: 8px; align-items: stretch; }
+.tailor-actions .onet-polish { flex: 1; }
+.tailor-quiz-btn {
+  flex: none;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #C7D2FE;
+  background: #EEF2FF;
+  color: #4338CA;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tailor-quiz-btn:hover:not(:disabled) { background: #E0E7FF; }
+.tailor-quiz-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.editor-layout.dark .tailor-quiz-btn { background: #1E1B3A; border-color: #4338CA; color: #C7D2FE; }
+
 .editor-layout.dark .tailor-textarea { background: #0F172A; border-color: #334155; color: #F1F5F9; }
 .editor-layout.dark .tailor-group-label { color: #CBD5E1; }
 .editor-layout.dark .tailor-suggestions li { color: #CBD5E1; }
