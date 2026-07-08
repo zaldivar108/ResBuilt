@@ -24,7 +24,7 @@ const TASKS = [
 // Server-side input caps per task (mirrors api/ai.js TASKS.maxInput). Used for a
 // friendly client pre-flight so the user isn't surprised by a 413 after waiting.
 // grammar runs on-device (harper.js), so it has no cap here.
-const MAX_INPUT = { improve: 2000, ideas: 2000, format: 6000 }
+const MAX_INPUT = { improve: 3500, ideas: 2000, format: 6000 }
 
 const MODE_TABS = [
   { id: 'ai',     label: 'Edit my text',   title: 'Improve, fix grammar, reformat, or get bullet-point ideas for the selected section.' },

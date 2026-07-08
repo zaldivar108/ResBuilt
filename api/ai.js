@@ -70,7 +70,7 @@ const STREAMABLE_TASKS = new Set(['improve', 'ideas'])
 const TASKS = {
   improve: {
     tier: 'small',
-    maxInput: 2000,
+    maxInput: 3500,
     maxTokens: 600,
     temperature: 0.5,
     prompt:

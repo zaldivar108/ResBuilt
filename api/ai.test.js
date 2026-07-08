@@ -188,8 +188,13 @@ describe('api/ai format task (paragraph → bullet points)', () => {
 })
 
 describe('api/ai regression — existing per-section tasks', () => {
-  test('improve still rejects text over 2000 chars', async () => {
-    const res = await handler(req({ task: 'improve', text: 'a'.repeat(2001) }))
+  test('improve accepts up to 3500 chars and rejects text over 3500 chars', async () => {
+    const ok = await handler(req({ task: 'improve', text: 'a'.repeat(3500) }))
+    expect(ok.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledOnce()
+
+    fetchMock.mockClear()
+    const res = await handler(req({ task: 'improve', text: 'a'.repeat(3501) }))
     expect(res.status).toBe(413)
     expect(fetchMock).not.toHaveBeenCalled()
   })
