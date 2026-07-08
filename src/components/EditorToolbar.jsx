@@ -12,48 +12,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
+import {
+  FONTS, SIZES,
+  firstFont, fontLabelFromFamily, getInlinePt,
+} from '../lib/toolbarUtils'
 import './EditorToolbar.css'
-
-/* ── Helpers ── */
-
-function firstFont(str) {
-  return str.split(',')[0].trim().replace(/['"]/g, '').toLowerCase()
-}
-
-function fontLabelFromFamily(family) {
-  if (!family) return 'Font'
-  const match = FONTS.find(f => firstFont(f.value) === firstFont(family))
-  return match ? match.label : 'Font'
-}
-
-function ptFromInline(str) {
-  if (!str) return null
-  if (str.endsWith('pt')) return Math.round(parseFloat(str))
-  if (str.endsWith('px')) return Math.round(parseFloat(str) * 0.75)
-  return null
-}
-
-function getInlinePt(anchorNode, editorEl) {
-  let el = anchorNode?.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode
-  while (el && el !== editorEl) {
-    const pt = ptFromInline(el.style?.fontSize)
-    if (pt) return pt
-    el = el.parentElement
-  }
-  return null
-}
-
-const FONTS = [
-  { label: 'Arial',           value: 'Arial, sans-serif' },
-  { label: 'Georgia',         value: 'Georgia, serif' },
-  { label: 'Garamond',        value: "'EB Garamond', Garamond, serif" },
-  { label: 'Helvetica',       value: "'Helvetica Neue', Helvetica, sans-serif" },
-  { label: 'Times New Roman', value: "'Times New Roman', Times, serif" },
-  { label: 'Verdana',         value: 'Verdana, sans-serif' },
-  { label: 'Calibri',         value: "'Calibri', Candara, sans-serif" },
-]
-
-const SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28]
 
 /* ── Tooltip ── */
 
