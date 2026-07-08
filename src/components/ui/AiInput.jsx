@@ -309,20 +309,18 @@ function InputForm() {
                     )
                   })}
                 </div>
-                {section?.type === 'contact' && (
-                  <div className="ai-ground-hint ai-ground-tip">
-                    🔒 Contact info stays on your device — Format &amp; Fix grammar run locally, nothing is sent.
-                  </div>
-                )}
-
-                {groundOcc ? (
-                  <div className="ai-ground-hint">
-                    ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
-                  </div>
-                ) : (
-                  <div className="ai-ground-hint ai-ground-tip">
-                    Tip: pick a job in <strong>Real job duties</strong> to ground “Suggest ideas” in real tasks.
-                  </div>
+                {/* Grounding only applies to "Suggest ideas", which is disabled
+                    on contact sections — so hide this hint there. */}
+                {section?.type !== 'contact' && (
+                  groundOcc ? (
+                    <div className="ai-ground-hint">
+                      ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
+                    </div>
+                  ) : (
+                    <div className="ai-ground-hint ai-ground-tip">
+                      Tip: pick a job in <strong>Real job duties</strong> to ground “Suggest ideas” in real tasks.
+                    </div>
+                  )
                 )}
 
                 {loading && <div className="ai-status" role="status" aria-live="polite">Thinking…</div>}
@@ -350,7 +348,9 @@ function InputForm() {
                 )}
 
                 <div className="ai-consent">
-                  🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format &amp; Suggest ideas send the section's text to Groq's AI, so don't put anything private in your résumé.
+                  {section?.type === 'contact'
+                    ? '🔒 On a contact section everything runs on your device — nothing is sent.'
+                    : '🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
                   <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
                 </div>
               </>
