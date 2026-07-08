@@ -14,9 +14,13 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Test suite: 361 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: 23 problems vs. baseline 22 — the +1 is two same-category shifts (see issue 006 note below), not a new class of debt. Gaps #2 (issues 001+002), #3 (issue 003), #4 (issue 004), #5 (issue 005), and #6 (issue 006) now fully shipped. Issue 001 committed `420777f`; issues 002–006 uncommitted as of this handoff.
+**Test suite: 361 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: 23 problems vs. baseline 22 — the +1 is two same-category shifts (see issue 006 note below), not a new class of debt. Gaps #2 (issues 001+002), #3 (issue 003), #4 (issue 004), #5 (issue 005), and #6 (issue 006) now fully shipped. Issue 001 committed `420777f`; issues 002–006 committed `2d085ac` — **both pushed to `origin/master`**, working tree clean except `.codex-dev/` (untracked, unrelated to this project's own history — left alone).
 
-### ⭐ NEXT SESSION — work the AI-experience gaps (user-chosen priority)
+### ⭐ NEXT SESSION — 3 gaps left: #7, #8, #9 (issues 007–009)
+
+Everything below through gap #6 is done and pushed. Pick up at issue 007 (tone/variant picker) — `docs/issues/007-result-variants.md`, blocked by nothing. Then 008 (fuller O*NET seed), then 009 (PII scrub all outbound). Same workflow each time: read the ADR + issue file first, TDD the pure lib, wire the UI, run full suite + lint + build, live-verify via `npm run dev`/`vercel dev` + chrome-devtools before marking done.
+
+### Full gap list (historical — #1–#6 done)
 
 Ranked list from the 2026-07-07 AI-gaps review. **Approach for #2–#9 locked in ADRs `docs/adr/0002`–`0009`; work is broken into grabbable vertical-slice issues in `docs/issues/` (001–009, file-based tracker — see its README for the grab protocol)** (part 7). Work top-down; #2's on-device half is quota-free.
 
