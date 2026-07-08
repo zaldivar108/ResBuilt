@@ -35,7 +35,7 @@
 
 /* Progress */
 .ip-progress { height: 6px; background: #E2E8F0; border-radius: 9999px; overflow: hidden; }
-.ip-progress-bar { height: 100%; background: linear-gradient(90deg, #6366F1, #8B5CF6); transition: width 0.25s ease; }
+.ip-progress-bar { height: 100%; background: var(--accent); transition: width 0.25s ease; }
 .ip-count { font-size: 12px; color: #94A3B8; margin: 6px 0 12px; }
 
 /* Questions */
@@ -56,8 +56,8 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.ip-opt:hover { border-color: #C7D2FE; color: #4F46E5; }
-.ip-opt.active { background: #6366F1; border-color: #6366F1; color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,0.4); }
+.ip-opt:hover { border-color: var(--accent-border); color: var(--accent-strong); }
+.ip-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(59,91,219,0.4); }
 
 /* Actions */
 .ip-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
@@ -68,7 +68,7 @@
 .ip-bar-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 12px; }
 .ip-bar-label { font-size: 13px; font-weight: 600; color: #475569; }
 .ip-bar-track { height: 14px; background: #F1F5F9; border-radius: 9999px; overflow: hidden; }
-.ip-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, #6366F1, #8B5CF6); border-radius: 9999px; transition: width 0.4s ease; }
+.ip-bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 9999px; transition: width 0.4s ease; }
 
 /* Results — careers */
 .ip-careers-title { font-size: 15px; color: #1E293B; margin: 0 0 10px; }
@@ -81,16 +81,16 @@
 .ip-badge { font-size: 10.5px; font-weight: 700; color: #B45309; background: #FEF3C7; padding: 2px 8px; border-radius: 9999px; }
 .ip-start {
   flex-shrink: 0; font-size: 12.5px; font-weight: 600; white-space: nowrap;
-  color: #4F46E5; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px; padding: 7px 12px; cursor: pointer; transition: all 0.15s;
+  color: var(--accent-strong); background: var(--accent-tint); border: 1px solid var(--accent-border); border-radius: 8px; padding: 7px 12px; cursor: pointer; transition: all 0.15s;
 }
-.ip-start:hover { background: #6366F1; color: #fff; border-color: #6366F1; }
+.ip-start:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .ip-attr { font-size: 11px; color: #94A3B8; line-height: 1.5; margin: 18px 0 0; }
-.ip-attr a { color: #6366F1; }
+.ip-attr a { color: var(--accent); }
 
 /* Loading / error */
 .ip-center { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 48px 16px; color: #64748B; font-size: 14px; }
-.ip-spinner { width: 32px; height: 32px; border: 3px solid #E2E8F0; border-top-color: #6366F1; border-radius: 50%; animation: ip-spin 0.7s linear infinite; }
+.ip-spinner { width: 32px; height: 32px; border: 3px solid #E2E8F0; border-top-color: var(--accent); border-radius: 50%; animation: ip-spin 0.7s linear infinite; }
 @keyframes ip-spin { to { transform: rotate(360deg); } }
 .ip-error { color: #DC2626; font-size: 13px; margin: 8px 0; }
 
@@ -115,11 +115,11 @@
   border-color: #334155;
   color: #E2E8F0;
 }
-.dashboard.dark .ip-modal .ip-opt:hover { border-color: #6366F1; color: #C7D2FE; }
-.dashboard.dark .ip-modal .ip-opt.active { background: #6366F1; border-color: #6366F1; color: #fff; }
+.dashboard.dark .ip-modal .ip-opt:hover { border-color: var(--accent); color: var(--accent-border); }
+.dashboard.dark .ip-modal .ip-opt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 /* Career rows on the dark surface */
 .dashboard.dark .ip-modal .ip-career { background: #1E293B; border-color: #334155; }
 .dashboard.dark .ip-modal .ip-career-name { color: #E2E8F0; }
-.dashboard.dark .ip-modal .ip-start { background: #312E81; border-color: #4338CA; color: #C7D2FE; }
-.dashboard.dark .ip-modal .ip-start:hover { background: #6366F1; color: #fff; }
+.dashboard.dark .ip-modal .ip-start { background: rgba(59,91,219,0.22); border-color: var(--accent-strong); color: var(--accent-border); }
+.dashboard.dark .ip-modal .ip-start:hover { background: var(--accent); color: #fff; }

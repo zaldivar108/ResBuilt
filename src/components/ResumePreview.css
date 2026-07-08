@@ -3,7 +3,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   /* subtle dot-grid background for depth */
-  background-color: #CDD3E2;
+  background-color: #DCDAD2;
   background-image: radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px);
   background-size: 18px 18px;
 }
@@ -103,4 +103,4 @@
 .preview-section-body strong { font-weight: 700; }
 .preview-section-body em     { font-style: italic; }
 .preview-section-body u      { text-decoration: underline; }
-.preview-section-body a      { color: #4F46E5; }
+.preview-section-body a      { color: var(--accent-strong); }

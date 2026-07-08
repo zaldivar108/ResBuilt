@@ -41,7 +41,7 @@ function genId() {
 
 function sliderBg(value, min, max) {
   const pct = ((value - min) / (max - min)) * 100
-  return { background: `linear-gradient(to right, #6366F1 ${pct}%, #E2E8F0 ${pct}%)` }
+  return { background: `linear-gradient(to right, var(--accent) ${pct}%, var(--slider-track) ${pct}%)` }
 }
 
 
@@ -393,7 +393,7 @@ export default function Editor() {
 
             {lastAiEdit && (
               <div className="undo-toast">
-                <span className="undo-toast-label">✦ AI edit applied</span>
+                <span className="undo-toast-label">AI edit applied</span>
                 <button className="undo-btn" onClick={undoAiEdit}>Undo</button>
               </div>
             )}
@@ -485,7 +485,7 @@ export default function Editor() {
               onClick={() => exportPDF(resume)}
               title="Export as PDF"
             >
-              ↓ Export PDF
+              Export PDF
             </button>
 
             <span className={`pt-page-count${pageCount > 1 ? ' overflow' : ''}`}>

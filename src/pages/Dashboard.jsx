@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Compass, Upload, Plus, Lock, FileText, CreditCard } from 'lucide-react'
 import { useResume } from '../context/ResumeContext'
 import ResumeCard from '../components/ResumeCard'
 import ImportModal from '../components/ImportModal'
@@ -48,11 +49,11 @@ export default function Dashboard() {
   return (
     <div className={`dashboard${darkMode ? ' dark' : ''}`}>
       <nav className="dash-nav">
-        <span className="dash-logo" onClick={() => navigate('/')}>ResBuilt</span>
+        <span className="wordmark dash-logo" onClick={() => navigate('/')}>ResBuilt</span>
         <div className="dash-nav-right">
           <Switch checked={darkMode} onCheckedChange={setDarkMode} />
           <span className="dash-privacy" title="No account required. Your resumes are stored only in this browser on this device.">
-            🔒 Private · saved on this device
+            <Lock size={12} strokeWidth={2} /> Private · saved on this device
           </span>
         </div>
       </nav>
@@ -60,34 +61,34 @@ export default function Dashboard() {
       <div className="dash-content">
         <div className="dash-header">
           <div>
-            <h1 className="dash-title">My Resumes</h1>
+            <h1 className="dash-title">My résumés</h1>
             <p className="dash-subtitle">
-              {resumes.length} resume{resumes.length !== 1 ? 's' : ''}
+              {resumes.length} résumé{resumes.length !== 1 ? 's' : ''}
             </p>
           </div>
           <div className="dash-header-actions">
-            <button className="btn-new-bizcard" onClick={() => setProfiling(true)}>
-              🎯 Find a job that fits
+            <button className="btn-secondary" onClick={() => setProfiling(true)}>
+              <Compass size={15} strokeWidth={1.75} /> Find a job that fits
             </button>
-            <button className="btn-new-bizcard" onClick={() => setBizCardModal(true)}>
-              + New Business Card
+            <button className="btn-secondary" onClick={() => setBizCardModal(true)}>
+              <CreditCard size={15} strokeWidth={1.75} /> Business card
             </button>
-            <button className="btn-new-bizcard" onClick={() => setImporting(true)}>
-              📥 Import a résumé
+            <button className="btn-secondary" onClick={() => setImporting(true)}>
+              <Upload size={15} strokeWidth={1.75} /> Import
             </button>
             <button className="btn-new-resume" onClick={openCreate}>
-              + New Resume
+              <Plus size={15} strokeWidth={2} /> New résumé
             </button>
           </div>
         </div>
 
         {resumes.length === 0 ? (
           <div className="dash-empty">
-            <div className="empty-icon">📄</div>
-            <h2>No resumes yet</h2>
-            <p>Create your first resume to get started.</p>
+            <div className="empty-icon"><FileText size={30} strokeWidth={1.5} /></div>
+            <h2>No résumés yet</h2>
+            <p>Create your first résumé to get started.</p>
             <button className="btn-new-resume" onClick={openCreate}>
-              + New Resume
+              <Plus size={15} strokeWidth={2} /> New résumé
             </button>
           </div>
         ) : (
@@ -133,7 +134,7 @@ export default function Dashboard() {
       {bizCardModal && (
         <div className="modal-overlay" onClick={() => setBizCardModal(false)}>
           <div className="modal bizcard-modal" onClick={e => e.stopPropagation()}>
-            <div className="bizcard-modal-icon">🪪</div>
+            <div className="bizcard-modal-icon"><CreditCard size={30} strokeWidth={1.5} /></div>
             <h2>Business Cards</h2>
             <p className="bizcard-modal-desc">Design and export professional business cards — coming soon.</p>
             <button className="modal-btn create" onClick={() => setBizCardModal(false)}>Got it</button>

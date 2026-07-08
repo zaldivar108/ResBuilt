@@ -1,6 +1,6 @@
 .nf-root {
   min-height: 100vh;
-  background: #F8FAFC;
+  background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,13 +16,6 @@
 }
 
 .nf-logo {
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #6366F1, #8B5CF6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   cursor: pointer;
   width: fit-content;
 }
@@ -36,7 +29,7 @@
 .nf-badge {
   font-size: 13px;
   font-weight: 600;
-  color: #6366F1;
+  color: var(--accent);
   letter-spacing: 0.02em;
 }
 
@@ -75,8 +68,8 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #EEF2FF;
-  color: #6366F1;
+  background: var(--accent-tint);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,14 +102,14 @@
   margin-top: 4px;
   font-size: 13px;
   font-weight: 600;
-  color: #6366F1;
+  color: var(--accent);
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
   transition: color 0.15s;
 }
-.nf-link:hover { color: #4F46E5; }
+.nf-link:hover { color: var(--accent-strong); }
 
 /* ── Dark mode ── */
 .nf-root.dark {
@@ -132,11 +125,11 @@
 }
 
 .nf-root.dark .nf-icon-wrap {
-  background: rgba(99,102,241,0.12);
+  background: rgba(59,91,219,0.12);
 }
 
 .nf-root.dark .nf-item-title { color: #F1F5F9; }
 .nf-root.dark .nf-item-desc  { color: #64748B; }
 
-.nf-root.dark .nf-link { color: #818CF8; }
-.nf-root.dark .nf-link:hover { color: #A5B4FC; }
+.nf-root.dark .nf-link { color: var(--accent-soft); }
+.nf-root.dark .nf-link:hover { color: var(--accent-softer); }

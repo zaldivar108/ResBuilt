@@ -1,70 +1,99 @@
 import { useNavigate } from 'react-router-dom'
+import { PenLine, LayoutTemplate, Printer, ShieldCheck } from 'lucide-react'
 import { useResume } from '../context/ResumeContext'
 import { APP_VERSION } from '../version'
 import './Landing.css'
+
+const FEATURES = [
+  {
+    icon: PenLine,
+    title: 'A real editor',
+    desc: 'Write, reorder, and restyle sections with a live preview beside you.',
+  },
+  {
+    icon: LayoutTemplate,
+    title: 'Six layouts',
+    desc: 'Classic to modern — every template stays clean and recruiter-readable.',
+  },
+  {
+    icon: Printer,
+    title: 'Print-ready PDF',
+    desc: 'Letter or A4, tuned margins, one-click export. No watermarks.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Private by default',
+    desc: 'No account. Your résumé lives in this browser, not on a server.',
+  },
+]
+
+/* CSS-drawn résumé page for the hero — product-specific, no stock art */
+function HeroPaper() {
+  return (
+    <div className="hero-paper" aria-hidden="true">
+      <div className="hp-name" />
+      <div className="hp-sub" />
+      <div className="hp-rule" />
+      {[0, 1, 2].map(i => (
+        <div key={i} className="hp-block">
+          <div className="hp-heading" />
+          <div className="hp-line w-92" />
+          <div className="hp-line w-78" />
+          {i < 2 && <div className="hp-line w-60" />}
+        </div>
+      ))}
+      <div className="hp-chip">Reviewed by AI, grounded in real job data</div>
+    </div>
+  )
+}
 
 export default function Landing() {
   const navigate = useNavigate()
   const { resumes } = useResume()
 
-  function handleCTA() {
-    navigate('/dashboard')
-  }
-
   return (
     <div className="landing">
-      <div className="landing-orbs">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-
       <nav className="landing-nav">
         <span className="landing-brand">
-          <span className="landing-logo">ResBuilt</span>
+          <span className="wordmark">ResBuilt</span>
           <span className="landing-version">v{APP_VERSION}</span>
         </span>
-        <div className="landing-nav-actions">
-          <button className="btn-nav" onClick={() => navigate('/dashboard')}>
-            {resumes.length > 0 ? 'My Resumes' : 'Get started'}
-          </button>
-        </div>
+        <button className="btn-nav" onClick={() => navigate('/dashboard')}>
+          {resumes.length > 0 ? 'My résumés' : 'Get started'}
+        </button>
       </nav>
 
       <main className="landing-hero">
-        <div className="hero-badge">✦ Free to use, forever</div>
-
-        <h1 className="hero-title">
-          Resume Builder<br />
-          <span className="hero-title-accent">made simple.</span>
-        </h1>
-
-        <p className="hero-subtitle">
-          Build your first resume in minutes — for school, part-time jobs,<br />
-          internships, and college applications. Free, always.
-        </p>
-
-        <div className="hero-actions">
-          <button className="btn-cta" onClick={handleCTA}>
-            Start Building →
-          </button>
-          <span className="hero-note">No account needed · nothing to sign up for</span>
+        <div className="hero-copy">
+          <p className="hero-eyebrow">Free forever · No sign-up</p>
+          <h1 className="hero-title">
+            Your first résumé,<br />
+            <em>done properly.</em>
+          </h1>
+          <p className="hero-subtitle">
+            Built for students and first jobs — school, part-time work,
+            internships, and college applications. Write it here, keep it here:
+            nothing leaves your device without asking.
+          </p>
+          <div className="hero-actions">
+            <button className="btn-cta" onClick={() => navigate('/dashboard')}>
+              Start building
+            </button>
+            <span className="hero-note">Takes about ten minutes</span>
+          </div>
         </div>
-
-        <div className="hero-features">
-          {[
-            { icon: '⚡', label: 'Fast editor' },
-            { icon: '🎨', label: 'Beautiful layouts' },
-            { icon: '📄', label: 'Print-ready' },
-            { icon: '🔒', label: 'Stays on your device' },
-          ].map(f => (
-            <div key={f.label} className="hero-feature">
-              <span>{f.icon}</span>
-              <span>{f.label}</span>
-            </div>
-          ))}
-        </div>
+        <HeroPaper />
       </main>
+
+      <section className="landing-features" aria-label="Features">
+        {FEATURES.map(f => (
+          <div key={f.title} className="feature">
+            <f.icon size={18} strokeWidth={1.75} className="feature-icon" />
+            <h3 className="feature-title">{f.title}</h3>
+            <p className="feature-desc">{f.desc}</p>
+          </div>
+        ))}
+      </section>
 
       <footer className="landing-footer">
         <a

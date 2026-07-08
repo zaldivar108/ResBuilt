@@ -45,7 +45,7 @@ export default function NotFound() {
   return (
     <main className={`nf-root${darkMode ? ' dark' : ''}`}>
       <div className="nf-container">
-        <span className="nf-logo" onClick={() => navigate('/')}>ResBuilt</span>
+        <span className="wordmark nf-logo" onClick={() => navigate('/')}>ResBuilt</span>
         <div className="nf-hero">
           <span className="nf-badge">404 Error</span>
           <h1 className="nf-heading">Page not found</h1>

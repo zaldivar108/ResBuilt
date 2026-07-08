@@ -296,7 +296,7 @@ export function AiInfoOrb() {
     <div className="ai-orb-float" ref={ref}>
       {open && (
         <div className="ai-info-card" role="dialog" aria-label="How the AI and your data work">
-          <div className="ai-info-title">✦ How the AI works — and your privacy</div>
+          <div className="ai-info-title">How the AI works — and your privacy</div>
 
           <h4 className="ai-info-h ok">On your device — nothing is sent</h4>
           <p>Fix grammar, adding real job duties, and formatting your contact info all run inside your browser. That text never leaves your device.</p>
@@ -359,7 +359,7 @@ export function AiWorkspace() {
           {section?.type !== 'contact' && (
             groundOcc ? (
               <div className="ai-ground-hint">
-                ✦ Ideas grounded in real <strong>{groundOcc.title}</strong> duties
+                Ideas grounded in real <strong>{groundOcc.title}</strong> duties
               </div>
             ) : (
               <div className="ai-ground-hint ai-ground-tip">
@@ -402,8 +402,8 @@ export function AiWorkspace() {
 
           <div className="ai-consent">
             {section?.type === 'contact'
-              ? '🔒 On a contact section everything runs on your device — nothing is sent.'
-              : '🔒 Fix grammar runs on your device — nothing is sent. Improve wording, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
+              ? 'On a contact section everything runs on your device — nothing is sent.'
+              : 'Fix grammar runs on your device — nothing is sent. Improve wording, Format & Suggest ideas send the section’s text to the AI service, so don’t put anything private in your résumé.'}
             <span className="ai-budget">{aiLeft} of {DAILY_LIMIT} AI actions left today</span>
           </div>
         </>

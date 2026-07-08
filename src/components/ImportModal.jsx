@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Upload } from 'lucide-react'
 import { importResumeFromFile } from '../lib/importResume'
 import './ImportModal.css'
 
@@ -31,7 +32,7 @@ export default function ImportModal({ onClose, onImported }) {
   return (
     <div className="modal-overlay" onClick={busy ? undefined : onClose}>
       <div className="modal import-modal" onClick={e => e.stopPropagation()}>
-        <div className="import-modal-icon">📥</div>
+        <div className="import-modal-icon"><Upload size={26} strokeWidth={1.5} /></div>
         <h2>Import a résumé</h2>
 
         {busy ? (
@@ -47,7 +48,7 @@ export default function ImportModal({ onClose, onImported }) {
               The file itself never leaves your device.
             </p>
             <p className="import-modal-note">
-              🔒 Don’t import a résumé with information you want to keep private. Supports PDF, Word
+              Don’t import a résumé with information you want to keep private. Supports PDF, Word
               (.docx), .txt, and .md (scanned/image PDFs aren’t supported). Max 5 MB.
             </p>
 

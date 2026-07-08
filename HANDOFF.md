@@ -6,17 +6,57 @@ _AI provider: **OpenCode Zen** free models (primary) → **Groq** (automatic fal
 
 **Purpose (locked):** a **free** resume builder for **teenagers & young adults** building their first resume — school, part-time jobs, internships, college apps. No paywalls. Privacy-first: **no account required**, data stays on the device.
 
-A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage` (that's the privacy feature, not debt). **AI Assist is live** (Groq proxy + on-device harper.js/O*NET); business cards are mocked; auth is optional/unused.
+A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage` (that's the privacy feature, not debt). **AI Assist is live** (OpenCode Zen → Groq fallback proxy + on-device harper.js/O*NET), controls in the sidebar + workspace in the editor column; business cards are mocked; auth is optional/unused.
 
 ---
 
 ## 0. Session status — where to continue
 
-**Test suite: 182 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: **20 errors, all pre-existing** (Editor/toolbar/AccentColorPicker + the `useResume` react-refresh one) — none from this session's work. **Production is deployed & verified live at https://resbuilt.vercel.app** (all `/api` proxies return 200: ai/onet/onetip).
+**Test suite: 262 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: pre-existing errors only (Editor's `setState`-in-effect + 2 unused-vars, EditorToolbar/AccentColorPicker + `useResume` react-refresh) — none from this session's work. Parts 1–5 pushed (`8fdc22b`); **part 6 (UI redesign) is uncommitted in the working tree** — commit before starting new work.
 
-**SHIPPED THIS SESSION — 2026-07-07 (part 4) — tests, quiz→tailor, OpenCode provider, UI fixes (tests 197 → 262):**
+### ⭐ NEXT SESSION — work the AI-experience gaps (user-chosen priority)
 
-_All committed on `master`. **First 4 commits pushed** (up to `058b14e`); **last 2 committed but NOT pushed** (`ee3da30` scroll fix, `e3291ca` import shape-fallback) — `git push origin master` to ship them + deploy._
+Ranked list from the 2026-07-07 AI-gaps review. Work top-down; #1 and #2's on-device half are quota-free.
+
+1. **Quiz result discards its own data** — "Find a job that fits" → "Start a résumé" only puts the career in the *title* (`Dashboard.jsx` `handleStartFromCareer` → `createResume(\`${careerTitle} Resume\`, DEFAULT_STARTER_ID)`). The career's real O*NET duties are already reachable (`occupationToPosting()` in `src/lib/onet.js`, used by the quiz→tailor bridge). Seed the new résumé's Experience/Skills starter content with those duties, or auto-set them as the AI grounding target (`groundOcc`) when the editor opens. Cheapest, biggest win.
+2. **No whole-résumé review** — AI acts on one section at a time. Two halves:
+   a. *On-device checklist (free, do first)*: heuristics over all sections — bullets without numbers, generic objective, tense inconsistency, duplicate skills, length vs 1 page. New pure lib (`resumeChecklist.js`) + panel in the editor; TDD-friendly.
+   b. *AI pass (one call)*: PII-scrubbed all-sections review via a new `review` task in `api/ai.js` (JSON: strengths/issues per section). Mind `maxInput` caps + reasoning-model headroom (see part-4 notes).
+3. **Apply is blind — no diff view** — AI preview replaces the section wholesale (`AiWorkspace` → `applyResult`). Word-level diff (ins/del marks) between `section.content` and result before Apply; matters most for Fix grammar (teens learning writing). Diff lib candidates: `diff` (jsdiff) — small, no new provider.
+4. **Job-match target not persisted** — `JobTailor` posting state is component-local; retailoring each section means re-supplying context. Persist `targetJob` on the résumé object (survives reload, drives whole-doc tailoring later).
+5. **Ideas grounding manual/buried** — `groundOcc` only set after visiting "Real job duties" and picking a job. Auto-suggest occupation from résumé title/objective (seed search is on-device already).
+6. **No selection-level AI** — can't improve one bullet; toolbar has no AI entry. Inline "rewrite this bullet" on text selection.
+7. **One-shot results** — no "another version"/tone variants. Cache keyed on input, so a variant needs a nonce or tone param (`api/ai.js` prompt tweak).
+8. **O*NET seed = ~10 occupations** — plain `npm run dev` (no `/api`) and offline fallback dead-end most searches. Ship fuller extract per `docs/onet-extract.md` behind the same `onet.js` interface.
+9. **PII scrub only on "ideas"** — extend `scrubPii` to improve/format outbound text (ties into security follow-up H2).
+
+Constraints to respect: 25/day device budget (`aiBudget.js`), shared free-tier quota, reasoning-model token headroom (`REASONING_HEADROOM`), TDD workflow, no new paid providers.
+
+**SHIPPED THIS SESSION — 2026-07-07 (part 6) — full UI redesign "Paper & Ink" (uncommitted):**
+
+User feedback: UI "looks vibe-coded." Replaced the indigo-gradient/orbs/emoji look with editorial minimalism. **Rules now binding for all new UI: no gradients, no emoji (user explicit), no glow shadows, single flat cobalt accent, lucide icons only.**
+
+- **Tokens** (`src/index.css`) — warm paper `--bg:#F6F5F1`, ink `--ink:#1B1D23`, accent `--accent:#3B5BDB` (+`-strong/-soft/-softer/-border/-tint/-tint-strong`, `--slider-track`), `--font-display: 'EB Garamond'` (already loaded in index.html), shared `.wordmark` class (serif "ResBuilt" + accent period). Old `--primary/*` vars alias to accent for compat.
+- **Landing** — full rewrite (light editorial): serif hero "Your first résumé, *done properly.*", CSS-drawn résumé-page mock, ink CTA, 4-feature hairline grid (lucide), O*NET footer kept (license).
+- **Dashboard** — serif H1 "My résumés", `btn-secondary` outline buttons + flat accent `btn-new-resume` (all lucide-iconed), flattened `ResumeCard` (no gradient Edit button, ink hover overlay), unified modal/starter/delete styles; full dark-mode restyle (flat slate `#0F1115/#14161C/#262A33`).
+- **Editor** — bulk recolor of `Editor.css`/`EditorToolbar.css`/`AiInput.css`/`dropdown-menu.css`/`switch.css`/`InterestProfiler.css`/`ImportModal.css`/`ResumePreview.css`/`AccentColorPicker.css` to tokens (sed map: `#6366F1→var(--accent)`, `#4F46E5/#4338CA→var(--accent-strong)`, `#818CF8→var(--accent-soft)`, `#EEF2FF→var(--accent-tint)`, rgb `99,102,241→59,91,219`, etc.). Export/Save buttons flat accent, no glows/lifts; section-list active = accent-tint; sliders use `var(--accent)/var(--slider-track)` (`sliderBg` in `Editor.jsx`); preview backdrop warmed (`#DCDAD2`).
+- **AI dock height consistency (user ask)** — `.ai-side` (sidebar controls) and `.ai-workspace` (editor column) both `flex: 0 0 30%` (fixed, within requested 1/4–1/3) with `min-height` 250/220px; content scrolls inside, consent note pinned bottom (`margin-top:auto`). No more mode-dependent resizing.
+- **Emoji purge** — all UI emoji removed (🔒📥🎯🪪📄⚡🎨✨✦⚠ →) → lucide icons (`Lock/Upload/Compass/CreditCard/FileText/Plus`) or plain text. "Make it mine" label kept (test asserts it). `overflow-indicator` icon span deleted (`ResumePreview.jsx`).
+- **Login page deleted** (user: "there's no login") — `src/pages/Login.jsx/.css` removed, `/login` route dropped from `App.jsx`. Mock `user/login/logout` still lives in `ResumeContext` (unused; possible future opt-in sync).
+- **Copy** — résumé accents unified on Dashboard ("My résumés", "N résumé(s)").
+- Résumé template layouts (`src/components/layouts/*`) deliberately untouched — document styles, not app UI.
+- Verified: build green, 262/262 tests, chrome-devtools screenshots (landing, dashboard light+dark, new-résumé modal, editor light+dark, dock in all 3 modes). Design rules memorized in `~/.claude` memory `project-design-system`.
+
+**SHIPPED THIS SESSION — 2026-07-07 (part 5) — AI dock relocated into sidebar + editor column, privacy info orb (`8fdc22b`, pushed):**
+
+The floating bottom-right AI dock (540×540 expanding panel) is gone. AI Assist is now two docked surfaces sharing one `AiProvider` (`src/components/ui/AiInput.jsx`):
+- **`AiControls`** — mode tabs (Edit my text / Real job duties / Match a job) + the 4 task buttons — pinned to the bottom of the **sections sidebar** (Col 1), max-height 62%.
+- **`AiWorkspace`** — the textbox/answers/results/consent — rendered in the **editor column** (Col 2), below the contentEditable, max-height 68%. `OnetSuggest`/`JobTailor` moved in unchanged (self-contained, just re-homed).
+- **`AiInfoOrb`** — the old decorative corner orb (Col 3 preview panel) is now a clickable button; opens a card explaining what's on-device (grammar, O*NET add, contact format) vs. sent to the AI service (OpenCode Zen → Groq) vs. sent to O*NET (job search), plus the no-account/browser-only/25-per-day notes. Closes on outside-click or Esc.
+
+Both AI surfaces read the same context, so switching sections/mode/task from the sidebar updates the workspace instantly — no prop drilling, no state duplication. `Editor.jsx` wraps both columns in `<AiProvider>`. CSS: `AiInput.css` — dead dock/form/textarea rules removed, new `.ai-side`/`.ai-workspace`/`.ai-orb-float`+`.ai-info-card` rules added, dark-mode covered. Verified live via `vercel dev` + chrome-devtools MCP (light + dark, Edit-text mode, Match-a-job mode, info card open/close).
+
+**Still owed from part 4** (below) — not touched this session:
 
 1. **Test coverage +45** (`3462658`) — new `ResumeContext.test.jsx` (CRUD, persistence, corrupt-JSON hydration, immutability, dark mode, mock auth), `toolbarUtils.test.js`, `layouts.test.jsx` (Modern/Compact partitioning). **Refactor:** extracted the fragile font-size/family helpers + FONTS/SIZES out of `EditorToolbar.jsx` into new pure `src/lib/toolbarUtils.js` (import-only change) to make them testable. Still untested: Editor (contentEditable — needs jsdom execCommand shims or Playwright), 4 simpler layouts, EditorToolbar render.
 2. **Quiz → tailor bridge** (`be142ce`) — in AI Assist → **Match a job**, a "🎯 Take the quiz" button opens the Interest Profiler; picking a matched career fetches its real O*NET duties and prefills the posting box (degrades to the title if duties can't load; empty box fills silently, non-empty replaces + notice). New pure `occupationToPosting()` in `onet.js`; `InterestProfiler` got an optional `onPickCareer(career)` prop (dashboard "Start a résumé" path unchanged). +10 tests. CONTEXT.md updated (3 AI modes; **Job match** + **Interest Profiler** terms).
@@ -127,7 +167,7 @@ Vitest: 135 tests, jsdom env. No CI. Deploys to Vercel (`vercel.json` rewrites a
 | On-device | `harper.js` (grammar WASM), `dompurify` (sanitize) |
 | Tests | `vitest` + `@testing-library/react`, `jsdom` env |
 
-Palette: indigo/violet primary `#6366F1`. Slate accents.
+Palette: **"Paper & Ink"** (2026-07-07 redesign) — warm paper `--bg:#F6F5F1`, ink `--ink:#1B1D23`, single flat cobalt accent `--accent:#3B5BDB`; EB Garamond display via `--font-display`. Tokens in `src/index.css`. **Banned: gradients, emoji, glow shadows, raw indigo `#6366F1` family.** Résumé layout CSS (`components/layouts/`) is exempt (document styling).
 
 ---
 
@@ -135,8 +175,7 @@ Palette: indigo/violet primary `#6366F1`. Slate accents.
 
 | Route | File | Notes |
 |---|---|---|
-| `/` | `src/pages/Landing.jsx` | Marketing landing |
-| `/login` | `src/pages/Login.jsx` | **Optional & unlinked.** Mock auth (login/signup toggle). Not part of the primary flow — reachable only by typing the URL. Skip-hack removed. |
+| `/` | `src/pages/Landing.jsx` | Marketing landing (light editorial, serif hero) |
 | `/dashboard` | `src/pages/Dashboard.jsx` | Home. Resume grid, create (with starter picker)/delete/duplicate, business-card modal (mock) |
 | `/editor/:id` | `src/pages/Editor.jsx` | Main workspace (see §5) |
 | `*` | `src/pages/NotFound.jsx` | 404 |
@@ -229,9 +268,9 @@ No PDF library. It clones the `.preview-paper` DOM node, inlines **all** stylesh
 
 ## 9. Mocked / placeholder features
 
-- **Auth** — mock and **unused**. Login page unlinked from the flow (no-account is the default). No backend.
-- **AI Assist** — **live** (free). `AiInput.jsx` dock, three tabs: **Edit my text** (Improve / Fix grammar / **Format** / Suggest ideas), **Real job duties** (O*NET, now live v2 API), **Match a job** (job-posting tailor). All buttons + tabs have tooltips. Calls `api/ai.js` (Vercel **Edge** proxy) → Groq. **Task→model routing:** editing/polish/tailor/retarget → `llama-3.1-8b-instant`; `import` → `llama-3.3-70b-versatile` (JSON mode). `GROQ_API_KEY` server-side only.
-  - **On-device (no Groq):** Fix grammar (harper.js WASM) + "Add selected" O*NET duties. Everything else sends text to Groq → consent notices shown.
+- **Auth** — mock and **unused**. Login page **deleted** (2026-07-07; no-account is the product). `ResumeContext` still exports `user/login/logout` for a possible future opt-in sync. No backend.
+- **AI Assist** — **live** (free). `AiInput.jsx`, three tabs: **Edit my text** (Improve / Fix grammar / **Format** / Suggest ideas), **Real job duties** (O*NET, live v2 API), **Match a job** (job-posting tailor). Controls (mode tabs + task buttons) live in the **sections sidebar**; the textbox/answers workspace lives in the **editor column**, both sharing one `AiProvider` context — no floating dock anymore (the corner orb is now a click-for-info privacy card, see §5). All buttons + tabs have tooltips. Calls `api/ai.js` (Vercel **Edge** proxy) → **OpenCode Zen** (primary) → **Groq** (fallback).
+  - **On-device (nothing sent):** Fix grammar (harper.js WASM), "Add selected" O*NET duties, contact-section Format. Everything else sends text to the AI service → consent notices shown.
   - **Quota guards:** `aiCache.js` (localStorage result cache), `aiBudget.js` (25 AI actions/device/day soft cap), `scrubPii.js` (redacts PII on Ideas). Improve/Ideas **stream** (`streamAi.js`).
 - **Business Cards** (Dashboard) — modal says "coming soon".
 
@@ -259,7 +298,7 @@ No PDF library. It clones the `.preview-paper` DOM node, inlines **all** stylesh
 Roadmap lives in [TASKS.md](TASKS.md) (paywalls already stripped — everything is free). Highlights by priority for this audience:
 
 - **High:** inline "not sure what to write?" content guidance per section (biggest value — see §0); mobile-responsive editor; free Template Builder (customize a template's colors/fonts/columns/headings/spacing, save as named custom template).
-- **AI (free, cost-controlled):** bullet-point suggestions, summary generator — wire into the `AiInput` dock. Job-targeting / ATS analysis de-prioritized for this audience.
+- **AI (free, cost-controlled):** bullet-point suggestions, summary generator — wire into the `AiInput` sidebar/workspace. Job-targeting / ATS analysis de-prioritized for this audience.
 - **Medium/Low:** dashboard rename-on-card, sort, last-edited timestamp (stored, unshown); search/filter; spell-check (offline nspell or LanguageTool API); word count; undo history; shareable view-only link (needs HTML sanitization first — see §10).
 - **Deferred:** cloud backend is **not** a default — localStorage is the privacy feature. Only add as opt-in sync, no PII from minors (COPPA/GDPR-K).
 
@@ -290,12 +329,12 @@ src/
 ├── config/
 │   ├── templates.js  paperSizes.js  starters.js
 │   └── onetData.js             # O*NET occupation SEED (10 jobs, CC BY 4.0) — swap per docs/
-├── pages/  Landing Login Dashboard Editor NotFound  (+ .css each)
+├── pages/  Landing Dashboard Editor NotFound  (+ .css each; Login deleted 2026-07-07)
 ├── components/
 │   ├── EditorToolbar.jsx  ResumePreview.jsx  ResumeCard.jsx
 │   ├── ImportModal.jsx         # multi-format import consent gate + UI
 │   ├── layouts/                # Classic, Modern, Minimal, Executive, Compact, Timeline
-│   └── ui/                     # AiInput (dock, 3 tabs), OnetSuggest, JobTailor,
+│   └── ui/                     # AiInput (sidebar controls + editor workspace, 3 tabs), OnetSuggest, JobTailor,
 │                               #   InterestProfiler (Mini-IP quiz modal),
 │                               #   AccentColorPicker, SelectDropdown, dropdown-menu, switch
 └── lib/

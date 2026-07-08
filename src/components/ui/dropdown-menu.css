@@ -4,8 +4,8 @@
   --dm-border:           #E2E8F0;
   --dm-text:             #374151;
   --dm-hover-bg:         #F1F5F9;
-  --dm-hover-text:       #6366F1;
-  --dm-indicator:        #6366F1;
+  --dm-hover-text:       var(--accent);
+  --dm-indicator:        var(--accent);
   --dm-muted:            #94A3B8;
   --dm-shadow:           0 0 0 1px rgba(0,0,0,0.04),
                          0 4px 8px  rgba(0,0,0,0.07),
@@ -17,8 +17,8 @@
   --dm-border:           #334155;
   --dm-text:             #CBD5E1;
   --dm-hover-bg:         #2D3748;
-  --dm-hover-text:       #818CF8;
-  --dm-indicator:        #818CF8;
+  --dm-hover-text:       var(--accent-soft);
+  --dm-indicator:        var(--accent-soft);
   --dm-muted:            #475569;
   --dm-shadow:           0 0 0 1px rgba(0,0,0,0.12),
                          0 4px 8px  rgba(0,0,0,0.2),
@@ -158,19 +158,19 @@
 }
 
 /* ── Danger item (destructive actions) ── */
-.dm-item.dm-item-danger { color: #EF4444; }
+.dm-item.dm-item-danger { color: var(--danger); }
 .dm-item.dm-item-danger[data-highlighted] {
   background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  color: var(--danger);
 }
 
 /* ── Trigger open-state: highlight the select button border ── */
 .select-trigger[data-state="open"] {
-  border-color: #6366F1 !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.12) !important;
 }
 [data-theme="dark"] .select-trigger[data-state="open"] {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.18) !important;
 }
 
 /* ── Trigger layout (shared by all select-style dropdowns) ── */

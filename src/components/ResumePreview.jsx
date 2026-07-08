@@ -118,7 +118,6 @@ export default function ResumePreview({ resume, paperSizeKey = 'letter', zoom = 
         </div>
         {overflowPx > 0 && (
           <div className="overflow-indicator" style={{ width: scaledW }}>
-            <span className="overflow-indicator-icon">⚠</span>
             Content overflows ~{Math.round(overflowPx / paper.height * 100)}% past the page — try reducing font size or spacing
           </div>
         )}

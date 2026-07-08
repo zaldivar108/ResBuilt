@@ -134,7 +134,7 @@ export default function JobTailor({ section, onApply }) {
           {busy ? 'Analyzing…' : 'Analyze match'}
         </button>
         <button type="button" className="tailor-quiz-btn" disabled={busy} onClick={() => setShowQuiz(true)}>
-          🎯 Not sure? Take the quiz
+          Not sure? Take the quiz
         </button>
       </div>
 

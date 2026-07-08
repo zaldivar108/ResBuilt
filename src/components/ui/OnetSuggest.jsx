@@ -15,7 +15,7 @@ const SEARCH_DEBOUNCE_MS = 300
 // Grounds résumé bullets in real O*NET occupational data instead of AI guesses.
 // Flow: search a job → pick it → check the real duties that apply →
 //   "Add selected" inserts them verbatim (zero AI, zero hallucination), or
-//   "✨ Make it mine" sends the picked duties to Groq's `polish` task to rewrite
+//   "Make it mine" sends the picked duties to Groq's `polish` task to rewrite
 //   them in a teen/entry-level voice (still grounded in the real tasks).
 export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
   const [query, setQuery] = useState('')
@@ -172,7 +172,7 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
             <button type="button" className="onet-change" onClick={() => { setOccupation(null); onOccupation(null) }}>Change</button>
           </div>
           <p className="onet-hint">Check the duties that apply to you:</p>
-          <p className="onet-ground-note">✦ Picking this job also grounds “Suggest ideas” (in Edit my text) in real duties.</p>
+          <p className="onet-ground-note">Picking this job also grounds “Suggest ideas” (in Edit my text) in real duties.</p>
           <ul className="onet-tasks">
             {occupation.tasks.map((task, i) => (
               <li key={`${task}-${i}`}>
@@ -191,7 +191,7 @@ export default function OnetSuggest({ onApply, onOccupation = () => {} }) {
               Add selected
             </button>
             <button type="button" className="onet-polish" disabled={!selectedTasks.length || busy} onClick={makeItMine}>
-              {busy ? 'Working…' : done || '✨ Make it mine'}
+              {busy ? 'Working…' : done || 'Make it mine'}
             </button>
           </div>
         </>
