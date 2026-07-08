@@ -1,5 +1,9 @@
-import { describe, test, expect } from 'vitest'
-import { extractDelta, splitSse } from './streamAi.js'
+import { describe, test, expect, afterEach, vi } from 'vitest'
+import { extractDelta, splitSse, streamAiTask } from './streamAi.js'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('extractDelta', () => {
   test('pulls the content token from a data line', () => {
@@ -31,5 +35,19 @@ describe('splitSse', () => {
     const { events, rest } = splitSse('data: incomplete')
     expect(events).toEqual([])
     expect(rest).toBe('data: incomplete')
+  })
+})
+
+describe('streamAiTask', () => {
+  test('throws a friendly error when the server returns an empty result', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      body: null,
+      json: async () => ({ result: '' }),
+    }))
+
+    await expect(streamAiTask({ task: 'format', text: '<p>x</p>' }, () => {}))
+      .rejects.toThrow(/didn.t return/i)
   })
 })

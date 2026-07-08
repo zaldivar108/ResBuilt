@@ -22,6 +22,13 @@ export function splitSse(buffer) {
   return { events: parts, rest }
 }
 
+function requireResult(result) {
+  if (!result.trim()) {
+    throw new Error('The AI didn’t return any text. Try again.')
+  }
+  return result
+}
+
 /**
  * Stream an AI task, invoking onDelta(cumulativeText) as tokens arrive.
  * Falls back to a buffered JSON response if the server didn't stream.
@@ -56,7 +63,7 @@ export async function streamAiTask(payload, onDelta, { signal } = {}) {
     const data = await res.json().catch(() => ({}))
     const result = data.result || ''
     if (result) onDelta(result)
-    return result
+    return requireResult(result)
   }
 
   const reader = res.body.getReader()
@@ -73,7 +80,7 @@ export async function streamAiTask(payload, onDelta, { signal } = {}) {
       for (const line of event.split('\n')) {
         if (!line.startsWith('data:')) continue
         const delta = extractDelta(line)
-        if (delta.done) return full
+        if (delta.done) return requireResult(full)
         if (delta.content) {
           full += delta.content
           onDelta(full)
@@ -81,5 +88,5 @@ export async function streamAiTask(payload, onDelta, { signal } = {}) {
       }
     }
   }
-  return full
+  return requireResult(full)
 }

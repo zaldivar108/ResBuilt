@@ -168,6 +168,23 @@ describe('api/ai format task (paragraph → bullet points)', () => {
     expect(sys).toContain('résumé conventions')
     expect(sys).not.toContain('EDUCATION')
   })
+
+  test('does not stream format, so an empty primary can fall back', async () => {
+    process.env.OPENCODE_API_KEY = 'oc-key'
+    mockByUrl({
+      [OC]: groqOk(''),
+      [GROQ]: groqOk('<ul><li>Formatted from fallback.</li></ul>'),
+    })
+
+    const res = await handler(req({ task: 'format', text: 'a'.repeat(5500), stream: true }))
+    const data = await res.json()
+
+    expect(res.headers.get('Content-Type')).toContain('application/json')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(callBody(0).stream).toBeUndefined()
+    expect(callBody(1).stream).toBeUndefined()
+    expect(data.result).toContain('Formatted from fallback')
+  })
 })
 
 describe('api/ai regression — existing per-section tasks', () => {
