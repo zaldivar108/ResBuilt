@@ -12,8 +12,10 @@ const today = () => new Date().toISOString().slice(0, 10)
 // keywords + honest bullet suggestions) grounded against THIS section. Optional
 // one-click rewrite reorders the section's existing content to fit the posting
 // (no fabrication). One 8B call per action, cached + budgeted.
-export default function JobTailor({ section, onApply }) {
-  const [posting, setPosting] = useState('')
+export default function JobTailor({ section, onApply, targetJob = null, onSaveTargetJob = () => {} }) {
+  // ADR 0004: the posting is the document's tailoring target, not dock-session
+  // state — hydrate once from the résumé's persisted targetJob on mount.
+  const [posting, setPosting] = useState(() => targetJob?.text ?? '')
   const [analysis, setAnalysis] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -22,10 +24,20 @@ export default function JobTailor({ section, onApply }) {
   const [notice, setNotice] = useState('')        // one-line note after a quiz prefill
   const abortRef = useRef(null)    // cancels the in-flight request on unmount/tab switch
   const mountedRef = useRef(true)  // guards setState after unmount
+  // Provenance of the CURRENT posting text, so re-analyzing without editing
+  // doesn't clobber a quiz-sourced target back to 'pasted' (ADR 0004).
+  const sourceRef = useRef(targetJob?.source === 'quiz' ? 'quiz' : 'pasted')
+  const titleRef = useRef(targetJob?.title)
   useEffect(() => {
     mountedRef.current = true
     return () => { mountedRef.current = false; abortRef.current?.abort() }
   }, [])
+
+  function handlePostingChange(e) {
+    sourceRef.current = 'pasted'
+    titleRef.current = undefined
+    setPosting(e.target.value)
+  }
 
   const combined = `JOB POSTING:\n${posting}\n\nRÉSUMÉ SECTION:\n${section?.content ?? ''}`
 
@@ -51,6 +63,9 @@ export default function JobTailor({ section, onApply }) {
     const hadText = posting.trim().length > 0
     setPosting(text)
     setAnalysis(null) // any prior analysis was for a different job
+    sourceRef.current = 'quiz'
+    titleRef.current = career.title
+    onSaveTargetJob({ text, title: career.title, source: 'quiz', savedAt: new Date().toISOString() })
     if (degraded) {
       note(`Couldn’t load full duties — analyzing against “${career.title}”. Paste the real posting for a sharper match.`)
     } else if (hadText) {
@@ -98,6 +113,7 @@ export default function JobTailor({ section, onApply }) {
   function analyze() {
     if (!posting.trim() || busy) return
     setAnalysis(null) // drop any stale analysis so it can't render beside a new error
+    onSaveTargetJob({ text: posting, title: titleRef.current, source: sourceRef.current, savedAt: new Date().toISOString() })
     callTask('tailor', result => {
       const parsed = parseTailorResult(result)
       if (!parsed.ok) { setError(parsed.error); return }
@@ -118,6 +134,14 @@ export default function JobTailor({ section, onApply }) {
     })
   }
 
+  function clearTarget() {
+    setPosting('')
+    setAnalysis(null)
+    sourceRef.current = 'pasted'
+    titleRef.current = undefined
+    onSaveTargetJob(null)
+  }
+
   return (
     <div className="tailor-panel">
       <label className="onet-label" htmlFor="tailor-posting">Paste a job posting</label>
@@ -125,7 +149,7 @@ export default function JobTailor({ section, onApply }) {
         id="tailor-posting"
         className="tailor-textarea"
         value={posting}
-        onChange={e => setPosting(e.target.value)}
+        onChange={handlePostingChange}
         placeholder="Paste the job description here…"
         rows={4}
       />
@@ -135,6 +159,9 @@ export default function JobTailor({ section, onApply }) {
         </button>
         <button type="button" className="tailor-quiz-btn" disabled={busy} onClick={() => setShowQuiz(true)}>
           Not sure? Take the quiz
+        </button>
+        <button type="button" className="tailor-quiz-btn" disabled={busy || !posting.trim()} onClick={clearTarget}>
+          Clear target
         </button>
       </div>
 

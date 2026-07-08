@@ -3,7 +3,7 @@ id: 003
 title: Word-level diff preview before Apply (jsdiff)
 adr: 0003
 type: AFK
-status: ready
+status: done
 blocked_by: []
 ---
 

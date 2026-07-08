@@ -134,6 +134,20 @@ const TASKS = {
       'Do NOT add skills, employers, numbers, dates, or achievements that are not already in the section. Preserve the HTML structure and tags (<p>, <ul>, <li>, <strong>, <em>). ' +
       'Return ONLY the rewritten HTML — no markdown, no code fences, no commentary.',
   },
+  review: {
+    tier: 'large',
+    maxInput: 8000,
+    maxTokens: 1600,
+    temperature: 0.3,
+    json: true,
+    jsonRequire: 'sections',
+    prompt:
+      'You review a whole résumé for a teenager or young adult, section by section. The input has one or more blocks of the form "SECTION <type> (id: <id>, title: \\"<title>\\"):" followed by that section\'s plain text. ' +
+      'Return ONLY a JSON object of the form {"sections":{"<id>":{"strengths":[string],"issues":[string]}}} — one entry per section id you were given, using the EXACT id strings from the input. ' +
+      'strengths = up to 2 short, specific things that section does well. issues = up to 3 short, specific, actionable things to improve (e.g. "add a number to this bullet", "this phrase is generic — say what you actually want"). ' +
+      'Be encouraging and honest for a first-time résumé writer; never invent facts about them, only comment on how the text is written. Omit a section entirely if you have nothing useful to say about it. ' +
+      'No markdown, no code fences, no commentary — the JSON object only.',
+  },
   import: {
     tier: 'large',
     maxInput: 8000,
@@ -150,6 +164,13 @@ const TASKS = {
       'No markdown, no code fences, no commentary — return the JSON object only.',
   },
 }
+
+// Selection-level "Improve this" (ADR 0006) reuses the `improve` task — same
+// tier/budget/cache/consent — with this hint appended when the client sends
+// `fragment: true`, so the model knows it received a bare fragment of plain
+// text (not a full HTML section) and must not wrap or restructure it.
+const FRAGMENT_HINT =
+  ' The user selected and sent ONLY a short fragment of plain text from within a larger section — not a full section, not HTML. Rewrite just that fragment. Return ONLY the rewritten plain text — no HTML tags, no markdown, no code fences, no commentary.'
 
 // The "format" task adapts to the section it's run on: each résumé section type
 // has its own conventional layout. The matching hint is appended to the base
@@ -230,6 +251,7 @@ export default async function handler(req) {
       : FORMAT_HINTS.default
     systemPrompt += ' ' + hint
   }
+  if (task === 'improve' && body.fragment === true) systemPrompt += FRAGMENT_HINT
 
   const requestBody = model => JSON.stringify({
     model,

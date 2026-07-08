@@ -144,6 +144,39 @@ describe('ResumeContext — updateResume', () => {
   })
 })
 
+describe('ResumeContext — targetJob (ADR 0004)', () => {
+  test('updateResume persists an arbitrary targetJob shape and it round-trips via localStorage', () => {
+    const { result } = setup()
+    let created
+    act(() => { created = result.current.createResume('Job seeker') })
+    const targetJob = { text: 'Cashier posting…', source: 'pasted', savedAt: '2026-07-08T00:00:00.000Z' }
+
+    act(() => { result.current.updateResume(created.id, { targetJob }) })
+    expect(result.current.getResume(created.id).targetJob).toEqual(targetJob)
+    expect(readStore('resbuilt_resumes').find(r => r.id === created.id).targetJob).toEqual(targetJob)
+  })
+
+  test('a résumé created before this feature has no targetJob field (no migration needed)', () => {
+    const { result } = setup()
+    let created
+    act(() => { created = result.current.createResume('Old résumé') })
+    expect(created.targetJob).toBeUndefined()
+  })
+
+  test('duplicateResume deep-copies the targetJob', () => {
+    const { result } = setup()
+    let original
+    act(() => { original = result.current.createResume('Original') })
+    const targetJob = { text: 'Waiter posting', source: 'quiz', title: 'Waiters and Waitresses' }
+    act(() => { result.current.updateResume(original.id, { targetJob }) })
+
+    let copy
+    act(() => { copy = result.current.duplicateResume(original.id) })
+    expect(copy.targetJob).toEqual(targetJob)
+    expect(copy.targetJob).not.toBe(result.current.getResume(original.id).targetJob) // deep copy
+  })
+})
+
 describe('ResumeContext — deleteResume', () => {
   test('removes the matching resume only', () => {
     const { result } = setup()

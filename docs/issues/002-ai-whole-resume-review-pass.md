@@ -3,7 +3,7 @@ id: 002
 title: AI whole-résumé review pass (review task + panel button)
 adr: 0002
 type: AFK
-status: ready
+status: done
 blocked_by: [001]
 ---
 

@@ -81,6 +81,86 @@ describe('JobTailor', () => {
   })
 })
 
+describe('JobTailor — persisted targetJob (ADR 0004)', () => {
+  test('hydrates the posting box from a persisted targetJob on mount', () => {
+    render(<JobTailor section={section} onApply={() => {}} targetJob={{ text: 'Old saved posting', source: 'pasted' }} />)
+    expect(screen.getByLabelText(/paste a job posting/i).value).toBe('Old saved posting')
+  })
+
+  test('with no targetJob, the posting box starts empty (old résumés behave as before)', () => {
+    render(<JobTailor section={section} onApply={() => {}} />)
+    expect(screen.getByLabelText(/paste a job posting/i).value).toBe('')
+  })
+
+  test('analyzing a manually-typed posting persists it with source "pasted"', async () => {
+    mockFetch({ result: JSON.stringify({ matched: [], missing: [], suggestions: [] }) })
+    const onSaveTargetJob = vi.fn()
+    render(<JobTailor section={section} onApply={() => {}} onSaveTargetJob={onSaveTargetJob} />)
+    typePosting('Cashier: register, customer service')
+    fireEvent.click(screen.getByRole('button', { name: /analyze match/i }))
+
+    await waitFor(() => expect(onSaveTargetJob).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Cashier: register, customer service', source: 'pasted' })
+    ))
+  })
+
+  test('picking a quiz career persists the target with source "quiz" and its title', async () => {
+    mockFetch({ occupation: { title: 'Waiters and Waitresses', tasks: ['Serve food.'] } })
+    const onSaveTargetJob = vi.fn()
+    render(<JobTailor section={section} onApply={() => {}} onSaveTargetJob={onSaveTargetJob} />)
+    fireEvent.click(screen.getByRole('button', { name: /take the quiz/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'pick-career' }))
+
+    await waitFor(() => expect(onSaveTargetJob).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'quiz', title: 'Waiters and Waitresses' })
+    ))
+  })
+
+  test('re-analyzing an unedited quiz-sourced posting keeps source "quiz"', async () => {
+    mockFetch({ occupation: { title: 'Waiters and Waitresses', tasks: ['Serve food.'] } })
+    const onSaveTargetJob = vi.fn()
+    render(<JobTailor section={section} onApply={() => {}} onSaveTargetJob={onSaveTargetJob} />)
+    fireEvent.click(screen.getByRole('button', { name: /take the quiz/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'pick-career' }))
+    await waitFor(() => expect(screen.getByLabelText(/paste a job posting/i).value).toContain('Serve food.'))
+
+    onSaveTargetJob.mockClear()
+    mockFetch({ result: JSON.stringify({ matched: [], missing: [], suggestions: [] }) })
+    fireEvent.click(screen.getByRole('button', { name: /analyze match/i }))
+
+    await waitFor(() => expect(onSaveTargetJob).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'quiz', title: 'Waiters and Waitresses' })
+    ))
+  })
+
+  test('editing the posting after a quiz pick reverts provenance to "pasted"', async () => {
+    mockFetch({ occupation: { title: 'Waiters and Waitresses', tasks: ['Serve food.'] } })
+    const onSaveTargetJob = vi.fn()
+    render(<JobTailor section={section} onApply={() => {}} onSaveTargetJob={onSaveTargetJob} />)
+    fireEvent.click(screen.getByRole('button', { name: /take the quiz/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'pick-career' }))
+    await waitFor(() => expect(screen.getByLabelText(/paste a job posting/i).value).toContain('Serve food.'))
+
+    typePosting('A manually edited posting')
+    onSaveTargetJob.mockClear()
+    mockFetch({ result: JSON.stringify({ matched: [], missing: [], suggestions: [] }) })
+    fireEvent.click(screen.getByRole('button', { name: /analyze match/i }))
+
+    await waitFor(() => expect(onSaveTargetJob).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'pasted', title: undefined })
+    ))
+  })
+
+  test('"Clear target" empties the posting and clears the persisted target', () => {
+    const onSaveTargetJob = vi.fn()
+    render(<JobTailor section={section} onApply={() => {}} targetJob={{ text: 'Old posting', source: 'pasted' }} onSaveTargetJob={onSaveTargetJob} />)
+    fireEvent.click(screen.getByRole('button', { name: /clear target/i }))
+
+    expect(screen.getByLabelText(/paste a job posting/i).value).toBe('')
+    expect(onSaveTargetJob).toHaveBeenCalledWith(null)
+  })
+})
+
 describe('JobTailor — quiz-to-tailor bridge', () => {
   const box = () => screen.getByLabelText(/paste a job posting/i)
 

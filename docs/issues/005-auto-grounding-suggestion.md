@@ -3,7 +3,7 @@ id: 005
 title: Auto-suggest grounding occupation (chip in Ideas)
 adr: 0005
 type: AFK
-status: ready
+status: done
 blocked_by: [004]
 ---
 

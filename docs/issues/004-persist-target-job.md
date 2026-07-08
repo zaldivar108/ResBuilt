@@ -3,7 +3,7 @@ id: 004
 title: Persist targetJob on the résumé object
 adr: 0004
 type: AFK
-status: ready
+status: done
 blocked_by: []
 ---
 

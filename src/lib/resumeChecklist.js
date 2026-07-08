@@ -32,7 +32,13 @@ const PAST_VERBS = new Set(VERB_PAIRS.map(([, past]) => past))
 // layout measurement (the editor's own overflow check does that precisely).
 const PAGE_CHAR_BUDGET = 3000
 
-function stripHtml(html) {
+/**
+ * Plain text from a section's HTML content. Exported for reuse by anything
+ * that needs the same text (e.g. resumeReview.js's AI-review payload).
+ * @param {string} html
+ * @returns {string}
+ */
+export function htmlToText(html) {
   if (typeof html !== 'string' || !html) return ''
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html')
   return doc.body.textContent || ''
@@ -71,7 +77,7 @@ function checkNumberlessBullets(section) {
 
 function checkGenericObjective(section) {
   if (!OBJECTIVE_SECTION_TYPES.has(section.type)) return null
-  const text = stripHtml(section.content).toLowerCase()
+  const text = htmlToText(section.content).toLowerCase()
   const hit = GENERIC_PHRASES.find(phrase => text.includes(phrase))
   if (!hit) return null
   return {
@@ -105,7 +111,7 @@ function checkTenseInconsistency(section) {
 
 function checkDuplicateSkills(section) {
   if (!SKILLS_SECTION_TYPES.has(section.type)) return null
-  const text = stripHtml(section.content)
+  const text = htmlToText(section.content)
   const tokens = text
     .split(/[,|•\n]/)
     .map(t => t.trim().replace(/^[-–—]\s*/, ''))
@@ -128,7 +134,7 @@ function checkDuplicateSkills(section) {
 }
 
 function checkLength(sections) {
-  const totalChars = sections.reduce((sum, s) => sum + stripHtml(s.content).length, 0)
+  const totalChars = sections.reduce((sum, s) => sum + htmlToText(s.content).length, 0)
   if (totalChars <= PAGE_CHAR_BUDGET) return null
   return {
     heuristic: 'length',

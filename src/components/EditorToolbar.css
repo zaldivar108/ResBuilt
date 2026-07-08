@@ -28,6 +28,8 @@
 }
 .tb-icon-btn:hover  { background: rgba(59,91,219,0.08); color: var(--accent); }
 .tb-icon-btn.active { background: rgba(59,91,219,0.12); color: var(--accent); }
+.tb-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.tb-icon-btn:disabled:hover { background: none; color: #64748B; }
 
 /* ── Separator ── */
 .tb-sep {

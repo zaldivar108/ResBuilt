@@ -132,6 +132,75 @@
 }
 .checklist-item-arrow { flex-shrink: 0; color: var(--text-muted); }
 
+/* AI review — distinct area below the on-device findings, same panel */
+.checklist-ai-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.checklist-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-strong);
+  margin-bottom: 10px;
+}
+.checklist-ai-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-tint);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.checklist-ai-btn:hover:not(:disabled) { background: var(--accent-tint-strong); }
+.checklist-ai-btn:disabled { opacity: 0.55; cursor: default; }
+.checklist-ai-consent {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+.checklist-ai-error {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.checklist-ai-retry {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.checklist-ai-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.checklist-ai-list > li { padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface-2); }
+.checklist-ai-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 6px; }
+.checklist-ai-strength { font-size: 13px; color: var(--text-primary); padding: 2px 0 2px 14px; position: relative; }
+.checklist-ai-strength::before { content: '+'; position: absolute; left: 0; color: var(--success); font-weight: 700; }
+.checklist-ai-issue { font-size: 13px; color: var(--text-primary); padding: 2px 0 2px 14px; position: relative; }
+.checklist-ai-issue::before { content: '–'; position: absolute; left: 0; color: var(--warning); font-weight: 700; }
+
+.editor-layout.dark .checklist-ai-section { border-top-color: #262A33; }
+.editor-layout.dark .checklist-ai-btn { background: rgba(59,91,219,0.18); border-color: var(--accent-soft); color: var(--accent-soft); }
+.editor-layout.dark .checklist-ai-btn:hover:not(:disabled) { background: rgba(59,91,219,0.28); }
+.editor-layout.dark .checklist-ai-list > li { background: #0F1115; }
+.editor-layout.dark .checklist-ai-section-title { color: #979CA6; }
+.editor-layout.dark .checklist-ai-strength,
+.editor-layout.dark .checklist-ai-issue { color: #E5E4DF; }
+
 /* Dark mode */
 .editor-layout.dark .checklist-trigger-btn {
   background: #14161C;

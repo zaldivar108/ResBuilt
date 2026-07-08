@@ -15,6 +15,7 @@ import { AiProvider, AiControls, AiWorkspace, AiInfoOrb } from '../components/ui
 import AccentColorPicker from '../components/ui/AccentColorPicker'
 import ResumeChecklistPanel, { ChecklistTriggerButton } from '../components/ui/ResumeChecklistPanel'
 import { sanitizeHtml } from '../lib/sanitizeHtml'
+import { isSelectionRangeStale, replaceSelectionRange } from '../lib/selectionRange'
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core'
@@ -143,6 +144,32 @@ export default function Editor() {
     if (editorRef.current) editorRef.current.innerHTML = html
   }
 
+  // Selection-level "Improve this" (ADR 0006): replace exactly the captured
+  // range, never the whole section. Refuses (never guesses) if the section,
+  // selection, or content changed since capture — the range-integrity rule.
+  function applyAiToRange(captured, rawHtml) {
+    if (!editorRef.current || !activeSectionId) return { ok: false, reason: 'no-section' }
+    if (isSelectionRangeStale(captured, editorRef.current, activeSectionId)) {
+      return { ok: false, reason: 'stale' }
+    }
+
+    const prevContent = editorRef.current.innerHTML
+    const html = sanitizeHtml(rawHtml)
+    const replaced = replaceSelectionRange(editorRef.current, captured, html)
+    if (!replaced) return { ok: false, reason: 'stale' }
+
+    const newContent = editorRef.current.innerHTML
+    setLastAiEdit({ sectionId: activeSectionId, prevContent })
+    clearTimeout(aiUndoTimerRef.current)
+    aiUndoTimerRef.current = setTimeout(() => setLastAiEdit(null), 8000)
+
+    patch(prev => ({
+      ...prev,
+      sections: prev.sections.map(s => s.id === activeSectionId ? { ...s, content: newContent } : s),
+    }))
+    return { ok: true }
+  }
+
   function undoAiEdit() {
     if (!lastAiEdit) return
     const { sectionId, prevContent } = lastAiEdit
@@ -253,6 +280,18 @@ export default function Editor() {
     setNewSectionTitle('')
   }
 
+  // ADR 0004: the job-match target lives on the résumé record (not JobTailor's
+  // component state), so it survives reloads/section switches. `null` clears it.
+  function saveTargetJob(targetJob) {
+    patch(prev => ({ ...prev, targetJob }))
+  }
+
+  // ADR 0005: remember a dismissed grounding-occupation suggestion per résumé
+  // so it doesn't re-nag on every visit to the Ideas surface.
+  function dismissGrounding() {
+    patch(prev => ({ ...prev, groundingDismissed: true }))
+  }
+
   function updateStyles(patch_) {
     patch(prev => ({ ...prev, styles: { ...prev.styles, ...patch_ } }))
   }
@@ -342,7 +381,17 @@ export default function Editor() {
       {/* Body: 4-column layout. AiProvider spans the sections sidebar (controls)
           and the editor column (workspace) so the two AI surfaces share state. */}
       <div className="editor-body">
-       <AiProvider section={activeSection} onApply={applyAiToSection}>
+       <AiProvider
+         section={activeSection}
+         onApply={applyAiToSection}
+         onApplyRange={applyAiToRange}
+         targetJob={resume.targetJob ?? null}
+         onSaveTargetJob={saveTargetJob}
+         resumeTitle={resume.title}
+         sections={resume.sections}
+         groundingDismissed={!!resume.groundingDismissed}
+         onDismissGrounding={dismissGrounding}
+       >
 
         {/* Col 1 — Sections sidebar (dark) */}
         <aside className={`sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>

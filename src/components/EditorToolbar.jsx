@@ -4,7 +4,7 @@ import { ChevronDownIcon } from '@radix-ui/react-icons'
 import {
   Bold, Italic, Underline, Strikethrough, Link,
   AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered,
+  List, ListOrdered, Sparkles,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -16,6 +16,8 @@ import {
   FONTS, SIZES,
   firstFont, fontLabelFromFamily, getInlinePt,
 } from '../lib/toolbarUtils'
+import { useAi } from './ui/AiInput'
+import { captureSelectionRange } from '../lib/selectionRange'
 import './EditorToolbar.css'
 
 /* ── Tooltip ── */
@@ -48,12 +50,13 @@ function Tooltip({ label, children }) {
 
 /* ── Icon button ── */
 
-function TbBtn({ icon: Icon, label, active, onMouseDown }) {
+function TbBtn({ icon: Icon, label, active, disabled, onMouseDown }) {
   return (
     <Tooltip label={label}>
       <button
         className={`tb-icon-btn${active ? ' active' : ''}`}
         onMouseDown={onMouseDown}
+        disabled={disabled}
         aria-label={label}
       >
         <Icon size={15} strokeWidth={2} />
@@ -66,6 +69,7 @@ function TbBtn({ icon: Icon, label, active, onMouseDown }) {
 
 export default function EditorToolbar({ editorRef, fontFamily, fontSize }) {
   const savedRange = useRef(null)
+  const { section, busy, runFragmentTask } = useAi()
 
   const [activeFontLabel, setActiveFontLabel] = useState(() => fontLabelFromFamily(fontFamily))
   const [activeSizeLabel, setActiveSizeLabel] = useState(() => fontSize ? `${fontSize}pt` : 'Size')
@@ -74,14 +78,19 @@ export default function EditorToolbar({ editorRef, fontFamily, fontSize }) {
     strikeThrough: false, justifyLeft: false, justifyCenter: false, justifyRight: false,
     insertUnorderedList: false, insertOrderedList: false,
   })
+  // Non-empty text selection inside the editor (ADR 0006) — gates the AI button.
+  const [hasSelection, setHasSelection] = useState(false)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setActiveFontLabel(fontLabelFromFamily(fontFamily)) }, [fontFamily])
   useEffect(() => { setActiveSizeLabel(fontSize ? `${fontSize}pt` : 'Size') }, [fontSize])
 
   const resolveState = useCallback(() => {
     if (!editorRef.current) return
     const sel = window.getSelection()
-    if (!sel || !editorRef.current.contains(sel.anchorNode)) return
+    const inEditor = !!sel && editorRef.current.contains(sel.anchorNode)
+    setHasSelection(inEditor && !sel.isCollapsed && sel.toString().trim().length > 0)
+    if (!inEditor) return
 
     // Font family
     const raw = document.queryCommandValue('fontName').toLowerCase()
@@ -175,6 +184,16 @@ export default function EditorToolbar({ editorRef, fontFamily, fontSize }) {
     if (url) document.execCommand('createLink', false, url)
   }
 
+  // Selection-level "Improve this" (ADR 0006) — capture the range at click
+  // time (before mousedown can shift focus/collapse the selection), then run
+  // it through the same `improve` pipeline as a normal AI action.
+  function handleAiImprove() {
+    if (!editorRef.current || !section) return
+    const captured = captureSelectionRange(editorRef.current, section.id)
+    if (!captured) return
+    runFragmentTask(captured)
+  }
+
   return (
     <div className="editor-toolbar">
       {/* Formatting */}
@@ -232,6 +251,17 @@ export default function EditorToolbar({ editorRef, fontFamily, fontSize }) {
       {/* Lists */}
       <TbBtn icon={List}        label="Bullet List"   active={fmt.insertUnorderedList} onMouseDown={prevent(() => exec('insertUnorderedList'))} />
       <TbBtn icon={ListOrdered} label="Numbered List" active={fmt.insertOrderedList}   onMouseDown={prevent(() => exec('insertOrderedList'))} />
+
+      <div className="tb-sep" />
+
+      {/* Selection-level AI (ADR 0006) — enabled only over a non-empty selection */}
+      <TbBtn
+        icon={Sparkles}
+        label={hasSelection ? 'Improve this selection (sent to the AI service)' : 'Select some text to improve it with AI'}
+        active={false}
+        disabled={!hasSelection || busy}
+        onMouseDown={prevent(handleAiImprove)}
+      />
     </div>
   )
 }

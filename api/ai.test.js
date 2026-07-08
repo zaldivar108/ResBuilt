@@ -88,6 +88,47 @@ describe('api/ai import task', () => {
   })
 })
 
+describe('api/ai review task (whole-résumé review)', () => {
+  test('is a recognized task', async () => {
+    const res = await handler(req({ task: 'review', text: 'SECTION summary (id: s1, title: "Summary"):\nHi' }))
+    expect(res.status).toBe(200)
+  })
+
+  test('requests JSON mode, a larger token budget, and the 70B model', async () => {
+    await handler(req({ task: 'review', text: 'a'.repeat(500) }))
+    const body = sentBody()
+    expect(body.response_format).toEqual({ type: 'json_object' })
+    expect(body.max_tokens).toBeGreaterThanOrEqual(1600)
+    expect(body.model).toBe('llama-3.3-70b-versatile')
+  })
+
+  test('accepts up to 8000 chars, rejects beyond', async () => {
+    const ok = await handler(req({ task: 'review', text: 'a'.repeat(8000) }))
+    expect(ok.status).toBe(200)
+    const over = await handler(req({ task: 'review', text: 'a'.repeat(8001) }))
+    expect(over.status).toBe(413)
+  })
+
+  test('returns the raw JSON string as { result }', async () => {
+    fetchMock.mockResolvedValue(groqOk('{"sections":{"s1":{"strengths":["Clear"],"issues":[]}}}'))
+    const res = await handler(req({ task: 'review', text: 'a'.repeat(200) }))
+    const data = await res.json()
+    expect(data.result).toContain('strengths')
+  })
+
+  test('falls back to Groq when OpenCode returns valid JSON of the wrong shape', async () => {
+    process.env.OPENCODE_API_KEY = 'oc-key'
+    mockByUrl({
+      [OC]: groqOk('{"html":"<p>oops</p>"}'),
+      [GROQ]: groqOk('{"sections":{"s1":{"strengths":[],"issues":["Too generic"]}}}'),
+    })
+    const res = await handler(req({ task: 'review', text: 'a'.repeat(200) }))
+    expect(res.status).toBe(200)
+    expect(callUrl(1)).toContain(GROQ)
+    expect((await res.json()).result).toContain('Too generic')
+  })
+})
+
 describe('api/ai polish task (O*NET-grounded rewrite)', () => {
   test('is a recognized task', async () => {
     const res = await handler(req({ task: 'polish', text: 'Receive payment by cash.' }))
@@ -184,6 +225,33 @@ describe('api/ai format task (paragraph → bullet points)', () => {
     expect(callBody(0).stream).toBeUndefined()
     expect(callBody(1).stream).toBeUndefined()
     expect(data.result).toContain('Formatted from fallback')
+  })
+})
+
+describe('api/ai improve task — fragment mode (ADR 0006)', () => {
+  test('appends the fragment hint when fragment: true', async () => {
+    await handler(req({ task: 'improve', text: 'helped customers', fragment: true }))
+    const sys = sentBody().messages[0].content
+    expect(sys).toContain('ONLY a short fragment of plain text')
+  })
+
+  test('does not append the fragment hint by default (whole-section improve unchanged)', async () => {
+    await handler(req({ task: 'improve', text: '<p>Helped customers.</p>' }))
+    const sys = sentBody().messages[0].content
+    expect(sys).not.toContain('short fragment of plain text')
+  })
+
+  test('fragment mode uses the same model, budget, and no JSON mode as normal improve', async () => {
+    await handler(req({ task: 'improve', text: 'helped customers', fragment: true }))
+    const body = sentBody()
+    expect(body.model).toBe('llama-3.1-8b-instant')
+    expect(body.response_format).toBeUndefined()
+    expect(body.max_tokens).toBe(600 + 2000)
+  })
+
+  test('fragment mode still enforces the same 3500-char cap', async () => {
+    const res = await handler(req({ task: 'improve', text: 'a'.repeat(3501), fragment: true }))
+    expect(res.status).toBe(413)
   })
 })
 

@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, createContext, useContext } from 'react'
+import { useState, useRef, useEffect, useMemo, createContext, useContext } from 'react'
+import { suggestGroundingOccupation } from '../../lib/groundingSuggest'
+import GroundingSuggestChip from './GroundingSuggestChip'
 import { fixGrammarInHtml } from '../../lib/grammarFix'
 import { getLinter } from '../../lib/harperLinter'
 import { sanitizeHtml } from '../../lib/sanitizeHtml'
@@ -9,6 +11,7 @@ import { formatContactLocal } from '../../lib/contactFormat'
 import { streamAiTask } from '../../lib/streamAi'
 import OnetSuggest from './OnetSuggest'
 import JobTailor from './JobTailor'
+import DiffPreview from './DiffPreview'
 import './AiInput.css'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -50,9 +53,14 @@ export function ColorOrb({ dimension = '24px', spinDuration = 20 }) {
 // column) shows the textbox/answers. Both read from this single provider so the
 // two surfaces stay in sync.
 const AiCtx = createContext(null)
-const useAi = () => useContext(AiCtx)
+export const useAi = () => useContext(AiCtx)
 
-export function AiProvider({ section = null, onApply = () => {}, children }) {
+export function AiProvider({
+  section = null, onApply = () => {}, onApplyRange = () => ({ ok: false }),
+  targetJob = null, onSaveTargetJob = () => {},
+  resumeTitle = '', sections = [], groundingDismissed = false, onDismissGrounding = () => {},
+  children,
+}) {
   const [result, setResult] = useState('')
   const [resultFor, setResultFor] = useState(null) // section id the result was generated for
   const [lastTask, setLastTask] = useState(null)
@@ -63,6 +71,11 @@ export function AiProvider({ section = null, onApply = () => {}, children }) {
   const [mode, setMode] = useState('ai') // 'ai' = rewrite tasks · 'onet' = duties · 'tailor' = match
   const [groundOcc, setGroundOcc] = useState(null) // O*NET occupation to ground "ideas" on
   const [attempt, setAttempt] = useState(null)     // last task attempted, for the "Try again" button
+  // Selection-level "Improve this" (ADR 0006): set only while the current
+  // result/Apply cycle is scoped to a captured text range, never a whole
+  // section. Cleared the moment a normal (whole-section) task runs, or after
+  // Apply resolves — a stale capture must never be reused.
+  const [fragmentCaptured, setFragmentCaptured] = useState(null)
   const coolingRef = useRef(false)
   const reqIdRef = useRef(0)          // monotonic id: only the latest request may touch state
   const abortRef = useRef(null)       // cancels a superseded/abandoned request
@@ -79,6 +92,7 @@ export function AiProvider({ section = null, onApply = () => {}, children }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setResult(''); setResultFor(null); setLastTask(null); setAttempt(null)
     setError(''); setApplied(false); setBusy(false); setLoading(false)
+    setFragmentCaptured(null)
     return () => abortRef.current?.abort()
   }, [sectionId])
 
@@ -86,6 +100,7 @@ export function AiProvider({ section = null, onApply = () => {}, children }) {
     if (busy) return
     if (!section) { setError('Select a section to edit first.'); return }
     if (coolingRef.current) { setError('One moment — try again in a second.'); return }
+    setFragmentCaptured(null) // a whole-section task supersedes any pending fragment context
 
     // Friendly length pre-flight — better than a post-hoc 413 after waiting.
     const limit = MAX_INPUT[task]
@@ -192,24 +207,124 @@ export function AiProvider({ section = null, onApply = () => {}, children }) {
     }
   }
 
+  // Selection-level "Improve this" (ADR 0006): same request lifecycle as
+  // runTask (cooldown/cache/budget/abort), but sources text from a captured
+  // fragment instead of the whole section, and never touches the `improve`
+  // per-task branches (grammar/format/ideas) that don't apply to a fragment.
+  async function runFragmentTask(captured) {
+    if (busy) return
+    if (!section || captured.sectionId !== section.id) {
+      setError('This section changed — reselect the text and try again.')
+      return
+    }
+    if (coolingRef.current) { setError('One moment — try again in a second.'); return }
+
+    const limit = MAX_INPUT.improve
+    if (captured.text.length > limit) {
+      setError(`That selection is long for AI (${captured.text.length}/${limit} characters). Select a shorter fragment and try again.`)
+      return
+    }
+
+    coolingRef.current = true
+    setTimeout(() => { coolingRef.current = false }, COOLDOWN_MS)
+
+    const forId = section.id
+    const reqId = ++reqIdRef.current
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const active = () => reqId === reqIdRef.current
+    setAttempt('improve')
+
+    setBusy(true)
+    setLoading(true)
+    setError('')
+    setResult('')
+    setApplied(false)
+    setFragmentCaptured(captured)
+
+    const cacheKey = captured.text
+    const cached = getCached('improve', cacheKey)
+    if (cached) {
+      setResult(cached); setResultFor(forId); setLastTask('improve')
+      setBusy(false); setLoading(false)
+      return
+    }
+
+    if (!canUseAI(today())) {
+      setError('You’ve reached today’s AI limit. Fix grammar still works offline — or come back tomorrow.')
+      setBusy(false); setLoading(false)
+      return
+    }
+
+    try {
+      const payload = { task: 'improve', text: captured.text, fragment: true }
+      let streamed = false
+      const full = await streamAiTask(payload, partial => {
+        if (!active()) return
+        if (!streamed) { streamed = true; setLoading(false) }
+        setResult(sanitizeHtml(stripFences(partial)))
+      }, { signal: controller.signal })
+      if (!active()) return
+      const clean = sanitizeHtml(stripFences(full))
+      setResult(clean); setResultFor(forId); setLastTask('improve')
+      setCached('improve', cacheKey, clean)
+      recordUse(today())
+    } catch (err) {
+      if (err?.name === 'AbortError' || !active()) return
+      setError(err?.message || 'Could not reach the AI. If running locally, use `vercel dev`.')
+    } finally {
+      if (active()) { setBusy(false); setLoading(false) }
+    }
+  }
+
+  // Clears the applied result after the flash so the Apply button can never
+  // be clicked a second time on stale data — a lingering `result` otherwise
+  // reads as a fresh whole-section replacement on a second click, silently
+  // overwriting the section with just the (already-applied) fragment text.
+  function flashApplied() {
+    setApplied(true)
+    setTimeout(() => {
+      setApplied(false)
+      setResult(''); setResultFor(null); setLastTask(null)
+    }, 1500)
+  }
+
   function applyResult() {
     // Guard: never apply a preview built for a different section than the active one.
-    if (!result || !section || resultFor !== section.id) return
+    if (!result || !section || resultFor !== section.id || applied) return
+
+    if (fragmentCaptured) {
+      const outcome = onApplyRange(fragmentCaptured, result)
+      setFragmentCaptured(null) // one-shot — a used or refused capture must never be reused
+      if (!outcome?.ok) {
+        setError('This section changed since you selected that text — reselect and try again.')
+        return
+      }
+      flashApplied()
+      return
+    }
+
     // 'ideas' returns new bullets to append; other tasks return the rewritten section.
     const next = lastTask === 'ideas' ? section.content + result : result
     onApply(next)
-    setApplied(true)
-    setTimeout(() => setApplied(false), 1500)
+    flashApplied()
   }
 
   // The value changes on every state transition anyway (state lives here), so
   // memoizing it would buy nothing — build it plainly each render.
+  const groundingSuggestion = useMemo(() => {
+    if (groundOcc || groundingDismissed) return null
+    return suggestGroundingOccupation({ title: resumeTitle, targetJob, sections })
+  }, [groundOcc, groundingDismissed, resumeTitle, targetJob, sections])
+
   const value = {
-    section, onApply, aiLeft,
+    section, onApply, aiLeft, targetJob, onSaveTargetJob,
+    groundingSuggestion, onDismissGrounding,
     mode, setMode,
     result, resultFor, lastTask, loading, busy, error, applied, attempt,
     groundOcc, setGroundOcc,
-    runTask, applyResult,
+    runTask, applyResult, runFragmentTask, fragmentCaptured,
     applyLabel: lastTask === 'ideas' ? 'Add to section' : 'Apply to section',
   }
 
@@ -330,7 +445,9 @@ export function AiWorkspace() {
   const {
     section, onApply, mode, groundOcc, setGroundOcc,
     loading, error, busy, attempt, runTask,
-    result, applied, applyResult, applyLabel, aiLeft,
+    result, lastTask, applied, applyResult, applyLabel, aiLeft,
+    targetJob, onSaveTargetJob, groundingSuggestion, onDismissGrounding,
+    fragmentCaptured,
   } = useAi()
 
   return (
@@ -351,7 +468,7 @@ export function AiWorkspace() {
           <p className="ai-ws-empty">Select a section, then search a real job to pull in its duties.</p>
         )
       ) : mode === 'tailor' ? (
-        <JobTailor section={section} onApply={onApply} />
+        <JobTailor section={section} onApply={onApply} targetJob={targetJob} onSaveTargetJob={onSaveTargetJob} />
       ) : (
         <>
           {/* Grounding only applies to "Suggest ideas", which is disabled on
@@ -361,6 +478,12 @@ export function AiWorkspace() {
               <div className="ai-ground-hint">
                 Ideas grounded in real <strong>{groundOcc.title}</strong> duties
               </div>
+            ) : groundingSuggestion ? (
+              <GroundingSuggestChip
+                suggestion={groundingSuggestion}
+                onAccept={setGroundOcc}
+                onDismiss={onDismissGrounding}
+              />
             ) : (
               <div className="ai-ground-hint ai-ground-tip">
                 Tip: pick a job in <strong>Real job duties</strong> to ground “Suggest ideas” in real tasks.
@@ -382,11 +505,17 @@ export function AiWorkspace() {
 
           {result && !loading && (
             <div className="ai-result" aria-live="polite">
-              <div
-                className="ai-result-text"
-                dangerouslySetInnerHTML={{ __html: result }}
-              />
-              <button type="button" className="ai-apply-btn" onClick={applyResult}>
+              {/* 'ideas' appends new bullets — nothing to diff against. Every
+                  other task replaces the section, so show what changed. */}
+              {lastTask === 'ideas' ? (
+                <div
+                  className="ai-result-text"
+                  dangerouslySetInnerHTML={{ __html: result }}
+                />
+              ) : (
+                <DiffPreview before={fragmentCaptured ? fragmentCaptured.text : section?.content} after={result} />
+              )}
+              <button type="button" className="ai-apply-btn" onClick={applyResult} disabled={applied}>
                 {applied ? 'Applied ✓' : applyLabel}
               </button>
             </div>

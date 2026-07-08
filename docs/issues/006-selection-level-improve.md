@@ -3,7 +3,7 @@ id: 006
 title: Selection-level "Improve this" from the toolbar
 adr: 0006
 type: AFK
-status: ready
+status: done
 blocked_by: [003]
 ---
 

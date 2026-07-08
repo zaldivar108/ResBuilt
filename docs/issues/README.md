@@ -17,11 +17,11 @@ same PR/commit.
 | # | Title | ADR | Blocked by | Status |
 |---|-------|-----|-----------|--------|
 | [001](001-on-device-resume-checklist.md) | On-device résumé checklist (lib + editor panel) | 0002 | — | done |
-| [002](002-ai-whole-resume-review-pass.md) | AI whole-résumé review pass | 0002 | 001 | ready |
-| [003](003-diff-preview-before-apply.md) | Word-level diff preview before Apply | 0003 | — | ready |
-| [004](004-persist-target-job.md) | Persist `targetJob` on the résumé object | 0004 | — | ready |
-| [005](005-auto-grounding-suggestion.md) | Auto-suggest grounding occupation | 0005 | 004 | ready |
-| [006](006-selection-level-improve.md) | Selection-level "Improve this" | 0006 | 003 | ready |
+| [002](002-ai-whole-resume-review-pass.md) | AI whole-résumé review pass | 0002 | 001 | done |
+| [003](003-diff-preview-before-apply.md) | Word-level diff preview before Apply | 0003 | — | done |
+| [004](004-persist-target-job.md) | Persist `targetJob` on the résumé object | 0004 | — | done |
+| [005](005-auto-grounding-suggestion.md) | Auto-suggest grounding occupation | 0005 | 004 | done |
+| [006](006-selection-level-improve.md) | Selection-level "Improve this" | 0006 | 003 | done |
 | [007](007-result-variants.md) | Tone picker + "Another version" variants | 0007 | — | ready |
 | [008](008-fuller-onet-seed.md) | Fuller O*NET seed extract | 0008 | — | ready |
 | [009](009-pii-scrub-all-outbound.md) | PII scrub-and-restore on all outbound AI text | 0009 | — | ready |
