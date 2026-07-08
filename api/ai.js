@@ -1,19 +1,51 @@
 /* global process */
-// Vercel Edge Function — server-side proxy to Groq's OpenAI-compatible API.
-// The GROQ_API_KEY never reaches the browser. Set it as a Vercel env var
-// (and in .env.local for `vercel dev`); see .env.example.
+// Vercel Edge Function — server-side proxy to OpenAI-compatible chat APIs.
+// API keys never reach the browser. Set them as Vercel env vars (and in
+// .env.local for `vercel dev`); see .env.example.
+//
+// Two providers, tried in order: OpenCode Zen (free models) as PRIMARY, Groq as
+// automatic FALLBACK. A provider is only tried if its key is set, so with just
+// GROQ_API_KEY configured this behaves exactly as the original Groq-only proxy.
+// Fallback fires when the primary errors, returns nothing, or (for JSON tasks)
+// returns unparseable JSON — so an unreliable free model degrades gracefully.
 
 import { checkRateLimit } from './_rateLimit.js'
 
 export const config = { runtime: 'edge' }
 
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-// Model routing to stretch the shared free-tier quota: short editing tasks run
-// on the fast/cheap 8B model (higher rate limits, plenty for a rewrite); only
-// résumé structure extraction (import) needs the larger 70B model + JSON mode.
-const MODEL_SMALL = 'llama-3.1-8b-instant'
-const MODEL_LARGE = 'llama-3.3-70b-versatile'
-const MODEL = MODEL_LARGE // fallback
+// Each task declares a `tier` ('small' | 'large'); each provider maps the tier
+// to a concrete model. Small = fast/cheap editing; large = résumé structure
+// extraction (import) which needs more capability + JSON mode.
+const PROVIDERS = {
+  // OpenCode Zen — OpenAI-compatible; free models (trial). Auth assumed to be a
+  // standard Bearer token (OpenAI-compatible default; not documented — verify
+  // live). Other free models available to swap in: 'mimo-v2.5-free',
+  // 'north-mini-code-free'.
+  opencode: {
+    url: 'https://opencode.ai/zen/v1/chat/completions',
+    envKey: 'OPENCODE_API_KEY',
+    models: { small: 'deepseek-v4-flash-free', large: 'nemotron-3-ultra-free' },
+  },
+  // Groq — the proven fallback.
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    envKey: 'GROQ_API_KEY',
+    models: { small: 'llama-3.1-8b-instant', large: 'llama-3.3-70b-versatile' },
+  },
+}
+const PROVIDER_ORDER = ['opencode', 'groq'] // primary → fallback
+
+// OpenCode Zen's free models are all REASONING models: they spend tokens on
+// hidden reasoning before emitting `content`, and that reasoning counts against
+// max_tokens. Without headroom a tight per-task cap gets fully consumed by
+// reasoning, content comes back empty/truncated, and every request silently
+// falls through to Groq (so the free key would never actually serve). This
+// ceiling absorbs the reasoning pass; it's a max, so it never raises Groq's
+// cost (Groq stops at its natural end). Verified live: a realistic one-sentence
+// `improve` burned ~1100 reasoning tokens before ~70 tokens of answer — hence
+// the large margin. Trade-off: these free models are slow (multi-second) for
+// short outputs; if reasoning still overruns, the Groq fallback catches it.
+const REASONING_HEADROOM = 2000
 
 // One entry per supported task. Per-section editing tasks are tailored for
 // teen / young-adult first-time résumé writers — truthful, concise, encouraging.
@@ -25,7 +57,7 @@ const MODEL = MODEL_LARGE // fallback
 // It gets a larger input/output budget and JSON mode.
 const TASKS = {
   improve: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 2000,
     maxTokens: 600,
     temperature: 0.5,
@@ -33,7 +65,7 @@ const TASKS = {
       'You improve one section of a first résumé for a teenager or young adult. The user sends the section as simple HTML. Rewrite for clarity and impact: strong action verbs, concise, honest — never invent experience, employers, numbers, or credentials. Preserve the HTML structure and the same tags (<p>, <ul>, <li>, <strong>, <em>). Return ONLY the improved HTML — no markdown, no code fences, no commentary.',
   },
   ideas: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 2000,
     maxTokens: 600,
     temperature: 0.5,
@@ -41,7 +73,7 @@ const TASKS = {
       'You help a teenager or young adult writing a first résumé. The user sends one résumé section as HTML for context. Suggest 3 short, realistic bullet points they could ADD, believable for someone with limited experience (school, part-time jobs, volunteering, activities) — never invent specific employers or achievements. Return ONLY an HTML fragment: a single <ul> with exactly three <li> items. No commentary, no code fences.',
   },
   grammar: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 2000,
     maxTokens: 600,
     temperature: 0.5,
@@ -49,7 +81,7 @@ const TASKS = {
       'Fix only spelling and grammar in the résumé section the user sends as HTML. Preserve the meaning, wording, tone, and every HTML tag and structure. Do not add or remove content. Return ONLY the corrected HTML — no markdown, no code fences, no commentary.',
   },
   format: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 6000,
     maxTokens: 1200,
     temperature: 0.2,
@@ -57,7 +89,7 @@ const TASKS = {
       'You reformat ONE section of a first résumé for a teenager or young adult into the clean, conventional layout for that kind of section. The user sends the section as HTML. Reformat the SAME information into standard résumé structure — do NOT reword beyond light cleanup, do NOT add or drop any facts, and never invent experience, employers, numbers, dates, or credentials. Use only <p>, <ul>, <li>, <strong>, <em>. Return ONLY the formatted HTML — no markdown, no code fences, no commentary.',
   },
   polish: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 2000,
     maxTokens: 500,
     temperature: 0.5,
@@ -65,7 +97,7 @@ const TASKS = {
       'You turn real job duties into résumé bullet points for a teenager or young adult writing a first résumé. The user sends one or more real tasks for a specific job (sourced from O*NET occupational data). Rewrite them as concise, first-person-implied résumé bullets with strong action verbs, in a voice believable for someone with limited experience. Keep them truthful to the duties given — do NOT invent employers, numbers, dates, or achievements. Return ONLY an HTML fragment: a single <ul> with one <li> per bullet. No commentary, no code fences.',
   },
   tailor: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 6000,
     maxTokens: 700,
     temperature: 0.3,
@@ -79,7 +111,7 @@ const TASKS = {
       'Keep every item short. No markdown, no code fences, no commentary — the JSON object only.',
   },
   retarget: {
-    model: MODEL_SMALL,
+    tier: 'small',
     maxInput: 6000,
     maxTokens: 700,
     temperature: 0.4,
@@ -90,7 +122,7 @@ const TASKS = {
       'Return ONLY the rewritten HTML — no markdown, no code fences, no commentary.',
   },
   import: {
-    model: MODEL_LARGE,
+    tier: 'large',
     maxInput: 8000,
     maxTokens: 2000,
     temperature: 0.2,
@@ -145,8 +177,11 @@ export default async function handler(req) {
     })
   }
 
-  const key = process.env.GROQ_API_KEY
-  if (!key) return json({ error: 'AI is not configured on the server.' }, 503)
+  // Providers to try, in order, whose key is configured. Empty → not set up.
+  const providers = PROVIDER_ORDER
+    .map(name => ({ name, ...PROVIDERS[name], key: process.env[PROVIDERS[name].envKey] }))
+    .filter(p => p.key)
+  if (!providers.length) return json({ error: 'AI is not configured on the server.' }, 503)
 
   let body
   try {
@@ -181,37 +216,39 @@ export default async function handler(req) {
     systemPrompt += ' ' + hint
   }
 
-  try {
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: config.model || MODEL,
-        temperature: config.temperature,
-        max_tokens: config.maxTokens,
-        ...(config.json ? { response_format: { type: 'json_object' } } : {}),
-        ...(wantStream ? { stream: true } : {}),
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text.trim() },
-        ],
-      }),
-    })
+  const requestBody = model => JSON.stringify({
+    model,
+    temperature: config.temperature,
+    max_tokens: config.maxTokens + REASONING_HEADROOM,
+    ...(config.json ? { response_format: { type: 'json_object' } } : {}),
+    ...(wantStream ? { stream: true } : {}),
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text.trim() },
+    ],
+  })
+  const headersFor = p => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${p.key}` })
+
+  // Try each provider in turn; the first success wins. A non-2xx, network error,
+  // empty completion, or (for JSON tasks) unparseable body drops to the next.
+  let lastStatus = 502
+  for (const p of providers) {
+    let res
+    try {
+      res = await fetch(p.url, { method: 'POST', headers: headersFor(p), body: requestBody(p.models[config.tier]) })
+    } catch {
+      lastStatus = 502
+      continue // network error — try the fallback
+    }
 
     if (!res.ok) {
-      // Do not leak upstream error bodies (may echo the request) to the client.
-      const status = res.status === 429 ? 429 : 502
-      const error = status === 429
-        ? 'The AI service is busy right now — try again in a moment.'
-        : 'The AI service returned an error. Try again shortly.'
-      return json({ error }, status)
+      lastStatus = res.status === 429 ? 429 : 502
+      continue // upstream rejected — try the fallback (never leak its body)
     }
 
     if (wantStream) {
-      // Pass Groq's SSE stream straight through to the browser.
+      // Pass the upstream SSE stream straight through to the browser. Can't fall
+      // back once bytes flow, so only a pre-stream failure (above) is recoverable.
       return new Response(res.body, {
         headers: {
           'Content-Type': 'text/event-stream; charset=utf-8',
@@ -221,11 +258,25 @@ export default async function handler(req) {
       })
     }
 
-    const data = await res.json()
-    const result = data?.choices?.[0]?.message?.content?.trim() ?? ''
-    if (!result) return json({ error: 'No suggestion was returned. Try again.' }, 502)
+    let result
+    try {
+      const data = await res.json()
+      result = data?.choices?.[0]?.message?.content?.trim() ?? ''
+    } catch {
+      lastStatus = 502
+      continue // malformed response envelope — try the fallback
+    }
+    if (!result) { lastStatus = 502; continue }
+    // JSON tasks must return parseable JSON; a free model that ignores JSON mode
+    // shouldn't win over a fallback that honors it.
+    if (config.json) {
+      try { JSON.parse(result) } catch { lastStatus = 502; continue }
+    }
     return json({ result })
-  } catch {
-    return json({ error: 'Could not reach the AI service. Check your connection.' }, 502)
   }
+
+  const error = lastStatus === 429
+    ? 'The AI service is busy right now — try again in a moment.'
+    : 'The AI service returned an error. Try again shortly.'
+  return json({ error }, lastStatus)
 }

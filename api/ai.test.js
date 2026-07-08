@@ -31,11 +31,26 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   delete process.env.GROQ_API_KEY
+  delete process.env.OPENCODE_API_KEY
 })
 
 function sentBody() {
   return JSON.parse(fetchMock.mock.calls[0][1].body)
 }
+
+// Route the fetch mock by URL fragment so provider order/fallback is testable.
+function mockByUrl(map) {
+  fetchMock.mockImplementation(url => {
+    for (const [frag, resp] of Object.entries(map)) {
+      if (String(url).includes(frag)) return Promise.resolve(resp)
+    }
+    return Promise.resolve({ ok: false, status: 502, json: async () => ({}) })
+  })
+}
+const OC = 'opencode.ai'
+const GROQ = 'api.groq.com'
+const callUrl = i => String(fetchMock.mock.calls[i][0])
+const callBody = i => JSON.parse(fetchMock.mock.calls[i][1].body)
 
 describe('api/ai import task', () => {
   test('is a recognized task (not "Unknown task")', async () => {
@@ -180,5 +195,83 @@ describe('api/ai regression — existing per-section tasks', () => {
     delete process.env.GROQ_API_KEY
     const res = await handler(req({ task: 'improve', text: 'hi' }))
     expect(res.status).toBe(503)
+  })
+
+  test('with no provider key at all, returns 503', async () => {
+    delete process.env.GROQ_API_KEY // OPENCODE also unset
+    const res = await handler(req({ task: 'improve', text: 'hi' }))
+    expect(res.status).toBe(503)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('api/ai provider routing — OpenCode primary → Groq fallback', () => {
+  beforeEach(() => {
+    process.env.OPENCODE_API_KEY = 'oc-key' // GROQ_API_KEY already set in outer beforeEach
+  })
+
+  test('uses OpenCode first when its key is present', async () => {
+    mockByUrl({ [OC]: groqOk('<p>improved</p>') })
+    const res = await handler(req({ task: 'improve', text: 'hi' }))
+    expect(res.status).toBe(200)
+    expect(callUrl(0)).toContain(OC)
+    expect(callBody(0).model).toBe('deepseek-v4-flash-free')
+    expect(fetchMock).toHaveBeenCalledOnce() // no fallback needed
+    expect((await res.json()).result).toContain('improved')
+  })
+
+  test('routes the large-tier import task to the OpenCode ultra model', async () => {
+    mockByUrl({ [OC]: groqOk('{"sections":[]}') })
+    await handler(req({ task: 'import', text: 'a'.repeat(300) }))
+    expect(callBody(0).model).toBe('nemotron-3-ultra-free')
+  })
+
+  test('falls back to Groq when OpenCode returns a 5xx', async () => {
+    mockByUrl({ [OC]: { ok: false, status: 500, json: async () => ({}) }, [GROQ]: groqOk('<p>from groq</p>') })
+    const res = await handler(req({ task: 'improve', text: 'hi' }))
+    expect(res.status).toBe(200)
+    expect(callUrl(0)).toContain(OC)
+    expect(callUrl(1)).toContain(GROQ)
+    expect(callBody(1).model).toBe('llama-3.1-8b-instant')
+    expect((await res.json()).result).toContain('from groq')
+  })
+
+  test('falls back to Groq on an OpenCode network error', async () => {
+    fetchMock.mockImplementation(url =>
+      String(url).includes(OC) ? Promise.reject(new Error('offline')) : Promise.resolve(groqOk('<p>g</p>'))
+    )
+    const res = await handler(req({ task: 'improve', text: 'hi' }))
+    expect(res.status).toBe(200)
+    expect((await res.json()).result).toContain('g')
+  })
+
+  test('falls back when a JSON task gets unparseable JSON from OpenCode', async () => {
+    mockByUrl({ [OC]: groqOk('sorry, here is your resume!'), [GROQ]: groqOk('{"sections":[]}') })
+    const res = await handler(req({ task: 'import', text: 'a'.repeat(300) }))
+    expect(res.status).toBe(200)
+    expect(callUrl(1)).toContain(GROQ)
+    expect((await res.json()).result).toBe('{"sections":[]}')
+  })
+
+  test('keeps a valid JSON completion from OpenCode (no needless fallback)', async () => {
+    mockByUrl({ [OC]: groqOk('{"sections":[{"type":"contact","title":"C","content":"<p>x</p>"}]}') })
+    const res = await handler(req({ task: 'import', text: 'a'.repeat(300) }))
+    expect(res.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  test('no fallback available → surfaces the error (only OpenCode configured)', async () => {
+    delete process.env.GROQ_API_KEY
+    mockByUrl({ [OC]: { ok: false, status: 500, json: async () => ({}) } })
+    const res = await handler(req({ task: 'improve', text: 'hi' }))
+    expect(res.status).toBe(502)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  test('both providers 429 → returns 429', async () => {
+    mockByUrl({ [OC]: { ok: false, status: 429, json: async () => ({}) }, [GROQ]: { ok: false, status: 429, json: async () => ({}) } })
+    const res = await handler(req({ task: 'improve', text: 'hi' }))
+    expect(res.status).toBe(429)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
