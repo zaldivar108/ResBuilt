@@ -16,7 +16,7 @@ same PR/commit.
 
 | # | Title | ADR | Blocked by | Status |
 |---|-------|-----|-----------|--------|
-| [001](001-on-device-resume-checklist.md) | On-device résumé checklist (lib + editor panel) | 0002 | — | ready |
+| [001](001-on-device-resume-checklist.md) | On-device résumé checklist (lib + editor panel) | 0002 | — | done |
 | [002](002-ai-whole-resume-review-pass.md) | AI whole-résumé review pass | 0002 | 001 | ready |
 | [003](003-diff-preview-before-apply.md) | Word-level diff preview before Apply | 0003 | — | ready |
 | [004](004-persist-target-job.md) | Persist `targetJob` on the résumé object | 0004 | — | ready |

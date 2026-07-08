@@ -13,6 +13,7 @@ import {
 } from '../components/ui/dropdown-menu'
 import { AiProvider, AiControls, AiWorkspace, AiInfoOrb } from '../components/ui/AiInput'
 import AccentColorPicker from '../components/ui/AccentColorPicker'
+import ResumeChecklistPanel, { ChecklistTriggerButton } from '../components/ui/ResumeChecklistPanel'
 import { sanitizeHtml } from '../lib/sanitizeHtml'
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragOverlay,
@@ -64,6 +65,7 @@ export default function Editor() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [lastDeleted, setLastDeleted] = useState(null) // { section, index }
   const [lastAiEdit, setLastAiEdit] = useState(null) // { sectionId, prevContent }
+  const [checklistOpen, setChecklistOpen] = useState(false)
 
   const editorRef      = useRef(null)
   const saveTimerRef   = useRef(null)
@@ -320,6 +322,7 @@ export default function Editor() {
           placeholder="Resume title..."
         />
         <div className="editor-nav-right">
+          <ChecklistTriggerButton onClick={() => setChecklistOpen(true)} />
           <Switch checked={darkMode} onCheckedChange={setDarkMode} />
           <span className={`save-badge ${saved ? 'saved' : 'pending'}`}>
             {saved ? '✓ Saved' : 'Saving…'}
@@ -327,6 +330,14 @@ export default function Editor() {
           <button className="save-btn" onClick={saveNow}>Save</button>
         </div>
       </nav>
+
+      {checklistOpen && (
+        <ResumeChecklistPanel
+          sections={resume.sections}
+          onSelectSection={switchSection}
+          onClose={() => setChecklistOpen(false)}
+        />
+      )}
 
       {/* Body: 4-column layout. AiProvider spans the sections sidebar (controls)
           and the editor column (workspace) so the two AI surfaces share state. */}

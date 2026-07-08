@@ -1,6 +1,8 @@
 # ResBuilt — Project Handoff
 
-_Last updated: 2026-07-07 · Branch `master` · Build: green · Tests: 276 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
+_Last updated: 2026-07-08 · Branch `master` · Build: green · Tests: 297 passing · npm audit: 0 vulns · v0.1.0 · Prod: https://resbuilt.vercel.app (live, deployed)_
+
+**LATEST FIX (part 8) — `599bd2a`, pushed, prod redeploy in flight:** user reported "AI couldn't process résumé" on **prod** import. Root cause: `api/ai.js`'s provider-fallback loop had **no per-provider timeout** — OpenCode's free reasoning models (multi-second by nature, worse on the `import` task's larger token budget) could hang past the Edge function's ~25s wall-clock ceiling, so the Groq fallback never got a turn and the whole request died as a 504 instead of degrading. Confirmed live via curl: `import` timed out (504), `improve` (small tier, fast) returned 200 fine. Fix: `AbortController` + timeout per provider attempt (OpenCode 9s, Groq 12s budget) so a hung primary aborts with room left for the fallback inside the edge ceiling. **Still owed:** re-verify live post-deploy (`curl -X POST https://resbuilt.vercel.app/api/ai -d '{"task":"import","text":"..."}'` should no longer 504); if OpenCode is *routinely* this slow on `import`, consider swapping its large-tier model or dropping OpenCode entirely for `import` (Groq-only for that one task).
 
 _AI provider: **OpenCode Zen** free models (primary) → **Groq** (automatic fallback). Keys `OPENCODE_API_KEY` + `GROQ_API_KEY` set in all 3 Vercel envs._
 
@@ -12,7 +14,7 @@ A client-side resume builder. React 19 + Vite 8. All data lives in `localStorage
 
 ## 0. Session status — where to continue
 
-**Test suite: 276 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: pre-existing errors only (Editor's `setState`-in-effect + 2 unused-vars, EditorToolbar/AccentColorPicker + `useResume` react-refresh) — none from this session's work. Part 6 (UI redesign) committed `34ecd18`; gap #1 shipped `8c3022e` — **both unpushed**.
+**Test suite: 297 passing** (`npm run test:run`). Build green throughout. Vitest env is **jsdom** (DOMPurify's reference DOM). Lint: pre-existing errors only (Editor's `setState`-in-effect + 2 unused-vars, EditorToolbar/AccentColorPicker + `useResume` react-refresh) — none from this session's work. Part 6 (UI redesign) committed `34ecd18`; gap #1 shipped `8c3022e`; issue 001 (on-device checklist) shipped this session — **all unpushed/uncommitted, see below**.
 
 ### ⭐ NEXT SESSION — work the AI-experience gaps (user-chosen priority)
 
@@ -20,8 +22,8 @@ Ranked list from the 2026-07-07 AI-gaps review. **Approach for #2–#9 locked in
 
 1. ~~**Quiz result discards its own data**~~ **DONE (part 7, `8c3022e`)** — "Start a résumé" from the quiz now fetches the career's occupation (live proxy → bundled seed → none, 5s timeout, `fetchOccupationForCareer`) and seeds the student starter's Experience (up to 6 real duties, framed as ideas-to-adapt, escaped) + Skills (occupation skills) via new pure `src/lib/careerSeed.js` (`seedSectionsFromOccupation`) → `createResumeFromImport`. Degrades to title-only when no record. `InterestProfiler` now passes the full career object and shows a disabled "Starting…" state. +14 tests. **Not live-verified in browser yet** (needs `vercel dev`: quiz → results → Start a résumé → editor shows seeded duties).
 2. **No whole-résumé review** (ADR 0002) — AI acts on one section at a time. Two halves:
-   a. *On-device checklist (free, do first)*: heuristics over all sections — bullets without numbers, generic objective, tense inconsistency, duplicate skills, length vs 1 page. New pure lib (`resumeChecklist.js`) + panel in the editor; TDD-friendly.
-   b. *AI pass (one call)*: PII-scrubbed all-sections review via a new `review` task in `api/ai.js` (JSON: strengths/issues per section). Mind `maxInput` caps + reasoning-model headroom (see part-4 notes).
+   a. ~~*On-device checklist (free, do first)*~~ **DONE (issue 001)** — heuristics over all sections — bullets without numbers, generic objective phrasing, tense inconsistency, duplicate skills, length vs 1 page. New pure lib `src/lib/resumeChecklist.js` (`checkResume`, +17 tests) + `ResumeChecklistPanel`/`ChecklistTriggerButton` (`src/components/ui/`): a "Review" button in the editor top nav opens an overlay modal (role=dialog, Escape-to-close, focus-on-open — same pattern as InterestProfiler), findings grouped flat with a section badge, clicking a finding switches the editor to that section and closes the modal. Zero network, zero AI-budget cost, Paper & Ink tokens only. Live-verified via `npm run dev` + chrome-devtools (light + dark, click-to-switch-section, Escape, X close — no console errors).
+   b. *AI pass (one call, next up — issue 002, blocked_by 001 now done)*: PII-scrubbed all-sections review via a new `review` task in `api/ai.js` (JSON: strengths/issues per section), rendered as a second list inside the same panel. Mind `maxInput` caps + reasoning-model headroom (see part-4 notes).
 3. **Apply is blind — no diff view** (ADR 0003) — AI preview replaces the section wholesale (`AiWorkspace` → `applyResult`). Word-level diff (ins/del marks) between `section.content` and result before Apply; matters most for Fix grammar (teens learning writing). Decided: `diff` (jsdiff), diff the *text* layer not HTML.
 4. **Job-match target not persisted** (ADR 0004) — `JobTailor` posting state is component-local; retailoring each section means re-supplying context. Decided: `resume.targetJob = { text, title?, source, savedAt }` via `updateResume`.
 5. **Ideas grounding manual/buried** (ADR 0005) — `groundOcc` only set after visiting "Real job duties" and picking a job. Decided: auto-*suggest* (never auto-apply) from title/objective; quiz/targetJob source wins over title guess.

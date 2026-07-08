@@ -3,7 +3,7 @@ id: 001
 title: On-device résumé checklist (lib + editor panel)
 adr: 0002
 type: AFK
-status: ready
+status: done
 blocked_by: []
 ---
 
